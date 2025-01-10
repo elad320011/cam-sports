@@ -1,0 +1,19 @@
+@baseUrl = 127.0.0.1:5000
+
+### Login Request
+POST http://{{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpassword"
+}
+
+### Register Request
+POST http://{{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "newuser",
+  "password": "newpassword"
+}
