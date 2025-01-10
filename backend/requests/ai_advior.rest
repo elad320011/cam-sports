@@ -1,0 +1,58 @@
+@baseUrl = 127.0.0.1:5000
+
+### Customize AI Advisor Request
+POST http://{{baseUrl}}/ai_advior/customize_ai_advisor
+Content-Type: application/json
+
+{
+  "custom_info": "My name is Shlomi, and I am a volleyball coach with experience coaching high school teams."
+}
+
+### Basic AI Advisor Question Request
+POST http://{{baseUrl}}/ai_advior/message_ai_advisor
+Content-Type: application/json
+
+{
+  "message": "Based on the match statistics, the player had a 70% serving accuracy, 55% successful attacks, and 90% successful passes. What can they improve?"
+}
+
+### Basic AI Advisor Question Request
+POST http://{{baseUrl}}/ai_advior/message_ai_advisor
+Content-Type: application/json
+
+{
+  "message": "What did I just ask you about the player's performance?"
+}
+
+### AI Advisor History Load Request
+GET http://{{baseUrl}}/ai_advior/load_conv_history
+Content-Type: application/json
+
+# TESTING
+# ### Customize AI Advisor Request
+# POST http://{{baseUrl}}/ai_advior/customize_ai_advisor
+# Content-Type: application/json
+
+# {
+#   "custom_info": "my name is shlomi."
+# }
+
+# ### Basic AI Advisor Question Request
+# POST http://{{baseUrl}}/ai_advior/message_ai_advisor
+# Content-Type: application/json
+
+# {
+#   "message": "what is 2+2 equals to?"
+# }
+
+# ### AI Advisor History Check Request
+# POST http://{{baseUrl}}/ai_advior/message_ai_advisor
+# Content-Type: application/json
+
+# {
+#   "message": "what did i just ask you?"
+# }
+
+# ### AI Advisor History Load Request
+# GET http://{{baseUrl}}/ai_advior/load_conv_history
+# Content-Type: application/json
