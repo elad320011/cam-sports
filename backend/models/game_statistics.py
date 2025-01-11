@@ -29,6 +29,7 @@ class ServeStats(me.EmbeddedDocument):
 class ServeReceivesStats(me.EmbeddedDocument):
     attempts = me.IntField(required=False, default = 0)
     one_balls = me.IntField(required=False, default = 0)
+    two_balls = me.IntField(required=False, default = 0)
     three_balls = me.IntField(required=False, default = 0)
     errors = me.IntField(required=False, default = 0)
     efficiency = me.FloatField(required=False, default = 0)
@@ -43,7 +44,7 @@ class DigsStats(me.EmbeddedDocument):
 class SettingStats(me.EmbeddedDocument):
     attempts = me.IntField(required=False, default = 0)
     errors = me.IntField(required=False, default = 0)
-    kills = me.IntField(required=False, default = 0)
+    assists = me.IntField(required=False, default = 0)
 
 
 class BlocksStats(me.EmbeddedDocument):
