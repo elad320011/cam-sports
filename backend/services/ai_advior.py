@@ -9,10 +9,10 @@ def get_response(messages, question):
 
     # Get the response from ChatGPT
     response = openai.ChatCompletion.create(
-        model="gpt-4o-mini", 
+        model=os.getenv("OPENAI_ENGINE"), 
         messages=messages,
         temperature=0.7,
-        max_tokens=256,
+        max_tokens=2000,
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0
