@@ -38,3 +38,4 @@
 */env.bak/
 */venv.bak/
 **/__pycache__/*
+.env

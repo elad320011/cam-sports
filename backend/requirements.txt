@@ -1,5 +1,6 @@
 Flask==2.0.1
 openai==0.27.0
 python-dotenv==0.19.2
-mongoengine==0.24.2
+mongoengine==0.29.1
 Werkzeug==2.2.2
+pymongo==3.13.0
