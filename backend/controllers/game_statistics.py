@@ -49,7 +49,7 @@ def get_game_statistics_by_id(game_id):
     try:
         # Query the database for the document by its _id
         game_statistics = GameStatistics.objects.get(id=ObjectId(game_id))
-
+        
         # Convert the document to JSON
         game_statistics_json = game_statistics.to_json()
 

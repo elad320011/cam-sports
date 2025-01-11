@@ -8,51 +8,24 @@ Content-Type: application/json
   "custom_info": "My name is Shlomi, and I am a volleyball coach with experience coaching high school teams."
 }
 
-### Basic AI Advisor Question Request
+### Basic AI Advisor Question Request - type text
 POST http://{{baseUrl}}/ai_advior/message_ai_advisor
 Content-Type: application/json
 
 {
-  "message": "Based on the match statistics, the player had a 70% serving accuracy, 55% successful attacks, and 90% successful passes. What can they improve?"
+  "type": "text",
+  "message": "{\"_id\": {\"$oid\": \"67826a86889979335402a7c3\"}, \"team_id\": \"team123\", \"opposite_team_name\": \"RivalTeam\", \"game_date\": {\"$date\": 1736521200000}, \"team_sets_won_count\": 3, \"team_sets_lost_count\": 1, \"sets_scores\": {\"1\": {\"team_score\": 25, \"opposite_team_score\": 18}, \"2\": {\"team_score\": 22, \"opposite_team_score\": 25}, \"3\": {\"team_score\": 25, \"opposite_team_score\": 20}, \"4\": {\"team_score\": 25, \"opposite_team_score\": 23}}, \"team_stats\": {\"player1\": {\"position\": \"Outside Hitter\", \"starter\": true, \"attack\": {\"attempts\": 22, \"kills\": 14, \"errors\": 4, \"kill_percentage\": 63.6}, \"serve\": {\"attempts\": 10, \"aces\": 1, \"errors\": 1, \"ace_percentage\": 10.0}, \"serve_recieves\": {\"attempts\": 18, \"one_balls\": 5, \"two_balls\": 8, \"three_balls\": 5, \"errors\": 0, \"efficiency\": 2.0}, \"digs\": {\"attempts\": 12, \"errors\": 1, \"efficiency\": 91.7}, \"setting\": {\"attempts\": 2, \"errors\": 0, \"assists\": 1}, \"blocks\": {\"attempts\": 6, \"kills\": 3, \"errors\": 1}}, \"player2\": {\"position\": \"Outside Hitter\", \"starter\": true, \"attack\": {\"attempts\": 18, \"kills\": 10, \"errors\": 3, \"kill_percentage\": 55.6}, \"serve\": {\"attempts\": 12, \"aces\": 2, \"errors\": 1, \"ace_percentage\": 16.7}, \"serve_recieves\": {\"attempts\": 20, \"one_balls\": 6, \"two_balls\": 9, \"three_balls\": 5, \"errors\": 0, \"efficiency\": 2.1}, \"digs\": {\"attempts\": 10, \"errors\": 1, \"efficiency\": 90.0}, \"setting\": {\"attempts\": 2, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 5, \"kills\": 2, \"errors\": 0}}, \"player3\": {\"position\": \"Setter\", \"starter\": true, \"attack\": {\"attempts\": 5, \"kills\": 2, \"errors\": 1, \"kill_percentage\": 40.0}, \"serve\": {\"attempts\": 8, \"aces\": 0, \"errors\": 2, \"ace_percentage\": 0.0}, \"serve_recieves\": {\"attempts\": 0, \"one_balls\": 0, \"two_balls\": 0, \"three_balls\": 0, \"errors\": 0, \"efficiency\": 0.0}, \"digs\": {\"attempts\": 7, \"errors\": 0, \"efficiency\": 100.0}, \"setting\": {\"attempts\": 72, \"errors\": 3, \"assists\": 60}, \"blocks\": {\"attempts\": 3, \"kills\": 0, \"errors\": 0}}, \"player4\": {\"position\": \"Middle Blocker\", \"starter\": true, \"attack\": {\"attempts\": 15, \"kills\": 8, \"errors\": 3, \"kill_percentage\": 53.3}, \"serve\": {\"attempts\": 6, \"aces\": 1, \"errors\": 0, \"ace_percentage\": 16.7}, \"serve_recieves\": {\"attempts\": 0, \"one_balls\": 0, \"two_balls\": 0, \"three_balls\": 0, \"errors\": 0, \"efficiency\": 0.0}, \"digs\": {\"attempts\": 3, \"errors\": 0, \"efficiency\": 100.0}, \"setting\": {\"attempts\": 1, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 10, \"kills\": 5, \"errors\": 1}}, \"player5\": {\"position\": \"Opposite Hitter\", \"starter\": true, \"attack\": {\"attempts\": 12, \"kills\": 7, \"errors\": 2, \"kill_percentage\": 58.3}, \"serve\": {\"attempts\": 5, \"aces\": 1, \"errors\": 1, \"ace_percentage\": 20.0}, \"serve_recieves\": {\"attempts\": 0, \"one_balls\": 0, \"two_balls\": 0, \"three_balls\": 0, \"errors\": 0, \"efficiency\": 0.0}, \"digs\": {\"attempts\": 8, \"errors\": 1, \"efficiency\": 87.5}, \"setting\": {\"attempts\": 1, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 8, \"kills\": 3, \"errors\": 1}}, \"player6\": {\"position\": \"Libero\", \"starter\": true, \"attack\": {\"attempts\": 0, \"kills\": 0, \"errors\": 0, \"kill_percentage\": 0.0}, \"serve\": {\"attempts\": 0, \"aces\": 0, \"errors\": 0, \"ace_percentage\": 0.0}, \"serve_recieves\": {\"attempts\": 30, \"one_balls\": 10, \"two_balls\": 12, \"three_balls\": 8, \"errors\": 0, \"efficiency\": 2.3}, \"digs\": {\"attempts\": 18, \"errors\": 1, \"efficiency\": 94.4}, \"setting\": {\"attempts\": 3, \"errors\": 0, \"assists\": 1}, \"blocks\": {\"attempts\": 0, \"kills\": 0, \"errors\": 0}}, \"player7\": {\"position\": \"Middle Blocker\", \"starter\": true, \"attack\": {\"attempts\": 10, \"kills\": 5, \"errors\": 1, \"kill_percentage\": 50.0}, \"serve\": {\"attempts\": 4, \"aces\": 1, \"errors\": 0, \"ace_percentage\": 25.0}, \"serve_recieves\": {\"attempts\": 0, \"one_balls\": 0, \"two_balls\": 0, \"three_balls\": 0, \"errors\": 0, \"efficiency\": 0.0}, \"digs\": {\"attempts\": 4, \"errors\": 0, \"efficiency\": 100.0}, \"setting\": {\"attempts\": 1, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 7, \"kills\": 3, \"errors\": 1}}, \"player8\": {\"position\": \"Opposite Hitter\", \"starter\": false, \"attack\": {\"attempts\": 8, \"kills\": 5, \"errors\": 2, \"kill_percentage\": 62.5}, \"serve\": {\"attempts\": 3, \"aces\": 0, \"errors\": 1, \"ace_percentage\": 0.0}, \"serve_recieves\": {\"attempts\": 5, \"one_balls\": 2, \"two_balls\": 2, \"three_balls\": 1, \"errors\": 0, \"efficiency\": 1.8}, \"digs\": {\"attempts\": 5, \"errors\": 0, \"efficiency\": 100.0}, \"setting\": {\"attempts\": 0, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 4, \"kills\": 1, \"errors\": 0}}, \"player9\": {\"position\": \"Middle Blocker\", \"starter\": false, \"attack\": {\"attempts\": 5, \"kills\": 2, \"errors\": 1, \"kill_percentage\": 40.0}, \"serve\": {\"attempts\": 2, \"aces\": 0, \"errors\": 0, \"ace_percentage\": 0.0}, \"serve_recieves\": {\"attempts\": 0, \"one_balls\": 0, \"two_balls\": 0, \"three_balls\": 0, \"errors\": 0, \"efficiency\": 0.0}, \"digs\": {\"attempts\": 2, \"errors\": 0, \"efficiency\": 100.0}, \"setting\": {\"attempts\": 1, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 5, \"kills\": 1, \"errors\": 0}}, \"player10\": {\"position\": \"Outside Hitter\", \"starter\": false, \"attack\": {\"attempts\": 6, \"kills\": 3, \"errors\": 1, \"kill_percentage\": 50.0}, \"serve\": {\"attempts\": 5, \"aces\": 1, \"errors\": 0, \"ace_percentage\": 20.0}, \"serve_recieves\": {\"attempts\": 4, \"one_balls\": 1, \"two_balls\": 2, \"three_balls\": 1, \"errors\": 0, \"efficiency\": 2.0}, \"digs\": {\"attempts\": 3, \"errors\": 0, \"efficiency\": 100.0}, \"setting\": {\"attempts\": 1, \"errors\": 0, \"assists\": 0}, \"blocks\": {\"attempts\": 2, \"kills\": 0, \"errors\": 1}}}}"
 }
 
-### Basic AI Advisor Question Request
+### Basic AI Advisor Question Request 0 type statistic_doc_id
 POST http://{{baseUrl}}/ai_advior/message_ai_advisor
 Content-Type: application/json
 
 {
-  "message": "What did I just ask you about the player's performance?"
+  "type": "statistic_doc_id",
+  "message": "67826a86889979335402a7c3"
 }
 
 ### AI Advisor History Load Request
 GET http://{{baseUrl}}/ai_advior/load_conv_history
 Content-Type: application/json
-
-# TESTING
-# ### Customize AI Advisor Request
-# POST http://{{baseUrl}}/ai_advior/customize_ai_advisor
-# Content-Type: application/json
-
-# {
-#   "custom_info": "my name is shlomi."
-# }
-
-# ### Basic AI Advisor Question Request
-# POST http://{{baseUrl}}/ai_advior/message_ai_advisor
-# Content-Type: application/json
-
-# {
-#   "message": "what is 2+2 equals to?"
-# }
-
-# ### AI Advisor History Check Request
-# POST http://{{baseUrl}}/ai_advior/message_ai_advisor
-# Content-Type: application/json
-
-# {
-#   "message": "what did i just ask you?"
-# }
-
-# ### AI Advisor History Load Request
-# GET http://{{baseUrl}}/ai_advior/load_conv_history
-# Content-Type: application/json
