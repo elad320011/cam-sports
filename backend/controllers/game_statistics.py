@@ -58,3 +58,19 @@ def get_game_statistics_by_id(game_id):
         return jsonify({"error": "Game statistics not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def get_game_statistics_by_team_id(team_id):
+    try:
+        # Query the database for the document by its _id
+        game_statistics = GameStatistics.objects(team_id=team_id)
+
+        # Convert the document to JSON
+        game_statistics_json = game_statistics.to_json()
+
+        # Return the document as a JSON response
+        return game_statistics_json, 200
+    except GameStatistics.DoesNotExist:
+        return jsonify({"error": "Game statistics not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
