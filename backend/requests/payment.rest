@@ -1,0 +1,18 @@
+@baseUrl = 127.0.0.1:5000
+
+### Creeat payment method fo the team
+POST  http://{{baseUrl}}/payment/create
+Content-Type: application/json
+
+{
+  "team": "danielfc",
+  "payment_method": "http://bit"
+}
+
+### Get payment method for the team
+GET http://{{baseUrl}}/payment/get
+Content-Type: application/json
+
+{
+  "team": "danielfc"
+}

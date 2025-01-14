@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from routes.auth import auth_bp
 from routes.ai_advior import ai_advior_bp
 from routes.game_statistics import game_statistics_bp
+from routes.payment import payment_bp
+from routes.team import team_bp
 
 
 load_dotenv()
@@ -15,6 +17,8 @@ app = Flask(__name__)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(ai_advior_bp, url_prefix='/ai_advior')
 app.register_blueprint(game_statistics_bp, url_prefix='/game_statistics')
+app.register_blueprint(payment_bp, url_prefix='/payment')
+app.register_blueprint(team_bp, url_prefix='/team')
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))

@@ -1,0 +1,13 @@
+@baseUrl = 127.0.0.1:5000
+
+### Create team
+POST  http://{{baseUrl}}/team/create
+Content-Type: application/json
+
+{
+    "name": "danielfc",
+    "manager": "jose morhino",
+    "staff": [ "daniel", "jose" ],
+    "players": [ "daniel", "jose" ]
+
+}
