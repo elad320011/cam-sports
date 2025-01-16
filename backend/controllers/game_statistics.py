@@ -41,15 +41,17 @@ def create_game_statistics(request):
         team_stats=team_stats
     )
     game_statistics.save()
+    game_id = str(game_statistics.id)
 
-    return jsonify({"message": "Game statistics created successfully"})
+    print(game_id)
+    return jsonify({"message": "Game statistics created successfully", "game_id": game_id})
 
 
 def get_game_statistics_by_id(game_id):
     try:
         # Query the database for the document by its _id
         game_statistics = GameStatistics.objects.get(id=ObjectId(game_id))
-        
+
         # Convert the document to JSON
         game_statistics_json = game_statistics.to_json()
 
