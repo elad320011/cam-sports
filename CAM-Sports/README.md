@@ -25,6 +25,13 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Authentication
+
+To access the authentication pages, navigate to:
+
+- `/auth/register` for the registration page
+- `/auth/login` for the login page
+
 ## Get a fresh project
 
 When you're ready, run:
