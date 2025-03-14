@@ -1,6 +1,7 @@
 from flask import Flask
 import os
 from dotenv import load_dotenv
+from flask_cors import CORS  # Import CORS
 
 # Routes
 from routes.auth import auth_bp
@@ -9,9 +10,12 @@ from routes.game_statistics import game_statistics_bp
 from routes.payment import payment_bp
 from routes.team import team_bp
 
+# Models
+from models.user import User  # Add this line
 
 load_dotenv()
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # Routes
 app.register_blueprint(auth_bp, url_prefix='/auth')
