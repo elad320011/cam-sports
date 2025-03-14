@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Picker } from 'react-native';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('player');
-  const [teamName, setTeamName] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const router = useRouter();
 
   const handleRegister = async () => {
     try {
@@ -14,16 +16,18 @@ export default function RegisterScreen() {
         username,
         password,
         user_type: userType,
-        team_name: userType === 'team_owner' ? teamName : undefined,
       });
-      alert(response.data.message);
+      if (response.data.redirect) {
+        router.push('/(auth)/login');
+      }
     } catch (error) {
-      alert('Registration failed');
+      setErrorMessage(error.response?.data?.message || 'Registration failed');
     }
   };
 
   return (
     <View style={styles.container}>
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       <TextInput
         style={styles.input}
         placeholder="Username"
@@ -45,16 +49,7 @@ export default function RegisterScreen() {
         <Picker.Item label="Player" value="player" />
         <Picker.Item label="Coach" value="coach" />
         <Picker.Item label="Staff" value="staff" />
-        <Picker.Item label="Team Owner" value="team_owner" />
       </Picker>
-      {userType === 'team_owner' && (
-        <TextInput
-          style={styles.input}
-          placeholder="Team Name"
-          value={teamName}
-          onChangeText={setTeamName}
-        />
-      )}
       <Button title="Register" onPress={handleRegister} />
     </View>
   );
@@ -72,5 +67,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
     paddingHorizontal: 8,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 12,
   },
 });

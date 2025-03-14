@@ -18,13 +18,12 @@ def register():
     username = data.get('username')
     password = data.get('password')
     user_type = data.get('user_type')
-    team_name = data.get('team_name')
 
-    if user_type == 'team_owner' and not team_name:
-        return jsonify({"message": "Team name is required for team owners"}), 400
+    if User.objects(username=username).first():
+        return jsonify({"message": "Username already exists"}), 400
 
     hashed_password = generate_password_hash(password)
-    user = User(username=username, password=hashed_password, user_type=user_type, team_name=team_name)
+    user = User(username=username, password=hashed_password, user_type=user_type, team_id='')  # Set team_id to an empty string
     user.save()
     
-    return jsonify({"message": "Registration successful"})
+    return jsonify({"message": "Registration successful", "redirect": "/(auth)/login"}), 201
