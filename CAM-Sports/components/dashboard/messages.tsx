@@ -12,11 +12,5 @@ export default function Messages() {
 }
 
 const styles = StyleSheet.create({
-  widget: {
-    backgroundColor: "#d0d0d0",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
   text: { fontSize: 16 },
 });
