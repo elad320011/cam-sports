@@ -2,13 +2,13 @@ import React from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 
 // Components
-import Calander from "@/components/dashboard/calander"
-import Messages from "@/components/dashboard/messages"
+import Calander from "@/components/settings/setting_1"
+import Messages from "@/components/settings/setting_2"
 
-export default function Dashboard() {
+export default function Settings() {
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Dashboard</Text>
+      <Text style={styles.title}>Settings</Text>
       <Calander />
       <Messages />
     </ScrollView>
