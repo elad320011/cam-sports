@@ -2,10 +2,6 @@ import { PropsWithChildren, useState } from 'react';
 import { StyleSheet, TouchableOpacity, Text, View, Dimensions, ScrollView } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-// Each section is half screen size when collapsed
-const screenHeight = Dimensions.get('window').height;
-const halfScreenHeight = screenHeight * 0.5;
-
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useColorScheme() ?? 'light';
@@ -41,10 +37,9 @@ const styles = StyleSheet.create({
   },
   content: {
     margin: 'auto',
-    marginTop: 6,
     width: '100%',
-    height: halfScreenHeight,
-    justifyContent: 'center'
+    justifyContent: 'center',
+    padding: 16,
   },
   text: {
     fontSize: 16,
