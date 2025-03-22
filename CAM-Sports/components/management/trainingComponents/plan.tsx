@@ -61,9 +61,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
         textAlign: "center"
     },
-    sections: {
-        margin: 10,
-    },
     drill_name: {
         fontSize: 18,
         textAlign: "center"
@@ -72,9 +69,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: "center"
     },
-    video: {
-        width: "100%",
-        height: "100%",
-        alignSelf: 'center',
-      },
 });
