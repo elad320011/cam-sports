@@ -1,12 +1,13 @@
 // app/(tabs)/dashboard/@widgets/WidgetA.tsx
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import { Collapsible } from "../Collapsible";
 
 export default function Calander() {
   return (
-    <View style={styles.widget}>
-      <Text style={styles.text}>Widget A Content</Text>
-    </View>
+    <Collapsible title="Calander">
+      <Text style={styles.text}>This will contain the calander</Text>
+    </Collapsible>
   );
 }
 

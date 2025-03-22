@@ -1,34 +1,25 @@
 import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
+import { StyleSheet, TouchableOpacity, Text, View, Dimensions } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
+
+// Each section is half screen size when collapsed
+const screenHeight = Dimensions.get('window').height;
+const halfScreenHeight = screenHeight * 0.5;
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useColorScheme() ?? 'light';
 
   return (
-    <ThemedView>
+    <View>
       <TouchableOpacity
         style={styles.heading}
         onPress={() => setIsOpen((value) => !value)}
         activeOpacity={0.8}>
-        <IconSymbol
-          name="chevron.right"
-          size={18}
-          weight="medium"
-          color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
-          style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
-        />
-
-        <ThemedText type="defaultSemiBold">{title}</ThemedText>
+        <Text style={styles.text}>{title}</Text>
       </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
-    </ThemedView>
+      {isOpen && <View style={styles.content}>{children}</View>}
+  </View>
   );
 }
 
@@ -37,9 +28,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    backgroundColor: "#e0e0e0",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
   },
   content: {
     marginTop: 6,
     marginLeft: 24,
+    width: '100%',
+    height: halfScreenHeight,
   },
+  text: { fontSize: 16 },
 });
