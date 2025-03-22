@@ -5,12 +5,15 @@ import { Collapsible } from "../Collapsible";
 
 export default function Training() {
   return (
-    <Collapsible title="Training plans">
-      <Text style={styles.text}>This will display all the training plans</Text>
+    <Collapsible title="Training Programs">
+      <Text style={styles.text}>This will display all the training plans.</Text>
     </Collapsible>
 );
 }
 
 const styles = StyleSheet.create({
-  text: { fontSize: 16 },
+  text: {
+    fontSize: 16,
+    textAlign: "center"
+  },
 });
