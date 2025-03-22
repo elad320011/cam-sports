@@ -2,9 +2,9 @@ import React from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 
 // Components
-import Calander from "@/components/dashboard/calander"
-import Messages from "@/components/dashboard/messages"
-import Training from "@/components/dashboard/training"
+import Calander from "@/components/management/calander"
+import Messages from "@/components/management/messages"
+import Training from "@/components/management/training"
 
 export default function Dashboard() {
   return (
