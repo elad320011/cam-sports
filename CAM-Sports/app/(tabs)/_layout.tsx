@@ -1,27 +1,15 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Text, Platform } from 'react-native';
-
+import { Platform } from 'react-native';
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { ThemeProvider, createTheme } from '@rneui/themed';
 
 // Icons
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-const theme = createTheme({
-  lightColors: {
-    primary: '#e7e7e8',
-  },
-  darkColors: {
-    primary: '#000',
-  },
-  mode: 'dark',
-});
 
 
 export default function TabLayout() {
@@ -51,7 +39,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Management',
           tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={24} color={color} />,
         }}
       />

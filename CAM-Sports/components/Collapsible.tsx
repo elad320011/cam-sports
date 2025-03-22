@@ -1,5 +1,5 @@
 import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity, Text, View, Dimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, Text, View, Dimensions, ScrollView } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Each section is half screen size when collapsed
@@ -18,7 +18,11 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
         activeOpacity={0.8}>
         <Text style={styles.text}>{title}</Text>
       </TouchableOpacity>
-      {isOpen && <View style={styles.content}>{children}</View>}
+      {isOpen && <View style={styles.content}>
+      <ScrollView>
+        {children}
+      </ScrollView>
+      </View>}
   </View>
   );
 }
@@ -26,18 +30,23 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
 const styles = StyleSheet.create({
   heading: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
     backgroundColor: "#e0e0e0",
     padding: 16,
     borderRadius: 8,
+    margin: 'auto',
     marginBottom: 16,
+    width: '100%',
   },
   content: {
+    margin: 'auto',
     marginTop: 6,
-    marginLeft: 24,
     width: '100%',
     height: halfScreenHeight,
+    justifyContent: 'center'
   },
-  text: { fontSize: 16 },
+  text: {
+    fontSize: 16,
+   },
 });
