@@ -1,0 +1,36 @@
+### Create a training plan
+POST http://localhost:5000/training_plans/create
+Content-Type: application/json
+
+{
+  "name": "Hitting workout",
+  "team_id": "your_team_id",
+  "description": "This plan is designed to improve your hitting skills",
+  "plan_sections": [{
+      "name": "Hitting lines",
+      "description": "Each player will hit 10 balls in a row",
+      "sources": [
+        {
+          "source_type": "Video",
+          "source_url": "997bmP4yPgU"
+        },
+        {
+          "source_type": "Image",
+          "source_url": "https://www.volleyball.com/images/volleyball-terms/hitting-line.jpg"
+        }
+      ]
+  },
+  {
+    "name": "Wall hitting",
+    "description": "Each player will hit 10 balls against the wall, focusing on technique",
+    "sources": [
+    {
+        "source_type": "Video",
+        "source_url": "FH0Pi7roh8E"
+    }]
+  }]
+}
+
+### Get all training plans of a team
+GET http://localhost:5000/training_plans/team_id/your_team_id
+Content-Type: application/json

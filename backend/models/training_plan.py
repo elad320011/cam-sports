@@ -20,5 +20,6 @@ class PlanSection(me.EmbeddedDocument):
 
 class TrainingPlan(me.Document):
     name = me.StringField(required=True)
-    plan_sections = me.MapField(field=me.EmbeddedDocumentField(PlanSection), default = {})
+    team_id = me.StringField(required=True)
+    plan_sections = me.ListField(field=me.EmbeddedDocumentField(PlanSection), default = {})
     description = me.StringField()
