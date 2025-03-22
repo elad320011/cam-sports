@@ -3,11 +3,27 @@ import React from "react";
 import { Text, StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
 import Plan, { PlanProps } from "./trainingComponents/plan";
+import axios from "axios";
+import { useState } from "react";
 
 export default function Training() {
 
-  const plans: PlanProps[] = [
+  const [plans, setPlans] = useState<PlanProps[]>([]);
+
+  const fetchPlans = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/training_plans/team_id/your_team_id');
+      const responsePlans = JSON.parse(response.data.plans);
+      setPlans(responsePlans);
+    } catch (error) {
+      console.log('Failed to fetch plans: ' + error);
+    }
+  };
+  fetchPlans();
+
+  const temp: PlanProps[] = [
     {
+      id: "test",
       name: "Hitting workout",
       description: "This plan is designed to improve your hitting skills",
       plan_sections: [
@@ -16,8 +32,8 @@ export default function Training() {
           description: "Each player will hit 10 balls in a row",
           sources: [
             {
-              source_type: "Video",
-              source_url: "997bmP4yPgU"
+              source_type: "Image",
+              source_url: "https://www.fivb.com/wp-content/uploads/2024/12/101767-1.jpeg"
             }
           ]
         },
@@ -32,32 +48,25 @@ export default function Training() {
           ]
         }
       ]
-    },
-    {
-      name: "Plan 2",
-      description: "This is the second plan",
-      plan_sections: [
-        {
-          name: "Section 1",
-          description: "This is the first section",
-          sources: [
-            {
-              source_type: "Video",
-              source_url: "qOagQWjKpyM"
-            }
-          ]
-        }
-      ]
     }
   ];
 
   return (
     <Collapsible title="Training Programs">
-      {plans.map((plan, index) => (
+      {plans.length > 0 && (
+        plans.map((plan, index) => (
         <Collapsible title={plan.name} key={index}>
           <Plan key={index} {...plan} />
         </Collapsible>
-      ))}
+        ))
+      )}
+      {plans.length === 0 && (
+        temp.map((plan, index) => (
+          <Collapsible title={plan.name} key={index}>
+            <Plan key={index} {...plan} />
+          </Collapsible>
+        ))
+      )}
     </Collapsible>
 );
 }
