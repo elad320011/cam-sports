@@ -1,21 +1,16 @@
 // app/(tabs)/dashboard/@widgets/WidgetB.tsx
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import { Collapsible } from "../Collapsible";
 
 export default function Messages() {
   return (
-    <View style={styles.widget}>
-      <Text style={styles.text}>Widget B Content</Text>
-    </View>
-  );
+    <Collapsible title="Messages">
+      <Text style={styles.text}>This will display all the messages</Text>
+    </Collapsible>
+);
 }
 
 const styles = StyleSheet.create({
-  widget: {
-    backgroundColor: "#d0d0d0",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
   text: { fontSize: 16 },
 });

@@ -1,14 +1,14 @@
-// app/(tabs)/dashboard/@widgets/WidgetA.tsx
+// app/(tabs)/dashboard/@widgets/WidgetB.tsx
 import React from "react";
 import { Text, StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
 
-export default function Calander() {
+export default function Training() {
   return (
-    <Collapsible title="Calander">
-      <Text style={styles.text}>This will contain the calander</Text>
+    <Collapsible title="Training plans">
+      <Text style={styles.text}>This will display all the training plans</Text>
     </Collapsible>
-  );
+);
 }
 
 const styles = StyleSheet.create({
