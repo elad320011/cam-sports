@@ -1,25 +1,26 @@
 // app/(tabs)/dashboard/@widgets/WidgetB.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Text, StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
 import Plan, { PlanProps } from "./trainingComponents/plan";
 import axios from "axios";
-import { useState } from "react";
 
 export default function Training() {
-
   const [plans, setPlans] = useState<PlanProps[]>([]);
 
-  const fetchPlans = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/training_plans/team_id/your_team_id');
-      const responsePlans = JSON.parse(response.data.plans);
-      setPlans(responsePlans);
-    } catch (error) {
-      console.log('Failed to fetch plans: ' + error);
-    }
-  };
-  fetchPlans();
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/training_plans/team_id/your_team_id');
+        const responsePlans = JSON.parse(response.data.plans);
+        setPlans(responsePlans);
+      } catch (error) {
+        console.log('Failed to fetch plans: ' + error);
+      }
+    };
+
+    fetchPlans();
+  }, []); // Empty dependency array means this runs once on mount
 
   const temp: PlanProps[] = [
     {
@@ -53,14 +54,13 @@ export default function Training() {
 
   return (
     <Collapsible title="Training Programs">
-      {plans.length > 0 && (
+      {plans.length > 0 ? (
         plans.map((plan, index) => (
-        <Collapsible title={plan.name} key={index}>
-          <Plan key={index} {...plan} />
-        </Collapsible>
+          <Collapsible title={plan.name} key={index}>
+            <Plan key={index} {...plan} />
+          </Collapsible>
         ))
-      )}
-      {plans.length === 0 && (
+      ) : (
         temp.map((plan, index) => (
           <Collapsible title={plan.name} key={index}>
             <Plan key={index} {...plan} />
@@ -68,7 +68,7 @@ export default function Training() {
         ))
       )}
     </Collapsible>
-);
+  );
 }
 
 const styles = StyleSheet.create({
