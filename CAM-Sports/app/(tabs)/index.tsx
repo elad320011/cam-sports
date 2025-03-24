@@ -24,7 +24,7 @@ export default function Management() {
       
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>
-          Welcome to CAM Sports, {userInfo?.username} ({userInfo?.user_type})!
+          Welcome to CAM Sports, {userInfo?.full_name} ({userInfo?.user_type})!
         </Text>
       </View>
 

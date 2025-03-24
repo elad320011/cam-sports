@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 const DateTimePickerComponent = Platform.OS === 'web' ? null : DateTimePicker;
 
 export default function RegisterScreen() {
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('player');
   const [teamCode, setTeamCode] = useState('');  // For player/management registration
@@ -41,22 +41,20 @@ export default function RegisterScreen() {
           setRegisteredTeamCode(response.data.team_code);
         }
       } else if (userType === 'player') {
-        // Validate all required fields
-        if (!username || !password || !role || !birthDate || !weight || !height || !email) {
+        if (!fullName || !password || !role || !birthDate || !weight || !height || !email) {
           setErrorMessage('All fields are required');
           return;
         }
 
-        // Add basic email validation
         if (!email.includes('@') || !email.includes('.')) {
           setErrorMessage('Please enter a valid email address');
           return;
         }
 
         const response = await axiosInstance.post('/auth/register', {
-          username,
+          email: email.toLowerCase(),
+          full_name: fullName,
           password,
-          email,
           user_type: userType,
           team_code: teamCode,
           role,
@@ -69,9 +67,8 @@ export default function RegisterScreen() {
           router.push('/login');
         }
       } else if (userType === 'management') {
-        // Update management validation
-        if (!username || !password || !email) {
-          setErrorMessage('Username, password and email are required');
+        if (!fullName || !password || !email) {
+          setErrorMessage('Full name, password and email are required');
           return;
         }
 
@@ -81,9 +78,9 @@ export default function RegisterScreen() {
         }
 
         const response = await axiosInstance.post('/auth/register', {
-          username,
+          email: email.toLowerCase(),
+          full_name: fullName,
           password,
-          email,
           user_type: userType,
           team_code: teamCode
         });
@@ -92,14 +89,13 @@ export default function RegisterScreen() {
           router.push('/login');
         }
       } else {
-        // Handle player/management registration
-        if (!username || !password) {
-          setErrorMessage('Username and password are required');
+        if (!fullName || !password) {
+          setErrorMessage('Full name and password are required');
           return;
         }
 
-        if (username.length < 3) {
-          setErrorMessage('Username must be at least 3 characters long');
+        if (fullName.length < 3) {
+          setErrorMessage('Full name must be at least 3 characters long');
           return;
         }
 
@@ -114,7 +110,8 @@ export default function RegisterScreen() {
         }
 
         const response = await axiosInstance.post('/auth/register', {
-          username,
+          email: email.toLowerCase(),
+          full_name: fullName,
           password,
           user_type: userType,
           team_code: teamCode
@@ -125,6 +122,7 @@ export default function RegisterScreen() {
         }
       }
     } catch (error: any) {
+      console.error('Registration error:', error.response?.data);
       setErrorMessage(error.response?.data?.message || 'Registration failed');
     }
   };
@@ -180,15 +178,6 @@ export default function RegisterScreen() {
         <>
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
-            placeholder="Username (min 3 characters)"
-            value={username}
-            onChangeText={(text) => {
-              setUsername(text);
-              setErrorMessage('');
-            }}
-          />
-          <TextInput
-            style={[styles.input, errorMessage ? styles.inputError : null]}
             placeholder="Email"
             value={email}
             onChangeText={(text) => {
@@ -198,6 +187,16 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
+          />
+          <TextInput
+            style={[styles.input, errorMessage ? styles.inputError : null]}
+            placeholder="Full Name"
+            value={fullName}
+            onChangeText={(text) => {
+              setFullName(text);
+              setErrorMessage('');
+            }}
+            autoComplete="name"
           />
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
@@ -297,15 +296,6 @@ export default function RegisterScreen() {
         <>
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
-            placeholder="Username (min 3 characters)"
-            value={username}
-            onChangeText={(text) => {
-              setUsername(text);
-              setErrorMessage('');
-            }}
-          />
-          <TextInput
-            style={[styles.input, errorMessage ? styles.inputError : null]}
             placeholder="Email"
             value={email}
             onChangeText={(text) => {
@@ -315,6 +305,16 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
+          />
+          <TextInput
+            style={[styles.input, errorMessage ? styles.inputError : null]}
+            placeholder="Full Name"
+            value={fullName}
+            onChangeText={(text) => {
+              setFullName(text);
+              setErrorMessage('');
+            }}
+            autoComplete="name"
           />
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
@@ -342,12 +342,13 @@ export default function RegisterScreen() {
         <>
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
-            placeholder="Username (min 3 characters)"
-            value={username}
+            placeholder="Full Name"
+            value={fullName}
             onChangeText={(text) => {
-              setUsername(text);
+              setFullName(text);
               setErrorMessage('');
             }}
+            autoComplete="name"
           />
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}

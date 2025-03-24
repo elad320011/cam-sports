@@ -6,6 +6,7 @@ me.connect(host=MONGODB_URI)
 
 class Management(me.Document):
     meta = {'collection': 'management'}
-    username = me.StringField(required=True, unique=True)
+    email = me.StringField(required=True, unique=True)
+    full_name = me.StringField(required=True)
     password = me.StringField(required=True)
     team_id = me.StringField(default='') 

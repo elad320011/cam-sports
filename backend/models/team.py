@@ -11,6 +11,6 @@ class Team(me.Document):
     meta = {'collection': 'teams'}
     team_id = me.StringField(required=True, unique=True)
     code = me.StringField(required=True, unique=True)  # Add this new field for the random code
-    players = me.ListField(me.StringField(), default=[])  # Store player usernames
-    management = me.ListField(me.StringField(), default=[])    # Store management usernames
+    players = me.ListField(me.StringField(), default=[])  # Now stores player emails
+    management = me.ListField(me.StringField(), default=[])    # Now stores management emails
     payment_method = me.StringField()

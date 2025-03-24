@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -14,13 +14,13 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      if (!username || !password) {
-        setError('Username and password are required');
+      if (!email || !password) {
+        setError('Email and password are required');
         return;
       }
 
       const response = await axiosInstance.post('/auth/login', {
-        username,
+        email: email.toLowerCase(),
         password
       });
 
@@ -41,9 +41,12 @@ export default function LoginScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
       />
       <TextInput
         style={styles.input}

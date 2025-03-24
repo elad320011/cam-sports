@@ -13,7 +13,17 @@ from routes.training_plans import training_plans_bp
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+
+# Configure CORS - Allow all origins
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        "allow_headers": "*",
+        "expose_headers": "*",
+        "supports_credentials": True
+    }
+})
 
 # Routes
 app.register_blueprint(auth_bp, url_prefix='/auth')

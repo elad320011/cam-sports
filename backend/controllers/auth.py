@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta  # Update this import line
 import os
 from functools import wraps
 from models.player import Player
@@ -10,59 +10,54 @@ from models.team import Team
 import random
 import string
 
-# Add these at the top of the file
+# Update these to use timedelta directly
 ACCESS_TOKEN_EXPIRE = timedelta(minutes=15)
 REFRESH_TOKEN_EXPIRE = timedelta(days=7)
-JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key')  # Use environment variable in production
+JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key')
 
 def create_tokens(user_id, user_type):
     access_token = jwt.encode({
         'user_id': str(user_id),
         'user_type': user_type,
-        'exp': datetime.utcnow() + ACCESS_TOKEN_EXPIRE
+        'exp': datetime.utcnow() + ACCESS_TOKEN_EXPIRE  # Remove .datetime
     }, JWT_SECRET, algorithm='HS256')
     
     refresh_token = jwt.encode({
         'user_id': str(user_id),
         'user_type': user_type,
-        'exp': datetime.utcnow() + REFRESH_TOKEN_EXPIRE
+        'exp': datetime.utcnow() + REFRESH_TOKEN_EXPIRE  # Remove .datetime
     }, JWT_SECRET, algorithm='HS256')
     
     return access_token, refresh_token
 
 def login():
     data = request.get_json()
-    username = data.get('username', '').lower()  # Convert to lowercase
+    email = data.get('email', '').lower()  # Changed from username to email
     password = data.get('password')
     
-    if not username or not password:
-        return jsonify({"message": "Username and password are required"}), 400
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
     
     # Try to find user in each collection
     user = None
     user_type = None
     team_id = None
+    full_name = None
     
     # Check Player collection
-    user = Player.objects(username=username).first()
+    user = Player.objects(email=email).first()
     if user and check_password_hash(user.password, password):
         user_type = 'player'
         team_id = user.team_id
+        full_name = user.full_name
     
     # Check Management collection
     if not user:
-        user = Management.objects(username=username).first()
+        user = Management.objects(email=email).first()
         if user and check_password_hash(user.password, password):
             user_type = 'management'
             team_id = user.team_id
-    
-    # Check Team collection
-    if not user:
-        team = Team.objects(team_id=username).first()
-        if team:
-            user_type = 'team'
-            team_id = team.team_id
-            user = team
+            full_name = user.full_name
     
     if user and user_type:
         access_token, refresh_token = create_tokens(str(user.id), user_type)
@@ -71,7 +66,8 @@ def login():
             "access_token": access_token,
             "refresh_token": refresh_token,
             "user": {
-                "username": username,
+                "email": email,
+                "full_name": full_name,
                 "user_type": user_type,
                 "team_id": team_id
             }
@@ -92,109 +88,88 @@ def generate_team_code(length=6):
 def register():
     data = request.get_json()
     user_type = data.get('user_type')
+    team_code = data.get('team_code')
 
-    try:
-        if user_type == 'team':
-            team_id = data.get('team_id', '').lower()  # Convert to lowercase
-            
-            if not team_id:
-                return jsonify({"message": "Team ID is required"}), 400
-            
-            if Team.objects(team_id=team_id).first():
-                return jsonify({"message": "Team ID already exists"}), 400
-            
-            # Generate a unique random code
-            random_code = generate_team_code()
-            
-            team = Team(
-                team_id=team_id,
-                code=random_code
-            )
-            team.save()
-            
-            return jsonify({
-                "message": "Team registration successful", 
-                "team_code": random_code,
-                "redirect": "/login"
-            }), 201
-            
-        else:  # player or management
-            username = data.get('username', '').lower()
-            password = data.get('password')
-            team_code = data.get('team_code', '').upper()
-            
-            if not username or not password:
-                return jsonify({"message": "Username and password are required"}), 400
-            
-            if len(username) < 3:
-                return jsonify({"message": "Username must be at least 3 characters long"}), 400
-            if len(password) < 6:
-                return jsonify({"message": "Password must be at least 6 characters long"}), 400
-            
-            if not team_code:
-                return jsonify({"message": "Team code is required"}), 400
-                
-            team = Team.objects(code=team_code).first()
-            if not team:
-                return jsonify({"message": "Invalid team code"}), 400
-            
-            if (Player.objects(username=username).first() or 
-                Management.objects(username=username).first()):
-                return jsonify({"message": "Username already exists"}), 400
+    if user_type == 'player':
+        if not all([data.get('email'), data.get('full_name'), data.get('password'),
+                   data.get('role'), data.get('birth_date'), 
+                   data.get('weight'), data.get('height'), data.get('team_code')]):
+            return jsonify({"message": "All fields are required"}), 400
 
-            hashed_password = generate_password_hash(password)
-            
-            if user_type == 'player':
-                # Validate additional player fields
-                role = data.get('role')
-                birth_date_str = data.get('birth_date')  # Expected format: YYYY-MM-DD
-                weight = data.get('weight')  # in kg
-                height = data.get('height')  # in cm
+        # Check if email already exists
+        if Player.objects(email=data['email'].lower()).first():
+            return jsonify({"message": "Email already registered"}), 400
 
-                if not all([role, birth_date_str, weight, height]):
-                    return jsonify({
-                        "message": "Role, birth date, weight, and height are required for players"
-                    }), 400
+        # Verify team code exists
+        team = Team.objects(code=team_code).first()
+        if not team:
+            return jsonify({"message": "Invalid team code"}), 400
 
-                try:
-                    birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
-                    weight = float(weight)
-                    height = float(height)
-                except (ValueError, TypeError):
-                    return jsonify({
-                        "message": "Invalid format for birth date, weight, or height"
-                    }), 400
+        try:
+            birth_date = datetime.strptime(data['birth_date'], '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"message": "Invalid date format. Use YYYY-MM-DD"}), 400
 
-                user = Player(
-                    username=username,
-                    password=hashed_password,
-                    team_id=team.team_id,
-                    role=role,
-                    birth_date=birth_date,
-                    weight=weight,
-                    height=height
-                )
-                user.save()
-                
-                if username not in team.players:
-                    team.players.append(username)
-                    team.save()
-                    
-            else:  # management
-                user = Management(username=username, password=hashed_password, team_id=team.team_id)
-                user.save()
-                
-                if username not in team.management:
-                    team.management.append(username)
-                    team.save()
-            
-            return jsonify({
-                "message": "Registration successful", 
-                "redirect": "/login"
-            }), 201
+        player = Player(
+            email=data['email'].lower(),
+            full_name=data['full_name'],
+            password=generate_password_hash(data['password']),
+            role=data['role'],
+            birth_date=birth_date,
+            weight=float(data['weight']),
+            height=float(data['height']),
+            team_id=team.team_id  # Set the team_id from the found team
+        )
+        player.save()
 
-    except Exception as e:
-        return jsonify({"message": f"Registration failed: {str(e)}"}), 500
+        # Add player's email to the team's players list
+        team.update(push__players=player.email)
+
+    elif user_type == 'management':
+        if not all([data.get('email'), data.get('full_name'), data.get('password'), data.get('team_code')]):
+            return jsonify({"message": "Email, full name, password, and team code are required"}), 400
+
+        # Check if email already exists
+        if Management.objects(email=data['email'].lower()).first():
+            return jsonify({"message": "Email already registered"}), 400
+
+        # Verify team code exists
+        team = Team.objects(code=team_code).first()
+        if not team:
+            return jsonify({"message": "Invalid team code"}), 400
+
+        management = Management(
+            email=data['email'].lower(),
+            full_name=data['full_name'],
+            password=generate_password_hash(data['password']),
+            team_id=team.team_id  # Set the team_id from the found team
+        )
+        management.save()
+
+        # Add management's email to the team's management list
+        team.update(push__management=management.email)
+
+    elif user_type == 'team':
+        if not data.get('team_id'):
+            return jsonify({"message": "Team ID is required"}), 400
+
+        # Generate a unique team code
+        team_code = generate_team_code()
+        
+        team = Team(
+            team_id=data['team_id'],
+            code=team_code,
+            players=[],
+            management=[]
+        )
+        team.save()
+
+        return jsonify({
+            "message": "Team registered successfully",
+            "team_code": team_code
+        }), 201
+
+    return jsonify({"message": "Registration successful", "redirect": True}), 201
 
 def refresh():
     refresh_token = request.headers.get('Authorization')
