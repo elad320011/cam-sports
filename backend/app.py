@@ -11,6 +11,7 @@ from routes.payment import payment_bp
 from routes.team import team_bp
 from routes.training_plans import training_plans_bp
 from routes.calendar import calendar_bp
+from routes.events import calendar_events_bp
 
 # Models
 from models.user import User  # Add this line
@@ -24,6 +25,7 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(ai_advior_bp, url_prefix='/ai_advior')
 app.register_blueprint(game_statistics_bp, url_prefix='/game_statistics')
 app.register_blueprint(calendar_bp, url_prefix='/calendar')
+app.register_blueprint(calendar_events_bp, url_prefix='/events')
 app.register_blueprint(payment_bp, url_prefix='/payment')
 app.register_blueprint(team_bp, url_prefix='/team')
 app.register_blueprint(training_plans_bp, url_prefix='/training_plans')
