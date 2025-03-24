@@ -2,7 +2,7 @@ import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 // Components
-import Calander from "@/components/management/calander"
+import GameCalendar from "@/components/management/calendar"
 import Messages from "@/components/management/messages"
 import Training from "@/components/management/training"
 
@@ -11,7 +11,7 @@ export default function Management() {
     <View style={styles.container}>
       <Text style={styles.title}>Management</Text>
       <ScrollView style={styles.container}>
-        <Calander />
+        <GameCalendar />
         <Training />
         <Messages />
       </ScrollView>
