@@ -5,12 +5,14 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 
 type Row = {
     player: string;
-    hits: number;
-    errors: number;
+    attacks: number;
     kills: number;
+    errors: number;
+    setAttempts: number;
     assists: number;
-    blocks: number;
+    setErrors: number;
     digs: number;
+    digErrors: number;
     serves: number;
     aces: number;
     serveErrors: number;
@@ -20,17 +22,19 @@ export default function GameStatistics() {
 
     const cols = [
         "Player",
-        "Hits",
-        "Errors",
+        "Attacks",
         "Kills",
+        "Errors",
+        "Set Attempts",
         "Assists",
-        "Blocks",
+        "Set Errors",
         "Digs",
+        "Dig Errors",
         "Serves",
         "Aces",
         "Serve Errors"
     ];
-    const rows: Row[] = [];
+    let rows: Row[] = [];
 
     return (
         <Collapsible title="Game Statistics">
@@ -52,12 +56,14 @@ export default function GameStatistics() {
                             <TableCell component="th" scope="row">
                                 {row.player}
                             </TableCell>
-                            <TableCell align="right">{row.hits}</TableCell>
-                            <TableCell align="right">{row.errors}</TableCell>
+                            <TableCell align="right">{row.attacks}</TableCell>
                             <TableCell align="right">{row.kills}</TableCell>
+                            <TableCell align="right">{row.errors}</TableCell>
+                            <TableCell align="right">{row.setAttempts}</TableCell>
                             <TableCell align="right">{row.assists}</TableCell>
-                            <TableCell align="right">{row.blocks}</TableCell>
+                            <TableCell align="right">{row.setErrors}</TableCell>
                             <TableCell align="right">{row.digs}</TableCell>
+                            <TableCell align="right">{row.digErrors}</TableCell>
                             <TableCell align="right">{row.serves}</TableCell>
                             <TableCell align="right">{row.aces}</TableCell>
                             <TableCell align="right">{row.serveErrors}</TableCell>
