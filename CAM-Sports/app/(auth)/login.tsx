@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -14,14 +14,14 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      if (!username || !password) {
-        setError('Username and password are required');
+      if (!email || !password) {
+        setError('Email and password are required');
         return;
       }
 
       const response = await axiosInstance.post('/auth/login', {
-        username,
-        password,
+        email: email.toLowerCase(),
+        password
       });
 
       await login({
@@ -38,11 +38,15 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
       />
       <TextInput
         style={styles.input}
@@ -55,7 +59,7 @@ export default function LoginScreen() {
       <View style={styles.registerContainer}>
         <Button 
           title="Register" 
-          onPress={() => router.push('/(auth)/register')} 
+          onPress={() => router.push('/register')} 
         />
       </View>
     </View>
@@ -77,5 +81,9 @@ const styles = StyleSheet.create({
   },
   registerContainer: {
     marginTop: 12,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 12,
   },
 });

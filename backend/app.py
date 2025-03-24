@@ -11,12 +11,19 @@ from routes.payment import payment_bp
 from routes.team import team_bp
 from routes.training_plans import training_plans_bp
 
-# Models
-from models.user import User  # Add this line
-
 load_dotenv()
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+
+# Configure CORS - Allow all origins
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        "allow_headers": "*",
+        "expose_headers": "*",
+        "supports_credentials": True
+    }
+})
 
 # Routes
 app.register_blueprint(auth_bp, url_prefix='/auth')
