@@ -89,16 +89,19 @@ def register():
     data = request.get_json()
     user_type = data.get('user_type')
     team_code = data.get('team_code')
+    email = data.get('email', '').lower()  # Get and normalize email
 
     if user_type == 'player':
-        if not all([data.get('email'), data.get('full_name'), data.get('password'),
+        if not all([email, data.get('full_name'), data.get('password'),
                    data.get('role'), data.get('birth_date'), 
                    data.get('weight'), data.get('height'), data.get('team_code')]):
             return jsonify({"message": "All fields are required"}), 400
 
-        # Check if email already exists
-        if Player.objects(email=data['email'].lower()).first():
-            return jsonify({"message": "Email already registered"}), 400
+        # Check if email exists in either Player or Management collection
+        if Player.objects(email=email).first():
+            return jsonify({"message": "Email already registered as a player"}), 400
+        if Management.objects(email=email).first():
+            return jsonify({"message": "Email already registered as management"}), 400
 
         # Verify team code exists
         team = Team.objects(code=team_code).first()
@@ -111,27 +114,29 @@ def register():
             return jsonify({"message": "Invalid date format. Use YYYY-MM-DD"}), 400
 
         player = Player(
-            email=data['email'].lower(),
+            email=email,
             full_name=data['full_name'],
             password=generate_password_hash(data['password']),
             role=data['role'],
             birth_date=birth_date,
             weight=float(data['weight']),
             height=float(data['height']),
-            team_id=team.team_id  # Set the team_id from the found team
+            team_id=team.team_id
         )
         player.save()
 
         # Add player's email to the team's players list
-        team.update(push__players=player.email)
+        team.update(push__players=email)
 
     elif user_type == 'management':
-        if not all([data.get('email'), data.get('full_name'), data.get('password'), data.get('team_code')]):
+        if not all([email, data.get('full_name'), data.get('password'), data.get('team_code')]):
             return jsonify({"message": "Email, full name, password, and team code are required"}), 400
 
-        # Check if email already exists
-        if Management.objects(email=data['email'].lower()).first():
-            return jsonify({"message": "Email already registered"}), 400
+        # Check if email exists in either Player or Management collection
+        if Management.objects(email=email).first():
+            return jsonify({"message": "Email already registered as management"}), 400
+        if Player.objects(email=email).first():
+            return jsonify({"message": "Email already registered as a player"}), 400
 
         # Verify team code exists
         team = Team.objects(code=team_code).first()
@@ -139,15 +144,15 @@ def register():
             return jsonify({"message": "Invalid team code"}), 400
 
         management = Management(
-            email=data['email'].lower(),
+            email=email,
             full_name=data['full_name'],
             password=generate_password_hash(data['password']),
-            team_id=team.team_id  # Set the team_id from the found team
+            team_id=team.team_id
         )
         management.save()
 
         # Add management's email to the team's management list
-        team.update(push__management=management.email)
+        team.update(push__management=email)
 
     elif user_type == 'team':
         if not data.get('team_id'):

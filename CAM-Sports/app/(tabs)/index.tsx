@@ -26,6 +26,11 @@ export default function Management() {
         <Text style={styles.welcomeText}>
           Welcome to CAM Sports, {userInfo?.full_name} ({userInfo?.user_type})!
         </Text>
+        {userInfo?.team_id && (
+          <Text style={styles.teamText}>
+            You are a part of {userInfo.team_id} team
+          </Text>
+        )}
       </View>
 
       <ScrollView style={styles.scrollContainer}>
@@ -66,6 +71,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
+    marginBottom: 4,  // Added margin to separate the two text lines
+  },
+  teamText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   scrollContainer: {
     flex: 1,
