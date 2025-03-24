@@ -9,7 +9,10 @@ def login():
     
     user = User.objects(username=username).first()
     if user and check_password_hash(user.password, password):
-        return jsonify({"message": "Login successful"})
+        return jsonify({
+            "message": "Login successful",
+            "redirect": "/"
+        })
     else:
         return jsonify({"message": "Invalid credentials"}), 401
 
@@ -23,7 +26,10 @@ def register():
         return jsonify({"message": "Username already exists"}), 400
 
     hashed_password = generate_password_hash(password)
-    user = User(username=username, password=hashed_password, user_type=user_type, team_id='')  # Set team_id to an empty string
+    user = User(username=username, password=hashed_password, user_type=user_type, team_id='')
     user.save()
     
-    return jsonify({"message": "Registration successful", "redirect": "/(auth)/login"}), 201
+    return jsonify({
+        "message": "Registration successful", 
+        "redirect": "/login"
+    }), 201

@@ -14,7 +14,11 @@ export default function LoginScreen() {
         username,
         password,
       });
-      alert(response.data.message);
+      if (response.data.message === "Login successful") {
+        router.push('/');  // Redirect to home page on successful login
+      } else {
+        alert(response.data.message);
+      }
     } catch (error) {
       alert('Login failed');
     }
