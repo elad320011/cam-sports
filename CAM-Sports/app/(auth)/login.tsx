@@ -26,7 +26,8 @@ export default function LoginScreen() {
 
       await login({
         access_token: response.data.access_token,
-        refresh_token: response.data.refresh_token
+        refresh_token: response.data.refresh_token,
+        user: response.data.user
       });
       
       router.replace('/');

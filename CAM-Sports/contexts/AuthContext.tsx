@@ -4,9 +4,15 @@ import axios from 'axios';
 import { useRouter, useSegments } from 'expo-router';
 import { setAuthToken } from '@/utils/axios';
 
+interface UserInfo {
+  username: string;
+  user_type: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (tokens: { access_token: string; refresh_token: string }) => Promise<void>;
+  userInfo: UserInfo | null;
+  login: (data: { access_token: string; refresh_token: string; user: UserInfo }) => Promise<void>;
   logout: () => Promise<void>;
   refreshTokens: () => Promise<boolean>;
 }
@@ -15,6 +21,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const router = useRouter();
   const segments = useSegments();
 
@@ -41,17 +48,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, []);
 
-  const login = async (tokens: { access_token: string; refresh_token: string }) => {
-    await AsyncStorage.setItem('access_token', tokens.access_token);
-    await AsyncStorage.setItem('refresh_token', tokens.refresh_token);
-    setAuthToken(tokens.access_token);
+  const login = async (data: { access_token: string; refresh_token: string; user: UserInfo }) => {
+    await AsyncStorage.setItem('access_token', data.access_token);
+    await AsyncStorage.setItem('refresh_token', data.refresh_token);
+    await AsyncStorage.setItem('userInfo', JSON.stringify(data.user));
+    setAuthToken(data.access_token);
+    setUserInfo(data.user);
     setIsAuthenticated(true);
   };
 
   const logout = async () => {
     await AsyncStorage.removeItem('access_token');
     await AsyncStorage.removeItem('refresh_token');
+    await AsyncStorage.removeItem('userInfo');
     setAuthToken(null);
+    setUserInfo(null);
     setIsAuthenticated(false);
     router.replace('/login');
   };
@@ -74,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, refreshTokens }}>
+    <AuthContext.Provider value={{ isAuthenticated, userInfo, login, logout, refreshTokens }}>
       {children}
     </AuthContext.Provider>
   );

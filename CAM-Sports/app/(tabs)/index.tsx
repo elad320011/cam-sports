@@ -9,7 +9,7 @@ import Training from "@/components/management/training"
 import GameStatistics from "@/components/management/statistics"
 
 export default function Management() {
-  const { logout } = useAuth();
+  const { logout, userInfo } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -21,6 +21,13 @@ export default function Management() {
           color="#ff4444"  // Red color for logout button
         />
       </View>
+      
+      <View style={styles.welcomeContainer}>
+        <Text style={styles.welcomeText}>
+          Welcome to CAM Sports, {userInfo?.username} ({userInfo?.user_type})!
+        </Text>
+      </View>
+
       <ScrollView style={styles.scrollContainer}>
         <GameStatistics />
         <Training />
@@ -47,6 +54,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
+  },
+  welcomeContainer: {
+    marginBottom: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
   },
   scrollContainer: {
     flex: 1,

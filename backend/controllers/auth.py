@@ -39,7 +39,11 @@ def login():
         return jsonify({
             "message": "Login successful",
             "access_token": access_token,
-            "refresh_token": refresh_token
+            "refresh_token": refresh_token,
+            "user": {
+                "username": user.username,
+                "user_type": user.user_type
+            }
         })
     else:
         return jsonify({"message": "Invalid credentials"}), 401
