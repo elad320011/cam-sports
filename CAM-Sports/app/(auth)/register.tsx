@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Picker } from 'react-native';
-import axios from 'axios';
+import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
 
 export default function RegisterScreen() {
@@ -28,7 +28,7 @@ export default function RegisterScreen() {
         return;
       }
 
-      const response = await axios.post('http://127.0.0.1:5000/auth/register', {
+      const response = await axiosInstance.post('/auth/register', {
         username,
         password,
         user_type: userType,

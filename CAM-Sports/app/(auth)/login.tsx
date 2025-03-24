@@ -2,33 +2,36 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import axiosInstance from '@/utils/axios';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const { login } = useAuth();
   const router = useRouter();
 
   const handleLogin = async () => {
     try {
-      // Add client-side validation
       if (!username || !password) {
-        alert('Username and password are required');
+        setError('Username and password are required');
         return;
       }
 
-      const response = await axios.post('http://127.0.0.1:5000/auth/login', {
+      const response = await axiosInstance.post('/auth/login', {
         username,
         password,
       });
-      if (response.data.message === "Login successful") {
-        router.push('/');  // Redirect to home page on successful login
-      } else {
-        alert(response.data.message);
-      }
-    } catch (error) {
-      // Show the error message from the server if available
-      const errorMessage = error.response?.data?.message || 'Login failed';
-      alert(errorMessage);
+
+      await login({
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token
+      });
+      
+      router.replace('/');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Login failed');
     }
   };
 
