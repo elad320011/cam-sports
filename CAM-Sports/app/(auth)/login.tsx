@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   const handleLogin = async () => {
     try {
@@ -34,6 +36,12 @@ export default function LoginScreen() {
         secureTextEntry
       />
       <Button title="Login" onPress={handleLogin} />
+      <View style={styles.registerContainer}>
+        <Button 
+          title="Register" 
+          onPress={() => router.push('/(auth)/register')} 
+        />
+      </View>
     </View>
   );
 }
@@ -50,5 +58,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
     paddingHorizontal: 8,
+  },
+  registerContainer: {
+    marginTop: 12,
   },
 });

@@ -51,6 +51,12 @@ export default function RegisterScreen() {
         <Picker.Item label="Staff" value="staff" />
       </Picker>
       <Button title="Register" onPress={handleRegister} />
+      <View style={styles.loginContainer}>
+        <Button 
+          title="Login" 
+          onPress={() => router.push('/(auth)/login')} 
+        />
+      </View>
     </View>
   );
 }
@@ -71,5 +77,8 @@ const styles = StyleSheet.create({
   error: {
     color: 'red',
     marginBottom: 12,
+  },
+  loginContainer: {
+    marginTop: 12,
   },
 });
