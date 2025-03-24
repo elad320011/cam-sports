@@ -21,7 +21,7 @@ export default function LoginScreen() {
 
       const response = await axiosInstance.post('/auth/login', {
         username,
-        password,
+        password
       });
 
       await login({
@@ -38,6 +38,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
       <TextInput
         style={styles.input}
         placeholder="Username"
@@ -55,7 +56,7 @@ export default function LoginScreen() {
       <View style={styles.registerContainer}>
         <Button 
           title="Register" 
-          onPress={() => router.push('/(auth)/register')} 
+          onPress={() => router.push('/register')} 
         />
       </View>
     </View>
@@ -77,5 +78,9 @@ const styles = StyleSheet.create({
   },
   registerContainer: {
     marginTop: 12,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 12,
   },
 });

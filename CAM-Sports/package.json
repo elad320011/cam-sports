@@ -50,7 +50,8 @@
     "react-native-web-webview": "^1.0.2",
     "react-native-webview": "13.12.5",
     "react-native-youtube-iframe": "^2.3.0",
-    "@react-native-async-storage/async-storage": "1.23.1"
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-picker/picker": "2.9.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

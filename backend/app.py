@@ -11,9 +11,6 @@ from routes.payment import payment_bp
 from routes.team import team_bp
 from routes.training_plans import training_plans_bp
 
-# Models
-from models.user import User  # Add this line
-
 load_dotenv()
 app = Flask(__name__)
 CORS(app)  # Enable CORS
