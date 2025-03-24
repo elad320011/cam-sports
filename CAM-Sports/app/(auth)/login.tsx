@@ -10,6 +10,12 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
+      // Add client-side validation
+      if (!username || !password) {
+        alert('Username and password are required');
+        return;
+      }
+
       const response = await axios.post('http://127.0.0.1:5000/auth/login', {
         username,
         password,
@@ -20,7 +26,9 @@ export default function LoginScreen() {
         alert(response.data.message);
       }
     } catch (error) {
-      alert('Login failed');
+      // Show the error message from the server if available
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      alert(errorMessage);
     }
   };
 

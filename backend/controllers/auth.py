@@ -7,6 +7,10 @@ def login():
     username = data.get('username')
     password = data.get('password')
     
+    # Add validation for empty fields
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+    
     user = User.objects(username=username).first()
     if user and check_password_hash(user.password, password):
         return jsonify({
@@ -21,6 +25,16 @@ def register():
     username = data.get('username')
     password = data.get('password')
     user_type = data.get('user_type')
+
+    # Add validation for empty fields
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+        
+    # Add minimum length requirements
+    if len(username) < 3:
+        return jsonify({"message": "Username must be at least 3 characters long"}), 400
+    if len(password) < 6:
+        return jsonify({"message": "Password must be at least 6 characters long"}), 400
 
     if User.objects(username=username).first():
         return jsonify({"message": "Username already exists"}), 400
