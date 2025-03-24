@@ -10,10 +10,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 def get_calendar_service():
     creds = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-    # If needed, delegate domain-wide access:
-    # creds = creds.with_subject('user@example.com')
-    service = build('calendar', 'v3', credentials=creds)
-    return service
+    return build('calendar', 'v3', credentials=creds)
 
 def create_team_calendar():
     try:
@@ -39,7 +36,7 @@ def get_team_calendar():
         
         service = get_calendar_service()
         calendar = service.calendars().get(calendarId=calendar_id).execute()
-        print(calendar)
+
         return jsonify({"status": "success", "calendar": calendar}), 200
     except HttpError as err:
         if err.resp.status == 404:

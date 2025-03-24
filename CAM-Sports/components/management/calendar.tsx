@@ -5,7 +5,11 @@ import { View, Text, Button, FlatList, TouchableOpacity, Modal, TextInput, Alert
 import { Calendar } from 'react-native-calendars';
 
 // Services
-import { getCalendarByID } from '@/services/calendarService';
+import { getCalendarByID, listCalendars, createEvent, getEvent, listEvents, updateEvent, deleteEvent,
+  rsvpEvent,
+  showAttendance as backendShowAttendance,
+  removeRSVP
+ } from '@/services/calendarService';
 
 // Define types for Calendar Events and Attendees
 interface Attendee {
@@ -21,6 +25,10 @@ interface CalendarEvent {
     dateTime?: string;
     date?: string;
   };
+  end: {
+    dateTime?: string;
+    date?: string;
+  };
   attendees?: Attendee[];
 }
 
@@ -31,49 +39,134 @@ export default function GameCalendar(): JSX.Element {
   const [attendanceModalVisible, setAttendanceModalVisible] = useState<boolean>(false);
   const [currentAttendees, setCurrentAttendees] = useState<Attendee[]>([]);
 
+  const DEFAULT_CALENDAR_ID = "f422d1217677325f1e4c2db7d77dc8b43b5cafcdd30601d32855d180ba95acdd@group.calendar.google.com";
+  // const DEFAULT_CALENDAR_ID = "eda5ca030ebe4c24d4121a5401fd709cbc615a00fb4381899f0bdcf621ba8fb1@group.calendar.google.com";
+
   useEffect(() => {
-    // Fetch events for the selected day
+    (async () => {
+      console.log(await listCalendars());
+      console.log(await getCalendarByID(DEFAULT_CALENDAR_ID));
+    })();
+
+    // Fetch all events
     fetchEvents();
   }, []);
 
 
-
-  
-
   // Fetch events for the selected day
-  const fetchEvents = (): void => {
-    console.log('get all events for this calander id: <GET CALENDAR ID FROM USER METADATA>')
+  const fetchEvents = async () => {
+    try {
+      // For now, always use the default calendar
+      const fetchedEvents = await listEvents(DEFAULT_CALENDAR_ID);
+      
+      console.log('Fetched events: ', fetchedEvents);
+      setEvents(fetchedEvents);
+
+    } catch (error) {
+      console.log('Failed to fetch events: ', error);
+    }
   };
 
+  // Create an event using the backend
+  const handleCreateEvent = async (): Promise<void> => {
+    try {
+      // Create a test event: summary "Test Event", starting now and ending in 1 hour.
+      const startTime = new Date();
+      const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+      const eventData = {
+        calendar_id: DEFAULT_CALENDAR_ID,
+        summary: "Test Event",
+        start: startTime.toISOString(),
+        end: endTime.toISOString(),
+        description: "This is a test event."
+      };
 
-  // Button handler for Approve Arrival (no logic implemented)
-  const handleRSPV = (eventId: string): void => {
-    Alert.alert("Not implemented", "Approve arrival logic is handled from the backend.");
-  };
-
-  // Button handler for Create Event (no logic implemented)
-  const handleCreateEvent = (): void => {
-    Alert.alert("Not implemented", "Create event logic is handled from the backend.");
-  };
-
-  // Button handler for Delete Event (no logic implemented)
-  const handleDeleteEvent = (): void => {
-    Alert.alert("Not implemented", "Delete event logic is handled from the backend.");
-  };
-
-    // Button handler for Edit Event (no logic implemented)
-  const handleEditEvent = (): void => {
-    Alert.alert("Not implemented", "Edit event logic is handled from the backend.");
+      const newEvent = await createEvent(eventData);
+      
+      Alert.alert("Success", "Event created with id: " + newEvent.id);
+      fetchEvents(); // Refresh the event list
+    
+    } catch (error) {
+      Alert.alert("Error", "Failed to create event.");
+    }
   };
   
+  // Delete an event using the backend
+  const handleDeleteEvent = async (): Promise<void> => {
+    try {
+      if (events.length === 0) {
+        Alert.alert("No Event", "No event available to delete.");
+        return;
+      }
+      
+      // For demonstration, delete the first event in the list.
+      const eventToDelete = events[0];
+      await deleteEvent(DEFAULT_CALENDAR_ID, eventToDelete.id);
+      
+      Alert.alert("Success", "Event deleted.");
+      fetchEvents(); // Refresh the event list
 
-  // Display attendance list in a modal
-  const showAttendance = (attendees?: Attendee[]): void => {
-    if (!attendees || attendees.length === 0) {
-      Alert.alert('Attendance', 'No attendees.');
-    } else {
-      setCurrentAttendees(attendees);
-      setAttendanceModalVisible(true);
+    } catch (error) {
+      Alert.alert("Error", "Failed to delete event.");
+    }
+  };
+
+  // Edit an event using the backend
+  const handleEditEvent = async (): Promise<void> => {
+    try {
+      if (events.length === 0) {
+        Alert.alert("No Event", "No event available to edit.");
+        return;
+      }
+      // For demonstration, update the first event's summary.
+      const eventToEdit = events[0];
+      const updatedData = {
+        calendar_id: DEFAULT_CALENDAR_ID,
+        event_id: eventToEdit.id,
+        summary: eventToEdit.summary + " (Updated)",
+        // Check each field independently to support both dateTime and date formats.
+        start: eventToEdit.start.dateTime ? eventToEdit.start.dateTime : eventToEdit.start.date,
+        end: eventToEdit.end.dateTime ? eventToEdit.end.dateTime : eventToEdit.end.date
+      };
+  
+      const updatedEvent = await updateEvent(updatedData);
+      Alert.alert("Success", "Event updated with id: " + updatedEvent.id);
+      fetchEvents(); // Refresh the event list
+    } catch (error) {
+      Alert.alert("Error", "Failed to update event.");
+    }
+  };
+  
+  
+  // RSVP for an event using the backend.
+  const handleRSVP = async (eventId: string): Promise<void> => {
+    try {
+      const userEmail = "haimovshlomi@gmail.com"; // Replace with the actual user email.
+      const response = await rsvpEvent(DEFAULT_CALENDAR_ID, eventId, userEmail);
+
+      if (response && response.status === 'success') {
+        Alert.alert("RSVP Success", "Your RSVP has been recorded.");
+        fetchEvents(); // Refresh the event list.
+      } else {
+        Alert.alert("RSVP Error", "Failed to record RSVP.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An error occurred while sending RSVP.");
+    }
+  };
+  
+  // Show attendance by calling the backend and updating the modal.
+  const handleShowAttendance = async (eventId: string): Promise<void> => {
+    try {
+      const response = await backendShowAttendance(DEFAULT_CALENDAR_ID, eventId);
+      if (response && response.status === 'success') {
+        setCurrentAttendees(response.attendees);
+        setAttendanceModalVisible(true);
+      } else {
+        Alert.alert("Error", "Failed to fetch attendance.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An error occurred while fetching attendance.");
     }
   };
 
@@ -85,7 +178,6 @@ export default function GameCalendar(): JSX.Element {
 
   return (
     <View style={{ flex: 1, padding: 10 }}>
-      <Text style={{ fontSize: 20, marginBottom: 10 }}>Calendar Module Example</Text>
   
       <Calendar 
         onDayPress={onDayPress} 
@@ -100,8 +192,8 @@ export default function GameCalendar(): JSX.Element {
           <View style={{ paddingVertical: 10, borderBottomWidth: 1 }}>
             <Text style={{ fontWeight: 'bold' }}>{item.summary}</Text>
             <Text>{item.start.dateTime || item.start.date}</Text>
-            <Button title="Approve Arrival" onPress={() => handleRSPV(item.id)} />
-            <Button title="View Attendance" onPress={() => showAttendance(item.attendees)} />
+            <Button title="RSVP" onPress={() => handleRSVP(item.id)} />
+            <Button title="View Attendance" onPress={() => handleShowAttendance(item.id)} />
           </View>
         )}
       />

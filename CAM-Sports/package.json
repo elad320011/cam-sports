@@ -15,10 +15,11 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@emotion/styled": "^11.14.0",
     "@expo/config": "^8.1.1",
     "@expo/metro-config": "^0.10.0",
     "@expo/vector-icons": "^14.0.2",
-    "@mui/material": "^5.13.7",
+    "@mui/material": "^5.17.1",
     "@react-native-community/cli-server-api": "^17.0.0",
     "@react-native-google-signin/google-signin": "^13.2.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
