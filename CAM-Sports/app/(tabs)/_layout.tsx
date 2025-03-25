@@ -10,7 +10,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -48,6 +48,13 @@ export default function TabLayout() {
         options={{
           title: 'Management',
           tabBarIcon: ({ color }) => <Feather name="settings" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="ai_advisor"
+        options={{
+          title: 'AI Advisor',
+          tabBarIcon: ({ color }) => <FontAwesome6 name="brain" size={24} color={color} />,
         }}
       />
 
