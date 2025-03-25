@@ -8,18 +8,29 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Markdown from 'react-native-markdown-display';
 import { sendAIAdvisorTextMessage } from '@/services/aiAdvisorService';
 
 interface Message {
   id: string;
   sender: 'user' | 'ai';
   text: string;
+  loading?: boolean;
 }
 
 export default function AIAdvisor() {
-  const [messages, setMessages] = useState<Message[]>([]);
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'default',
+      sender: 'ai',
+      text: "**Hey there!** I'm your Volleyball AI Advisor. Need tips on improving your serves, spikes, or overall gameplay? Ask away, and let's get you ready for the court! 🏐",
+    },
+  ]);
+  
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const typingRef = useRef<NodeJS.Timeout | null>(null);
@@ -38,41 +49,58 @@ export default function AIAdvisor() {
       sender: 'user',
       text: input,
     };
-    setMessages((prev) => [...prev, userMsg]);
+
+    const loadingMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      sender: 'ai',
+      text: '',
+      loading: true,
+    };
+
+    setMessages((prev) => [...prev, userMsg, loadingMsg]);
     setInput('');
 
     try {
       const aiResponse = await sendAIAdvisorTextMessage({ question: input });
       const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
-      simulateTypingAIResponse(aiMessageText);
+      
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === loadingMsg.id ? { ...msg, loading: false } : msg
+        )
+      );
+
+      simulateTypingAIResponse(aiMessageText, loadingMsg.id);
     } catch (error) {
-      simulateTypingAIResponse('Error getting response from AI advisor.');
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === loadingMsg.id
+            ? { ...msg, text: 'Error getting response from AI advisor.', loading: false }
+            : msg
+        )
+      );
     }
   };
 
-  const simulateTypingAIResponse = (fullText: string) => {
+  const simulateTypingAIResponse = (fullText: string, messageId: string) => {
     setTyping(true);
-    const aiMsg: Message = {
-      id: (Date.now() + 1).toString(),
-      sender: 'ai',
-      text: '',
-    };
-    setMessages((prev) => [...prev, aiMsg]);
+    let index = 0;
 
-    const typeCharacter = (index: number) => {
+    const typeCharacter = () => {
       if (index <= fullText.length) {
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
-            msg.id === aiMsg.id ? { ...msg, text: fullText.slice(0, index) } : msg
+            msg.id === messageId ? { ...msg, text: fullText.slice(0, index) } : msg
           )
         );
-        typingRef.current = setTimeout(() => typeCharacter(index + 1), 30);
+        index += 1;
+        typingRef.current = setTimeout(typeCharacter, 15);
       } else {
         setTyping(false);
       }
     };
 
-    typeCharacter(1);
+    typeCharacter();
   };
 
   const stopTyping = () => {
@@ -100,7 +128,13 @@ export default function AIAdvisor() {
           item.sender === 'user' ? styles.userBubble : styles.aiBubble,
         ]}
       >
-        <Text style={styles.messageText}>{item.text}</Text>
+        {item.loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : item.sender === 'ai' ? (
+          <Markdown style={markdownStyles}>{item.text}</Markdown>
+        ) : (
+          <Text style={styles.messageText}>{item.text}</Text>
+        )}
       </View>
     </View>
   );
@@ -214,3 +248,33 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
 });
+
+const markdownStyles = {
+  body: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  heading1: { color: '#fff' },
+  heading2: { color: '#fff' },
+  heading3: { color: '#fff' },
+  heading4: { color: '#fff' },
+  heading5: { color: '#fff' },
+  heading6: { color: '#fff' },
+  strong: { color: '#fff' },
+  em: { color: '#fff' },
+  bullet_list: { color: '#fff' },
+  ordered_list: { color: '#fff' },
+  list_item: { color: '#fff' },
+  code_inline: {
+    backgroundColor: '#555',
+    padding: 4,
+    borderRadius: 4,
+    color: '#fff',
+  },
+  code_block: {
+    backgroundColor: '#555',
+    padding: 8,
+    borderRadius: 6,
+    color: '#fff',
+  },
+};
