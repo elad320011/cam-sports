@@ -5,4 +5,9 @@ mongoengine==0.29.1
 Werkzeug==2.2.2
 pymongo==4.9
 flask-cors==3.0.10
+google-api-core==2.24.2
+google-api-python-client==2.165.0
+google-auth==2.38.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
 PyJWT==2.8.0

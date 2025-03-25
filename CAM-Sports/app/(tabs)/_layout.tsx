@@ -39,14 +39,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Management',
+          title: 'Home',
           tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: 'Management',
           tabBarIcon: ({ color }) => <Feather name="settings" size={24} color={color} />,
         }}
       />

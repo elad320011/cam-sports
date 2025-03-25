@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View, Button } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
 
 // Components
-import Calander from "@/components/management/calander"
+import GameCalendar from "@/components/management/calendar"
 import Messages from "@/components/management/messages"
 import Training from "@/components/management/training"
 import GameStatistics from "@/components/management/statistics"
@@ -34,6 +34,7 @@ export default function Management() {
       </View>
 
       <ScrollView style={styles.scrollContainer}>
+        <GameCalendar />
         <GameStatistics />
         <Training />
         <Messages />

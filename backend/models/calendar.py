@@ -12,3 +12,7 @@ class Event(me.Document):
     event_date = me.DateTimeField(required=True)
     description = me.StringField()
     attendees = me.ListField(me.StringField()) # List of user ids
+
+class Calendar(me.Document):
+    id = me.StringField(required=True)
+    
