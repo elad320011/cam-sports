@@ -158,21 +158,29 @@ def register():
         if not data.get('team_id'):
             return jsonify({"message": "Team ID is required"}), 400
 
+        # Check if team_id already exists
+        existing_team = Team.objects(team_id=data['team_id']).first()
+        if existing_team:
+            return jsonify({"message": "Team ID already exists"}), 400
+
         # Generate a unique team code
         team_code = generate_team_code()
         
-        team = Team(
-            team_id=data['team_id'],
-            code=team_code,
-            players=[],
-            management=[]
-        )
-        team.save()
+        try:
+            team = Team(
+                team_id=data['team_id'],  # This will be used as the team identifier
+                code=team_code,
+                players=[],
+                management=[]
+            )
+            team.save()
 
-        return jsonify({
-            "message": "Team registered successfully",
-            "team_code": team_code
-        }), 201
+            return jsonify({
+                "message": "Team registered successfully",
+                "team_code": team_code
+            }), 201
+        except Exception as e:
+            return jsonify({"message": "Error creating team: " + str(e)}), 500
 
     return jsonify({"message": "Registration successful", "redirect": True}), 201
 
