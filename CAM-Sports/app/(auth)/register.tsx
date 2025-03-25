@@ -28,7 +28,7 @@ export default function RegisterScreen() {
     try {
       if (userType === 'team') {
         if (!teamId) {
-          setErrorMessage('Team ID is required');
+          setErrorMessage('Team name is required');
           return;
         }
 
@@ -161,7 +161,7 @@ export default function RegisterScreen() {
         <>
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
-            placeholder="Enter Team ID"
+            placeholder="Enter Team Name (will be used as Team ID)"
             value={teamId}
             onChangeText={(text) => {
               setTeamId(text.toUpperCase());
@@ -171,7 +171,7 @@ export default function RegisterScreen() {
             maxLength={10}
           />
           <Text style={styles.helperText}>
-            This ID will be used as your team code for players and staff to join.
+            This name will be used as your team's unique identifier and cannot be changed later.
           </Text>
         </>
       ) : userType === 'player' ? (
