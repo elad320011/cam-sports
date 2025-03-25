@@ -55,6 +55,27 @@ const deleteCalendar = async (calendar_id: string) => {
     }
 };
 
+// ADD this to new user that added a team.
+
+// Share a calendar with a user
+const shareCalendar = async (
+    calendar_id: string, 
+    email: string, 
+    role: string = "reader"
+) => {
+    try {
+      const response = await axios.post(`${BACKEND_URL}/calendar/share_calendar`, {
+        calendar_id,
+        email,
+        role
+      });
+      return response.data;
+    } catch (error) {
+      console.log('Something went wrong with sharing the calendar: ' + error);
+    }
+};
+
+
 // ------------------------------
 // Events Services
 // ------------------------------
@@ -119,7 +140,7 @@ const deleteEvent = async (calendar_id: string, event_id: string) => {
     }
 };
 
-
+  
 // ------------------------------
 // RSVP Services
 // ------------------------------
@@ -170,6 +191,7 @@ export {
     getCalendarByID,
     listCalendars,
     deleteCalendar,
+    shareCalendar,
     createEvent,
     getEvent,
     listEvents,

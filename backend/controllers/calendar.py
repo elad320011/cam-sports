@@ -73,3 +73,32 @@ def delete_team_calendar():
             return jsonify({"status": "error", "message": err._get_reason()}), err.resp.status
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+
+
+def share_calendar():
+    try:
+        data = request.get_json()
+        if not data or "calendar_id" not in data or "email" not in data:
+            return jsonify({"status": "error", "message": "Missing 'calendar_id' or 'email' field"}), 400
+        
+        calendar_id = data["calendar_id"]
+        email = data["email"]
+        role = data.get("role", "reader")  # default role is reader
+
+        service = get_calendar_service()
+        acl_rule = {
+            "scope": {
+                "type": "user",
+                "value": email
+            },
+            "role": role
+        }
+
+        result = service.acl().insert(calendarId=calendar_id, body=acl_rule).execute()
+        return jsonify({"status": "success", "acl": result}), 200
+
+    except HttpError as err:
+        return jsonify({"status": "error", "message": err._get_reason()}), err.resp.status
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

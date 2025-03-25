@@ -24,6 +24,7 @@ def get_calendar_service(user_email: str = None):
     )
     if user_email:
         creds = creds.with_subject(user_email)
+    print("Impersonating:", getattr(creds, '_subject', None))
     return build('calendar', 'v3', credentials=creds)
 
 
@@ -164,16 +165,18 @@ def rsvp_event():
         for field in ['calendar_id', 'event_id', 'email']:
             if field not in data:
                 return jsonify({"status": "error", "message": f"Missing '{field}' field"}), 400
+        
         calendar_id = data['calendar_id']
         event_id = data['event_id']
         email = data['email']
-        # Default status is "accepted" unless provided.
         status = data.get('status', 'accepted')
 
         # service = get_calendar_service()
         service = get_calendar_service(email)
-        event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
 
+        event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
+        print(event)
+        print("1")
         attendees = event.get('attendees', [])
         attendee_found = False
         for attendee in attendees:
@@ -181,10 +184,15 @@ def rsvp_event():
                 attendee['responseStatus'] = status
                 attendee_found = True
                 break
+
         if not attendee_found:
             attendees.append({'email': email, 'responseStatus': status})
+        
         event['attendees'] = attendees
+        
         print(event)
+        # service = get_calendar_service(email)
+
         updated_event = service.events().update(
             calendarId=calendar_id,
             eventId=event_id,

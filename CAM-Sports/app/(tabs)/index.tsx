@@ -14,7 +14,7 @@ export default function Management() {
       <ScrollView style={styles.container}>
         <GameCalendar />
         <GameStatistics />
-        <Training />
+        {/* <Training /> */} 
         <Messages />
       </ScrollView>
     </View>

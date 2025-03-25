@@ -5,7 +5,7 @@ import { View, Text, Button, FlatList, TouchableOpacity, Modal, TextInput, Alert
 import { Calendar } from 'react-native-calendars';
 
 // Services
-import { getCalendarByID, listCalendars, createEvent, getEvent, listEvents, updateEvent, deleteEvent,
+import { getCalendarByID, listCalendars, shareCalendar, createEvent, getEvent, listEvents, updateEvent, deleteEvent,
   rsvpEvent,
   showAttendance as backendShowAttendance,
   removeRSVP
@@ -41,9 +41,11 @@ export default function GameCalendar(): JSX.Element {
 
   const DEFAULT_CALENDAR_ID = "f422d1217677325f1e4c2db7d77dc8b43b5cafcdd30601d32855d180ba95acdd@group.calendar.google.com";
   // const DEFAULT_CALENDAR_ID = "eda5ca030ebe4c24d4121a5401fd709cbc615a00fb4381899f0bdcf621ba8fb1@group.calendar.google.com";
+  const DEFAULT_EMAIL_ID = "haimovshlomi@gmail.com";
 
   useEffect(() => {
     (async () => {
+      console.log(await shareCalendar(DEFAULT_CALENDAR_ID, DEFAULT_EMAIL_ID, "writer" ))
       console.log(await listCalendars());
       console.log(await getCalendarByID(DEFAULT_CALENDAR_ID));
     })();
@@ -141,7 +143,7 @@ export default function GameCalendar(): JSX.Element {
   // RSVP for an event using the backend.
   const handleRSVP = async (eventId: string): Promise<void> => {
     try {
-      const userEmail = "haimovshlomi@gmail.com"; // Replace with the actual user email.
+      const userEmail = DEFAULT_EMAIL_ID; // Replace with the actual user email.
       const response = await rsvpEvent(DEFAULT_CALENDAR_ID, eventId, userEmail);
 
       if (response && response.status === 'success') {
