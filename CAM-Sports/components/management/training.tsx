@@ -6,6 +6,8 @@ import Plan, { PlanProps } from "./trainingComponents/plan";
 import axios from "axios";
 import Button from '@mui/material/Button';
 import Dropdown from 'react-native-input-select';
+import PlanForm from "./trainingComponents/planForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 const temp: PlanProps[] = [
@@ -39,6 +41,7 @@ const temp: PlanProps[] = [
 ];
 
 export default function Training() {
+  const { logout, userInfo } = useAuth();
   const [plans, setPlans] = useState<PlanProps[]>([]);
   const [program, setProgram] = useState<PlanProps>();
   const [displayProgram, setDisplayProgram] = useState<any>({value: null, label: "Select a program"});
@@ -49,9 +52,8 @@ export default function Training() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/training_plans/team_id/your_team_id');
+        const response = await axios.get(`http://localhost:5000/training_plans/team_id/${userInfo?.team_id}`);
         const responsePlans = JSON.parse(response.data.plans);
-        console.log(responsePlans);
         setPlans(responsePlans);
       } catch (error) {
         console.log('Failed to fetch plans: ' + error);
@@ -59,19 +61,19 @@ export default function Training() {
     };
 
     fetchPlans();
-  }, [displayProgram]); // Empty dependency array means this runs once on mount
+  }, [displayProgram, addMode]); // Empty dependency array means this runs once on mount
 
   const handleChange = (selectedOption: any) => {
     const selectedPlan = plans.find(plan => plan.id == selectedOption);
     setProgram(selectedPlan);
+    console.log(selectedPlan?.name);
     setDisplayProgram(selectedOption);
   };
 
-  console.log(program);
   return (
   <div>
     <Collapsible title="Training Programs">
-      <Button variant="outlined" onClick={(e) => setAddMode(!addMode)}>
+      <Button style={{marginBottom: 20}} variant="outlined" onClick={(e) => setAddMode(!addMode)}>
         {addMode ? "View" : "Add"} Programs
       </Button>
       {!addMode ? (
@@ -96,7 +98,7 @@ export default function Training() {
           />
         ))
       : (
-        <Text style={styles.text}>Add program form</Text>
+        <PlanForm setAddMode={setAddMode} />
       )}
       {program && !addMode && <Plan {...program} />}
     </Collapsible>
