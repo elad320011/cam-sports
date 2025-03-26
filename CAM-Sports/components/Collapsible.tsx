@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     padding: 16,
+    minHeight: 200,
   },
   text: {
     fontSize: 16,
