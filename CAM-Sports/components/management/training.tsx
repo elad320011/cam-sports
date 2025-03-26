@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Text, StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
 import Plan, { PlanProps } from "./trainingComponents/plan";
-import axios from "axios";
+import axiosInstance from '@/utils/axios';
 import Button from '@mui/material/Button';
 import Dropdown from 'react-native-input-select';
 import PlanForm from "./trainingComponents/planForm";
@@ -52,7 +52,7 @@ export default function Training() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/training_plans/team_id/${userInfo?.team_id}`);
+        const response = await axiosInstance.get(`http://localhost:5000/training_plans/team_id/${userInfo?.team_id}`);
         const responsePlans = JSON.parse(response.data.plans);
         setPlans(responsePlans);
       } catch (error) {
