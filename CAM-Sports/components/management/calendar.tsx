@@ -44,11 +44,11 @@ export default function GameCalendar(): JSX.Element {
   const DEFAULT_EMAIL_ID = "haimovshlomi@gmail.com";
 
   useEffect(() => {
-    (async () => {
-      console.log(await shareCalendar(DEFAULT_CALENDAR_ID, DEFAULT_EMAIL_ID, "writer" ))
-      console.log(await listCalendars());
-      console.log(await getCalendarByID(DEFAULT_CALENDAR_ID));
-    })();
+    // (async () => {
+    //   console.log(await shareCalendar(DEFAULT_CALENDAR_ID, DEFAULT_EMAIL_ID, "writer" ))
+    //   console.log(await listCalendars());
+    //   console.log(await getCalendarByID(DEFAULT_CALENDAR_ID));
+    // })();
 
     // Fetch all events
     fetchEvents();
@@ -60,7 +60,7 @@ export default function GameCalendar(): JSX.Element {
     try {
       // For now, always use the default calendar
       const fetchedEvents = await listEvents(DEFAULT_CALENDAR_ID);
-      
+
       console.log('Fetched events: ', fetchedEvents);
       setEvents(fetchedEvents);
 
@@ -84,15 +84,15 @@ export default function GameCalendar(): JSX.Element {
       };
 
       const newEvent = await createEvent(eventData);
-      
+
       Alert.alert("Success", "Event created with id: " + newEvent.id);
       fetchEvents(); // Refresh the event list
-    
+
     } catch (error) {
       Alert.alert("Error", "Failed to create event.");
     }
   };
-  
+
   // Delete an event using the backend
   const handleDeleteEvent = async (): Promise<void> => {
     try {
@@ -100,11 +100,11 @@ export default function GameCalendar(): JSX.Element {
         Alert.alert("No Event", "No event available to delete.");
         return;
       }
-      
+
       // For demonstration, delete the first event in the list.
       const eventToDelete = events[0];
       await deleteEvent(DEFAULT_CALENDAR_ID, eventToDelete.id);
-      
+
       Alert.alert("Success", "Event deleted.");
       fetchEvents(); // Refresh the event list
 
@@ -130,7 +130,7 @@ export default function GameCalendar(): JSX.Element {
         start: eventToEdit.start.dateTime ? eventToEdit.start.dateTime : eventToEdit.start.date,
         end: eventToEdit.end.dateTime ? eventToEdit.end.dateTime : eventToEdit.end.date
       };
-  
+
       const updatedEvent = await updateEvent(updatedData);
       Alert.alert("Success", "Event updated with id: " + updatedEvent.id);
       fetchEvents(); // Refresh the event list
@@ -138,8 +138,8 @@ export default function GameCalendar(): JSX.Element {
       Alert.alert("Error", "Failed to update event.");
     }
   };
-  
-  
+
+
   // RSVP for an event using the backend.
   const handleRSVP = async (eventId: string): Promise<void> => {
     try {
@@ -156,7 +156,7 @@ export default function GameCalendar(): JSX.Element {
       Alert.alert("Error", "An error occurred while sending RSVP.");
     }
   };
-  
+
   // Show attendance by calling the backend and updating the modal.
   const handleShowAttendance = async (eventId: string): Promise<void> => {
     try {
@@ -180,10 +180,10 @@ export default function GameCalendar(): JSX.Element {
 
   return (
     <View style={{ flex: 1, padding: 10 }}>
-  
-      <Calendar 
-        onDayPress={onDayPress} 
-        markedDates={{ [selectedDate]: { selected: true } }} 
+
+      <Calendar
+        onDayPress={onDayPress}
+        markedDates={{ [selectedDate]: { selected: true } }}
         style={{ marginVertical: 10 }}
       />
 

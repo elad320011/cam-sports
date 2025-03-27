@@ -72,7 +72,7 @@ def get_game_statistics_by_team_id(team_id):
         game_statistics_json = game_statistics.to_json()
 
         # Return the document as a JSON response
-        return game_statistics_json, 200
+        return jsonify({"stats": game_statistics_json}), 200
     except GameStatistics.DoesNotExist:
         return jsonify({"error": "Game statistics not found"}), 404
     except Exception as e:
