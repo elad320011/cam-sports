@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 import { sendAIAdvisorTextMessage } from '@/services/aiAdvisorService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -30,12 +31,15 @@ export default function AIAdvisor() {
       text: "**Hey there!** I'm your Volleyball AI Advisor. Need tips on improving your serves, spikes, or overall gameplay? Ask away, and let's get you ready for the court! 🏐",
     },
   ]);
-  
+
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const typingRef = useRef<NodeJS.Timeout | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}'); // Change ME
+  // const { userInfo } = useAuth();
+  
   const handleSend = async () => {
     if (typing) {
       stopTyping();
@@ -61,24 +65,31 @@ export default function AIAdvisor() {
     setInput('');
 
     try {
-      const aiResponse = await sendAIAdvisorTextMessage({ question: input });
-      const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
-      
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === loadingMsg.id ? { ...msg, loading: false } : msg
-        )
-      );
+        const data = {
+            email: userInfo?.email,
+            user_type: userInfo?.user_type,
+            type: 'text',
+            message: JSON.stringify(input),
+        }
 
-      simulateTypingAIResponse(aiMessageText, loadingMsg.id);
+        const aiResponse = await sendAIAdvisorTextMessage(data);
+        const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
+
+        setMessages((prevMessages) =>
+            prevMessages.map((msg) =>
+            msg.id === loadingMsg.id ? { ...msg, loading: false } : msg
+            )
+        );
+
+        simulateTypingAIResponse(aiMessageText, loadingMsg.id);
     } catch (error) {
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === loadingMsg.id
-            ? { ...msg, text: 'Error getting response from AI advisor.', loading: false }
-            : msg
-        )
-      );
+        setMessages((prevMessages) =>
+            prevMessages.map((msg) =>
+            msg.id === loadingMsg.id
+                ? { ...msg, text: 'Error getting response from AI advisor.', loading: false }
+                : msg
+            )
+        );
     }
   };
 
