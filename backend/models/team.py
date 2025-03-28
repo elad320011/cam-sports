@@ -20,3 +20,4 @@ class Team(me.Document):
     players = me.ListField(me.StringField(), default=[])  # Now stores player emails
     management = me.ListField(me.StringField(), default=[])    # Now stores management emails
     payment_method = me.StringField()
+    calendar_id = me.StringField(default='')
