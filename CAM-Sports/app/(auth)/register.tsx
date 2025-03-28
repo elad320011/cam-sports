@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
 import { customizeAIAdvisor } from '@/services/aiAdvisorService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DateTimePickerComponent = Platform.OS === 'web' ? null : DateTimePicker;
 
@@ -24,6 +25,60 @@ export default function RegisterScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState('');
   const router = useRouter();
+
+  // Load saved data on component mount
+  useEffect(() => {
+    loadSavedData();
+  }, []);
+
+  // Save data when relevant fields change
+  useEffect(() => {
+    saveFormData();
+  }, [fullName, userType, teamCode, teamId, role, birthDate, weight, height, email]);
+
+  const loadSavedData = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem('registerFormData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        setFullName(parsedData.fullName || '');
+        setUserType(parsedData.userType || 'player');
+        setTeamCode(parsedData.teamCode || '');
+        setTeamId(parsedData.teamId || '');
+        setRole(parsedData.role || '');
+        setBirthDate(parsedData.birthDate || '');
+        setWeight(parsedData.weight || '');
+        setHeight(parsedData.height || '');
+        setEmail(parsedData.email || '');
+        
+        // If there's a birthDate, also set the date state for the date picker
+        if (parsedData.birthDate) {
+          setDate(new Date(parsedData.birthDate));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved form data:', error);
+    }
+  };
+
+  const saveFormData = async () => {
+    try {
+      const formData = {
+        fullName,
+        userType,
+        teamCode,
+        teamId,
+        role,
+        birthDate,
+        weight,
+        height,
+        email
+      };
+      await AsyncStorage.setItem('registerFormData', JSON.stringify(formData));
+    } catch (error) {
+      console.error('Error saving form data:', error);
+    }
+  };
 
   const handleRegister = async () => {
     try {
@@ -64,9 +119,17 @@ export default function RegisterScreen() {
           height: parseFloat(height)
         });
         
-        if (response.data.redirect) {
-          setUpProfile();
-          router.push('/login');
+        if (response.data.redirect || response.data.team_code) {
+          // Clear saved form data after successful registration
+          await AsyncStorage.removeItem('registerFormData');
+          
+          if (response.data.team_code) {
+            setRegisteredTeamCode(response.data.team_code);
+          }
+          if (response.data.redirect) {
+            setUpProfile();
+            router.push('/login');
+          }
         }
       } else if (userType === 'management') {
         if (!fullName || !password || !email) {
@@ -173,6 +236,23 @@ export default function RegisterScreen() {
     else {
 
     }
+  };
+
+  // Add a reset form function
+  const resetForm = async () => {
+    setFullName('');
+    setPassword('');
+    setUserType('player');
+    setTeamCode('');
+    setTeamId('');
+    setRole('');
+    setBirthDate('');
+    setWeight('');
+    setHeight('');
+    setEmail('');
+    setDate(new Date());
+    setErrorMessage('');
+    await AsyncStorage.removeItem('registerFormData');
   };
 
   return (
@@ -410,7 +490,10 @@ export default function RegisterScreen() {
 
       {!registeredTeamCode && (
         <>
-          <Button title="Register" onPress={handleRegister} />
+          <View style={styles.buttonContainer}>
+            <Button title="Register" onPress={handleRegister} />
+            <Button title="Reset Form" onPress={resetForm} color="#666" />
+          </View>
           <View style={styles.loginContainer}>
             <Button 
               title="Back to Login" 
@@ -515,7 +598,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginTop: 16,
+    marginBottom: 12,
   },
   helperText: {
     fontSize: 12,
