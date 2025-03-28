@@ -22,12 +22,16 @@ const sendAIAdvisorTextMessage = async (data: object) => {
 };
 
 // Send a basic AI Advisor message of type 'statistic_doc_id'
-const sendAIAdvisorStatisticDocId = async (docId: string) => {
+// {
+//   "email": "player@example.com",
+//   "user_type": "player",
+//   "type": "statistic_doc_id",
+//   "message": "67826a86889979335402a7c3"
+// }
+
+const sendAIAdvisorStatisticDocId = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, {
-      type: 'statistic_doc_id',
-      message: docId,
-    });
+    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, data);
     return response.data;
   } catch (error) {
     console.log('Error sending statistic_doc_id message to AI Advisor:', error);
