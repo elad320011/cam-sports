@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
 
@@ -36,63 +36,71 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome Back</Text>
-        
-        <View style={styles.formContainer}>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }} 
+      />
+      
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Welcome Back</Text>
           
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, error ? styles.inputError : null]}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setError('');
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              placeholderTextColor="#666"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={[styles.input, error ? styles.inputError : null]}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setError('');
-              }}
-              secureTextEntry
-              placeholderTextColor="#666"
-            />
-          </View>
-
-          <View style={styles.buttonGroup}>
-            <TouchableOpacity 
-              style={styles.primaryButton} 
-              onPress={handleLogin}
-            >
-              <Text style={styles.primaryButtonText}>Login</Text>
-            </TouchableOpacity>
+          <View style={styles.formContainer}>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
             
-            <TouchableOpacity 
-              style={styles.linkButton} 
-              onPress={() => router.push('/register')}
-            >
-              <Text style={styles.linkButtonText}>Don't have an account? Register</Text>
-            </TouchableOpacity>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={[styles.input, error ? styles.inputError : null]}
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setError('');
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={[styles.input, error ? styles.inputError : null]}
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setError('');
+                }}
+                secureTextEntry
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity 
+                style={styles.primaryButton} 
+                onPress={handleLogin}
+              >
+                <Text style={styles.primaryButtonText}>Login</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.linkButton} 
+                onPress={() => router.push('/register')}
+              >
+                <Text style={styles.linkButtonText}>Don't have an account? Register</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 

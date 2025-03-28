@@ -3,7 +3,7 @@ import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable, ScrollV
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { customizeAIAdvisor } from '@/services/aiAdvisorService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -256,290 +256,298 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Create Account</Text>
-        
-        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        
-        <View style={styles.formContainer}>
-          <View style={styles.pickerContainer}>
-            <Text style={styles.label}>Register as:</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={userType}
-                style={styles.picker}
-                onValueChange={(itemValue: string) => setUserType(itemValue)}
-              >
-                <Picker.Item label="Player" value="player" />
-                <Picker.Item label="Management" value="management" />
-                <Picker.Item label="Team" value="team" />
-              </Picker>
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }} 
+      />
+      
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Create Account</Text>
+          
+          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+          
+          <View style={styles.formContainer}>
+            <View style={styles.pickerContainer}>
+              <Text style={styles.label}>Register as:</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={userType}
+                  style={styles.picker}
+                  onValueChange={(itemValue: string) => setUserType(itemValue)}
+                >
+                  <Picker.Item label="Player" value="player" />
+                  <Picker.Item label="Management" value="management" />
+                  <Picker.Item label="Team" value="team" />
+                </Picker>
+              </View>
             </View>
-          </View>
 
-          {userType === 'team' ? (
-            <>
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Enter Team Name"
-                value={teamId}
-                onChangeText={(text) => {
-                  setTeamId(text.toUpperCase());
-                  setErrorMessage('');
-                }}
-                autoCapitalize="characters"
-                maxLength={10}
-                placeholderTextColor="#666"
-              />
-              <Text style={styles.helperText}>
-                This name will be used as your team's unique identifier and cannot be changed later.
-              </Text>
-            </>
-          ) : userType === 'player' ? (
-            <>
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Email"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setErrorMessage('');
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                placeholderTextColor="#666"
-              />
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Full Name"
-                value={fullName}
-                onChangeText={(text) => {
-                  setFullName(text);
-                  setErrorMessage('');
-                }}
-                autoComplete="name"
-              />
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Password (min 6 characters)"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setErrorMessage('');
-                }}
-                secureTextEntry
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Team Code"
-                value={teamCode}
-                onChangeText={(text) => {
-                  setTeamCode(text.toUpperCase());
-                  setErrorMessage('');
-                }}
-                autoCapitalize="characters"
-                maxLength={6}
-              />
-              <Picker
-                selectedValue={role}
-                style={styles.picker}
-                onValueChange={(itemValue: string) => setRole(itemValue)}
-              >
-                <Picker.Item label="Select Position" value="" />
-                <Picker.Item label="Outside Hitter" value="Outside Hitter" />
-                <Picker.Item label="Middle Blocker" value="Middle Blocker" />
-                <Picker.Item label="Opposite Hitter" value="Opposite Hitter" />
-                <Picker.Item label="Setter" value="Setter" />
-                <Picker.Item label="Libero" value="Libero" />
-                <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
-              </Picker>
-
-              <Text style={styles.inputLabel}>Birth Date:</Text>
-              {Platform.OS === 'web' ? (
-                <input
-                  type="date"
-                  style={{
-                    height: 40,
-                    borderColor: 'gray',
-                    borderWidth: 1,
-                    marginBottom: 12,
-                    width: '100%'
+            {userType === 'team' ? (
+              <>
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Enter Team Name"
+                  value={teamId}
+                  onChangeText={(text) => {
+                    setTeamId(text.toUpperCase());
+                    setErrorMessage('');
                   }}
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  min="1900-01-01"
+                  autoCapitalize="characters"
+                  maxLength={10}
+                  placeholderTextColor="#666"
                 />
-              ) : (
-                <>
-                  <Pressable 
-                    style={[styles.input, styles.dateInput]} 
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={birthDate ? styles.dateText : styles.placeholderText}>
-                      {birthDate || 'Select Birth Date'}
-                    </Text>
-                  </Pressable>
+                <Text style={styles.helperText}>
+                  This name will be used as your team's unique identifier and cannot be changed later.
+                </Text>
+              </>
+            ) : userType === 'player' ? (
+              <>
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setErrorMessage('');
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  placeholderTextColor="#666"
+                />
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChangeText={(text) => {
+                    setFullName(text);
+                    setErrorMessage('');
+                  }}
+                  autoComplete="name"
+                />
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Password (min 6 characters)"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setErrorMessage('');
+                  }}
+                  secureTextEntry
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Team Code"
+                  value={teamCode}
+                  onChangeText={(text) => {
+                    setTeamCode(text.toUpperCase());
+                    setErrorMessage('');
+                  }}
+                  autoCapitalize="characters"
+                  maxLength={6}
+                />
+                <Picker
+                  selectedValue={role}
+                  style={styles.picker}
+                  onValueChange={(itemValue: string) => setRole(itemValue)}
+                >
+                  <Picker.Item label="Select Position" value="" />
+                  <Picker.Item label="Outside Hitter" value="Outside Hitter" />
+                  <Picker.Item label="Middle Blocker" value="Middle Blocker" />
+                  <Picker.Item label="Opposite Hitter" value="Opposite Hitter" />
+                  <Picker.Item label="Setter" value="Setter" />
+                  <Picker.Item label="Libero" value="Libero" />
+                  <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
+                </Picker>
 
-                  {showDatePicker && (
-                    <DateTimePicker
-                      testID="dateTimePicker"
-                      value={date}
-                      mode="date"
-                      is24Hour={true}
-                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                      onChange={onDateChange}
-                      maximumDate={new Date()}
-                      minimumDate={new Date(1900, 0, 1)}
-                    />
-                  )}
-                </>
-              )}
+                <Text style={styles.inputLabel}>Birth Date:</Text>
+                {Platform.OS === 'web' ? (
+                  <input
+                    type="date"
+                    style={{
+                      height: 40,
+                      borderColor: 'gray',
+                      borderWidth: 1,
+                      marginBottom: 12,
+                      width: '100%'
+                    }}
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                  />
+                ) : (
+                  <>
+                    <Pressable 
+                      style={[styles.input, styles.dateInput]} 
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Text style={birthDate ? styles.dateText : styles.placeholderText}>
+                        {birthDate || 'Select Birth Date'}
+                      </Text>
+                    </Pressable>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Weight (kg)"
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="numeric"
-              />
+                    {showDatePicker && (
+                      <DateTimePicker
+                        testID="dateTimePicker"
+                        value={date}
+                        mode="date"
+                        is24Hour={true}
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={onDateChange}
+                        maximumDate={new Date()}
+                        minimumDate={new Date(1900, 0, 1)}
+                      />
+                    )}
+                  </>
+                )}
 
-              <TextInput
-                style={styles.input}
-                placeholder="Height (cm)"
-                value={height}
-                onChangeText={setHeight}
-                keyboardType="numeric"
-              />
-            </>
-          ) : userType === 'management' ? (
-            <>
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Email"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setErrorMessage('');
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Full Name"
-                value={fullName}
-                onChangeText={(text) => {
-                  setFullName(text);
-                  setErrorMessage('');
-                }}
-                autoComplete="name"
-              />
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Password (min 6 characters)"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setErrorMessage('');
-                }}
-                secureTextEntry
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Team Code"
-                value={teamCode}
-                onChangeText={(text) => {
-                  setTeamCode(text.toUpperCase());
-                  setErrorMessage('');
-                }}
-                autoCapitalize="characters"
-                maxLength={6}
-              />
-            </>
-          ) : (
-            <>
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Full Name"
-                value={fullName}
-                onChangeText={(text) => {
-                  setFullName(text);
-                  setErrorMessage('');
-                }}
-                autoComplete="name"
-              />
-              <TextInput
-                style={[styles.input, errorMessage ? styles.inputError : null]}
-                placeholder="Password (min 6 characters)"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setErrorMessage('');
-                }}
-                secureTextEntry
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Team Code"
-                value={teamCode}
-                onChangeText={(text) => {
-                  setTeamCode(text.toUpperCase());
-                  setErrorMessage('');
-                }}
-                autoCapitalize="characters"
-                maxLength={6}
-              />
-            </>
-          )}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Weight (kg)"
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="numeric"
+                />
 
-          {!registeredTeamCode && (
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity 
-                style={styles.primaryButton} 
-                onPress={handleRegister}
-              >
-                <Text style={styles.primaryButtonText}>Register</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.secondaryButton} 
-                onPress={resetForm}
-              >
-                <Text style={styles.secondaryButtonText}>Reset Form</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.linkButton} 
-                onPress={() => router.push('/login')}
-              >
-                <Text style={styles.linkButtonText}>Already have an account? Login</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Height (cm)"
+                  value={height}
+                  onChangeText={setHeight}
+                  keyboardType="numeric"
+                />
+              </>
+            ) : userType === 'management' ? (
+              <>
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    setErrorMessage('');
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                />
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChangeText={(text) => {
+                    setFullName(text);
+                    setErrorMessage('');
+                  }}
+                  autoComplete="name"
+                />
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Password (min 6 characters)"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setErrorMessage('');
+                  }}
+                  secureTextEntry
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Team Code"
+                  value={teamCode}
+                  onChangeText={(text) => {
+                    setTeamCode(text.toUpperCase());
+                    setErrorMessage('');
+                  }}
+                  autoCapitalize="characters"
+                  maxLength={6}
+                />
+              </>
+            ) : (
+              <>
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChangeText={(text) => {
+                    setFullName(text);
+                    setErrorMessage('');
+                  }}
+                  autoComplete="name"
+                />
+                <TextInput
+                  style={[styles.input, errorMessage ? styles.inputError : null]}
+                  placeholder="Password (min 6 characters)"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setErrorMessage('');
+                  }}
+                  secureTextEntry
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Team Code"
+                  value={teamCode}
+                  onChangeText={(text) => {
+                    setTeamCode(text.toUpperCase());
+                    setErrorMessage('');
+                  }}
+                  autoCapitalize="characters"
+                  maxLength={6}
+                />
+              </>
+            )}
 
-          {registeredTeamCode && (
-            <View style={styles.teamCodeContainer}>
-              <Text style={styles.teamCodeLabel}>Your Team Code:</Text>
-              <Text style={styles.teamCode}>{registeredTeamCode}</Text>
-              <Text style={styles.teamCodeInstructions}>
-                Share this code with your team members for registration.{'\n'}
-                They will use this code to join your team.
-              </Text>
-              <TouchableOpacity 
-                style={styles.primaryButton}
-                onPress={() => router.push('/login')}
-              >
-                <Text style={styles.primaryButtonText}>Proceed to Login</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            {!registeredTeamCode && (
+              <View style={styles.buttonGroup}>
+                <TouchableOpacity 
+                  style={styles.primaryButton} 
+                  onPress={handleRegister}
+                >
+                  <Text style={styles.primaryButtonText}>Register</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.secondaryButton} 
+                  onPress={resetForm}
+                >
+                  <Text style={styles.secondaryButtonText}>Reset Form</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.linkButton} 
+                  onPress={() => router.push('/login')}
+                >
+                  <Text style={styles.linkButtonText}>Already have an account? Login</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {registeredTeamCode && (
+              <View style={styles.teamCodeContainer}>
+                <Text style={styles.teamCodeLabel}>Your Team Code:</Text>
+                <Text style={styles.teamCode}>{registeredTeamCode}</Text>
+                <Text style={styles.teamCodeInstructions}>
+                  Share this code with your team members for registration.{'\n'}
+                  They will use this code to join your team.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.primaryButton}
+                  onPress={() => router.push('/login')}
+                >
+                  <Text style={styles.primaryButtonText}>Proceed to Login</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
