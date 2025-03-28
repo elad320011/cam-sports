@@ -61,6 +61,14 @@ def login():
     
     if user and user_type:
         access_token, refresh_token = create_tokens(str(user.id), user_type)
+        
+        # Get team name for the response
+        team_name = None
+        if user.team_id:
+            team = Team.objects(id=user.team_id).first()
+            if team:
+                team_name = team.name
+
         return jsonify({
             "message": "Login successful",
             "access_token": access_token,
@@ -69,7 +77,7 @@ def login():
                 "email": email,
                 "full_name": full_name,
                 "user_type": user_type,
-                "team_id": team_id
+                "team_id": team_name  # Send team name instead of ID
             }
         })
     else:
@@ -89,7 +97,7 @@ def register():
     data = request.get_json()
     user_type = data.get('user_type')
     team_code = data.get('team_code')
-    email = data.get('email', '').lower()  # Get and normalize email
+    email = data.get('email', '').lower()
 
     if user_type == 'player':
         if not all([email, data.get('full_name'), data.get('password'),
@@ -121,7 +129,7 @@ def register():
             birth_date=birth_date,
             weight=float(data['weight']),
             height=float(data['height']),
-            team_id=team.team_id
+            team_id=team.id  # Use the MongoDB ObjectId
         )
         player.save()
 
@@ -147,7 +155,7 @@ def register():
             email=email,
             full_name=data['full_name'],
             password=generate_password_hash(data['password']),
-            team_id=team.team_id
+            team_id=team.id  # Use the MongoDB ObjectId
         )
         management.save()
 
@@ -155,20 +163,20 @@ def register():
         team.update(push__management=email)
 
     elif user_type == 'team':
-        if not data.get('team_id'):
-            return jsonify({"message": "Team ID is required"}), 400
+        if not data.get('team_id'):  # We'll still use team_id in the request but save it as name
+            return jsonify({"message": "Team name is required"}), 400
 
-        # Check if team_id already exists
-        existing_team = Team.objects(team_id=data['team_id']).first()
+        # Check if team name already exists
+        existing_team = Team.objects(name=data['team_id']).first()
         if existing_team:
-            return jsonify({"message": "Team ID already exists"}), 400
+            return jsonify({"message": "Team name already exists"}), 400
 
         # Generate a unique team code
         team_code = generate_team_code()
         
         try:
             team = Team(
-                team_id=data['team_id'],  # This will be used as the team identifier
+                name=data['team_id'],  # Save as team name
                 code=team_code,
                 players=[],
                 management=[]

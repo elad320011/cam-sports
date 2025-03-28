@@ -35,7 +35,7 @@ export default function RegisterScreen() {
 
         const response = await axiosInstance.post('/auth/register', {
           user_type: 'team',
-          team_id: teamId
+          team_id: teamId  // This will be used as the team name now
         });
         
         if (response.data.team_code) {
@@ -196,7 +196,7 @@ export default function RegisterScreen() {
         <>
           <TextInput
             style={[styles.input, errorMessage ? styles.inputError : null]}
-            placeholder="Enter Team Name (will be used as Team ID)"
+            placeholder="Enter Team Name"
             value={teamId}
             onChangeText={(text) => {
               setTeamId(text.toUpperCase());
