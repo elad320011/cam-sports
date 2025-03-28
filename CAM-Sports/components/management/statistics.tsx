@@ -1,40 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Text, StyleSheet, ScrollView } from "react-native";
 import { Collapsible } from "../Collapsible";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Card, Typography, ButtonGroup, Button } from "@mui/material";
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
 import Dropdown from 'react-native-input-select';
 import { all } from "axios";
-import { Tab } from "material-ui";
 
-type Row = {
-    player: string;
-    starter: string;
-    position: string;
-    attacks: number;
-    kills: number;
-    errors: number;
-    killPercentage: number;
-    setAttempts: number;
-    assists: number;
-    setErrors: number;
-    digs: number;
-    digErrors: number;
-    digsEfficiency: number;
-    serveRecieves: number;
-    serveRecieveErrors: number;
-    serveRecieveOne: number;
-    serveRecieveTwo: number;
-    serveRecieveThree: number;
-    serveReciveScore: number;
-    serves: number;
-    aces: number;
-    serveErrors: number;
-    acePercentage: number;
-    blocks: number;
-    blockKills: number;
-    blockErrors: number;
+type Score = {
+    team_score: number;
+    opposite_team_score: number;
 }
 
 type GameStats = {
@@ -44,7 +19,7 @@ type GameStats = {
     game_date: object;
     team_sets_won_count: number;
     team_sets_lost_count: number;
-    sets_scores: { [key: string]: string | number };
+    sets_scores: { [key: string]: Score };
     team_stats: { [key: string]: any };
 }
 
@@ -55,6 +30,105 @@ const formatDateToDDMMYYYY = (date: Date): string => {
     return `${day}/${month}/${year}`;
   };
 
+  const offenseCols = [
+    "Player",
+    "Starter",
+    "Position",
+    "Attacks",
+    "Kills",
+    "Errors",
+    "Kill percentage",
+    "Serves",
+    "Aces",
+    "Serve Errors",
+    "Ace Percentage",
+];
+
+const settingCols = [
+    "Player",
+    "Starter",
+    "Position",
+    "Set Attempts",
+    "Assists",
+    "Set Errors",
+]
+
+const defenseCols = [
+    "Player",
+    "Starter",
+    "Position",
+    "Digs",
+    "Dig Errors",
+    "Digs Efficiency",
+    "Serve Recieves",
+    "1",
+    "2",
+    "3",
+    "Serve Recieve Errors",
+    "Serve Recieve Score",
+    "Blocks",
+    "Block Kills",
+    "Block Errors",
+]
+
+const allCols =[
+    "Player",
+    "Starter",
+    "Position",
+    "Attacks",
+    "Kills",
+    "Errors",
+    "Kill percentage",
+    "Serves",
+    "Aces",
+    "Serve Errors",
+    "Ace Percentage",
+    "Set Attempts",
+    "Assists",
+    "Set Errors",
+    "Digs",
+    "Dig Errors",
+    "Digs Efficiency",
+    "Serve Recieves",
+    "1",
+    "2",
+    "3",
+    "Serve Recieve Errors",
+    "Serve Recieve Score",
+    "Blocks",
+    "Block Kills",
+    "Block Errors",
+]
+
+type Row = {
+    player: string;
+    starter: string;
+    position: string;
+    attacks?: number;
+    kills?: number;
+    errors?: number;
+    killPercentage?: number;
+    serves?: number;
+    aces?: number;
+    serveErrors?: number;
+    acePercentage?: number;
+    setAttempts?: number;
+    assists?: number;
+    setErrors?: number;
+    digs?: number;
+    digErrors?: number;
+    digsEfficiency?: number;
+    serveRecieves?: number;
+    serveRecieveOne?: number;
+    serveRecieveTwo?: number;
+    serveRecieveThree?: number;
+    serveRecieveErrors?: number;
+    serveReciveScore?: number;
+    blocks?: number;
+    blockKills?: number;
+    blockErrors?: number;
+};
+
 export default function GameStatistics() {
 
     const { logout, userInfo } = useAuth();
@@ -63,36 +137,10 @@ export default function GameStatistics() {
     const [currentStat, setCurrentStat] = useState<GameStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [rows, setRows] = useState<Row[]>([]);
 
-    const cols = [
-        "Player",
-        "Starter",
-        "Position",
-        "Attacks",
-        "Kills",
-        "Errors",
-        "Kill percentage",
-        "Set Attempts",
-        "Assists",
-        "Set Errors",
-        "Digs",
-        "Dig Errors",
-        "Digs Efficiency",
-        "Serve Recieves",
-        "1",
-        "2",
-        "3",
-        "Serve Recieve Errors",
-        "Serve Recieve Score",
-        "Serves",
-        "Aces",
-        "Serve Errors",
-        "Ace Percentage",
-        "Blocks",
-        "Block Kills",
-        "Block Errors",
-    ];
+    const [rows, setRows] = useState<Row[]>([]);
+    const [cols, setCols] = useState<string[]>(offenseCols);
+    const [currentStatus, setCurrentStatus] = useState<string>();
 
     const handleChange = (selectedOption: any) => {
         const selectedStat = allStats?.find(stat => stat.id === selectedOption);
@@ -137,45 +185,103 @@ export default function GameStatistics() {
     }, [addMode]);
 
     useEffect(() => {
-        const newRows: Row[] = []; // Create a new empty array
+        const newRows = []; // Create a new empty array
         if (currentStat && currentStat.team_stats) {
+
+            currentStat.team_sets_won_count > currentStat.team_sets_lost_count ? setCurrentStatus("W") : setCurrentStatus("L");
+
             for (const playerName in currentStat.team_stats) {
                 const playerStats = currentStat.team_stats[playerName];
-                console.log(playerStats?.starter)
 
-                newRows.push({
-                    player: playerName,
-                    starter: JSON.stringify(playerStats?.starter) || "false",
-                    position: playerStats?.position || "",
-                    attacks: playerStats?.attack.attempts || 0,
-                    kills: playerStats?.attack.kills || 0,
-                    errors: playerStats?.attack.errors || 0,
-                    killPercentage: playerStats?.attack.kill_percentage || 0,
-                    setAttempts: playerStats?.setting.attempts || 0,
-                    assists: playerStats?.setting.assists || 0,
-                    setErrors: playerStats?.setting.errors || 0,
-                    digs: playerStats?.digs.attempts || 0,
-                    digErrors: playerStats?.digs.errors || 0,
-                    digsEfficiency: playerStats?.digs.efficiency || 0,
-                    serveRecieves: playerStats?.serve_recieves.attempts || 0,
-                    serveRecieveOne: playerStats?.serve_recieves.one_balls || 0,
-                    serveRecieveTwo: playerStats?.serve_recieves.two_balls || 0,
-                    serveRecieveThree: playerStats?.serve_recieves.three_balls || 0,
-                    serveRecieveErrors: playerStats?.serve_recieves.errors || 0,
-                    serveReciveScore: playerStats?.serve_recieves.efficiency || 0,
-                    serves: playerStats?.serve.attempts || 0,
-                    aces: playerStats?.serve.aces || 0,
-                    serveErrors: playerStats?.serve.errors || 0,
-                    acePercentage: playerStats?.serve.ace_percentage || 0,
-                    blocks: playerStats?.blocks.attempts || 0,
-                    blockKills: playerStats?.blocks.kills || 0,
-                    blockErrors: playerStats?.blocks.errors || 0,
-                });
+                if (cols == offenseCols) {
+                    newRows.push({
+                        player: playerName,
+                        starter: JSON.stringify(playerStats?.starter) || "false",
+                        position: playerStats?.position || "",
+                        attacks: playerStats?.attack.attempts || 0,
+                        kills: playerStats?.attack.kills || 0,
+                        errors: playerStats?.attack.errors || 0,
+                        killPercentage: playerStats?.attack.kill_percentage || 0,
+                        serves: playerStats?.serve.attempts || 0,
+                        aces: playerStats?.serve.aces || 0,
+                        serveErrors: playerStats?.serve.errors || 0,
+                        acePercentage: playerStats?.serve.ace_percentage || 0,
+                    });
+                }
+                else if (cols == settingCols) {
+                    newRows.push({
+                        player: playerName,
+                        starter: JSON.stringify(playerStats?.starter) || "false",
+                        position: playerStats?.position || "",
+                        setAttempts: playerStats?.setting.attempts || 0,
+                        assists: playerStats?.setting.assists || 0,
+                        setErrors: playerStats?.setting.errors || 0,
+                    });
+                }
+                else {
+                    newRows.push({
+                        player: playerName,
+                        starter: JSON.stringify(playerStats?.starter) || "false",
+                        position: playerStats?.position || "",
+                        digs: playerStats?.digs.attempts || 0,
+                        digErrors: playerStats?.digs.errors || 0,
+                        digsEfficiency: playerStats?.digs.efficiency || 0,
+                        serveRecieves: playerStats?.serve_recieves.attempts || 0,
+                        serveRecieveOne: playerStats?.serve_recieves.one_balls || 0,
+                        serveRecieveTwo: playerStats?.serve_recieves.two_balls || 0,
+                        serveRecieveThree: playerStats?.serve_recieves.three_balls || 0,
+                        serveRecieveErrors: playerStats?.serve_recieves.errors || 0,
+                        serveReciveScore: playerStats?.serve_recieves.efficiency || 0,
+                        blocks: playerStats?.blocks.attempts || 0,
+                        blockKills: playerStats?.blocks.kills || 0,
+                        blockErrors: playerStats?.blocks.errors || 0,
+                    });
+                }
             }
         }
         setRows(newRows); // Update the state with the *new* array
         console.log(newRows);
-    }, [currentStat]);
+        }, [currentStat, cols]);
+
+    const showSets = () => {
+        console.log("showSets");
+        const setsSection = document.getElementById("setsSection");
+        const playerStatsSection = document.getElementById("playerStatsSection");
+        if (setsSection) {
+            setsSection.style.display = "inline";
+        }
+        if (playerStatsSection) {
+            playerStatsSection.style.display = "none";
+        }
+    }
+
+    const showPlayerStats = () => {
+        console.log("showPlayerStats");
+        const setsSection = document.getElementById("setsSection");
+        const playerStatsSection = document.getElementById("playerStatsSection");
+        if (setsSection) {
+            setsSection.style.display = "none";
+        }
+        if (playerStatsSection) {
+            playerStatsSection.style.display = "inline";
+        }
+    }
+
+    const showOffense = () => {
+        setCols(offenseCols);
+    }
+
+    const showSetting = () => {
+        setCols(settingCols);
+    }
+
+    const showDefense = () => {
+        setCols(defenseCols);
+    }
+
+    const showAll = () => {
+        setCols(allCols);
+    }
 
     if (loading) {
         return (
@@ -200,7 +306,7 @@ export default function GameStatistics() {
                     label="Select Game"
                     selectedValue={currentStat?.id}
                     onValueChange={handleChange}
-                    options={allStats.map((stats: GameStats) => ({ value: stats.id, label: `${stats.opposite_team_name} - ${formatDateToDDMMYYYY(new Date(stats?.game_date.$date))}` }))}
+                    options={allStats.map((stats: GameStats) => ({ value: stats.id, label: `${stats.opposite_team_name} - ${formatDateToDDMMYYYY(new Date(stats?.game_date.$date))} (${stats?.team_sets_won_count > stats?.team_sets_lost_count ? "W" : "L"})` }))}
                     styles={styles.select}
                     primaryColor={'green'}
                     isMultiple={false}
@@ -209,56 +315,59 @@ export default function GameStatistics() {
                 <Text style={styles.text}>No game statistics available for your team.</Text>
             )}
             {currentStat && (
-                <ScrollView style={styles.container}>
-                    <TableContainer component={Paper}>
-                        <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                            <TableHead>
-                                <TableRow>
-                                    {cols.map((col, index) => (
-                                        <TableCell key={index}>{col}</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.length > 0 && (rows.map((row, index) => (
-                                    <TableRow
-                                        key={row.player}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                    >
-                                        <TableCell component="th" scope="row">
-                                            {row.player}
-                                        </TableCell>
-                                        <TableCell align="right">{row.starter}</TableCell>
-                                        <TableCell align="right">{row.position}</TableCell>
-                                        <TableCell align="right">{row.attacks}</TableCell>
-                                        <TableCell align="right">{row.kills}</TableCell>
-                                        <TableCell align="right">{row.errors}</TableCell>
-                                        <TableCell align="right">{row.killPercentage}</TableCell>
-                                        <TableCell align="right">{row.setAttempts}</TableCell>
-                                        <TableCell align="right">{row.assists}</TableCell>
-                                        <TableCell align="right">{row.setErrors}</TableCell>
-                                        <TableCell align="right">{row.digs}</TableCell>
-                                        <TableCell align="right">{row.digErrors}</TableCell>
-                                        <TableCell align="right">{row.digsEfficiency}</TableCell>
-                                        <TableCell align="right">{row.serveRecieves}</TableCell>
-                                        <TableCell align="right">{row.serveRecieveOne}</TableCell>
-                                        <TableCell align="right">{row.serveRecieveTwo}</TableCell>
-                                        <TableCell align="right">{row.serveRecieveThree}</TableCell>
-                                        <TableCell align="right">{row.serveRecieveErrors}</TableCell>
-                                        <TableCell align="right">{row.serveReciveScore}</TableCell>
-                                        <TableCell align="right">{row.serves}</TableCell>
-                                        <TableCell align="right">{row.aces}</TableCell>
-                                        <TableCell align="right">{row.serveErrors}</TableCell>
-                                        <TableCell align="right">{row.acePercentage}</TableCell>
-                                        <TableCell align="right">{row.blocks}</TableCell>
-                                        <TableCell align="right">{row.blockKills}</TableCell>
-                                        <TableCell align="right">{row.blockErrors}</TableCell>
-                                    </TableRow>
-                                )))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </ScrollView>
+                <div>
+                    <ButtonGroup variant="text" style={styles.menu} aria-label="Basic button group">
+                        <Button onClick={showSets}>Sets</Button>
+                        <Button onClick={showPlayerStats}>Player Stats</Button>
+                    </ButtonGroup>
+                    <Card style={styles.section} id="setsSection">
+                        <Typography variant="h5" style={styles.setScoreHeader}>Set Scores:</Typography>
+                        <ScrollView style={styles.container}>
+                            {Object.keys(currentStat.sets_scores).map((key, index) => (
+                                <Card style={styles.setScore} key={index}>
+                                    <Typography variant="h6">Set {index + 1}</Typography>
+                                    <Typography style={styles.scoreLine}>Points: {currentStat.sets_scores[key].team_score}</Typography>
+                                    <Typography style={styles.scoreLine}>Opponent Points: {currentStat.sets_scores[key].opposite_team_score}</Typography>
+                                </Card>
+                            ))}
+                        </ScrollView>
+                    </Card>
+
+                    <Card style={styles.section} id="playerStatsSection">
+                        <Typography variant="h5">Stats</Typography>
+                        <ScrollView style={styles.container}>
+                            <ButtonGroup style={styles.playerStatsMenu}>
+                                <Button onClick={showOffense}>Offense</Button>
+                                <Button onClick={showSetting}>Setting</Button>
+                                <Button onClick={showDefense}>Defense</Button>
+                                <Button onClick={showAll}>All</Button>
+                            </ButtonGroup>
+                            <TableContainer component={Paper} id="offense">
+                                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                                    <TableHead>
+                                        <TableRow>
+                                            {cols.map((col, index) => (
+                                                <TableCell key={index}>{col}</TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {rows.length > 0 && (rows.map((row, index) => (
+                                            <TableRow
+                                                key={row.player}
+                                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                            >
+                                                {Object.keys(row).map((key, index) => (
+                                                    <TableCell align="center" key={index}>{row[key as keyof Row]}</TableCell>
+                                                ))}
+                                            </TableRow>
+                                        )))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </ScrollView>
+                    </Card>
+                </div>
             )}
         </Collapsible>
     );
@@ -281,5 +390,32 @@ const styles = StyleSheet.create({
     },
     container: {
         maxHeight: 300,
+    },
+    menu: {
+        justifyContent: "center",
+        width: "100%",
+    },
+    section: {
+        margin: 'auto',
+        marginBottom: 30,
+        display: 'none',
+    },
+    playerStatsMenu: {
+        margin: 10,
+    },
+    scoreLine: {
+        fontSize: 12,
+    },
+    setScore: {
+        padding: 20,
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    setScoreHeader: {
+        padding: 20,
+        width: "90%",
+        alignSelf: "center",
+        margin: 'auto',
+        marginTop: 10,
     }
 });
