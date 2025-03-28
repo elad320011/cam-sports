@@ -24,27 +24,40 @@ def get_calendar_service(user_email: str = None):
     )
     if user_email:
         creds = creds.with_subject(user_email)
-    print("Impersonating:", getattr(creds, '_subject', None))
     return build('calendar', 'v3', credentials=creds)
 
 
 def create_event():
     try:
         data = request.get_json()
+        
         required_fields = ["calendar_id", "summary", "start", "end"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"status": "error", "message": f"Missing '{field}' field"}), 400
 
         calendar_id = data["calendar_id"]
+
+        if "T" in data["start"]:
+            start_field = {"dateTime": data["start"]}
+        else:
+            start_field = {"date": data["start"]}
+
+        if "T" in data["end"]:
+            end_field = {"dateTime": data["end"]}
+        else:
+            end_field = {"date": data["end"]}
+
         event_body = {
             "summary": data["summary"],
             "description": data.get("description", ""),
-            "start": {"dateTime": data["start"]},
-            "end": {"dateTime": data["end"]}
+            "start": start_field,
+            "end": end_field,
         }
+
         service = get_calendar_service()
         created_event = service.events().insert(calendarId=calendar_id, body=event_body).execute()
+
         return jsonify({"status": "success", "event": created_event}), 201
     except HttpError as err:
         if err.resp.status == 404:
@@ -85,13 +98,13 @@ def list_events():
         
         events_result = service.events().list(
             calendarId=calendar_id,
-            timeMin=now,
+            # timeMin=now,
             singleEvents=True,
             orderBy='startTime'
         ).execute()
         
         events = events_result.get('items', [])
-        
+
         return jsonify({"status": "success", "events": events}), 200
     
     except HttpError as err:

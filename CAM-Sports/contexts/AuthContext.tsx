@@ -11,6 +11,7 @@ interface UserInfo {
   user_type: string;
   team_id?: string;
   full_name?: string;
+  calendar_id?: string;
 }
 
 interface AuthContextType {

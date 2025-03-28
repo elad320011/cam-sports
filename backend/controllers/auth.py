@@ -59,6 +59,10 @@ def login():
             team_id = user.team_id
             full_name = user.full_name
     
+    # Get calendar id for team
+    team = Team.objects(team_id=team_id).first()
+    calendar_id = team.calendar_id
+
     if user and user_type:
         access_token, refresh_token = create_tokens(str(user.id), user_type)
         return jsonify({
@@ -69,7 +73,8 @@ def login():
                 "email": email,
                 "full_name": full_name,
                 "user_type": user_type,
-                "team_id": team_id
+                "team_id": team_id,
+                "calendar_id": calendar_id
             }
         })
     else:
