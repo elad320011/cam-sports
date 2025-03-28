@@ -9,4 +9,4 @@ class Management(me.Document):
     email = me.StringField(required=True, unique=True)
     full_name = me.StringField(required=True)
     password = me.StringField(required=True)
-    team_id = me.StringField(default='') 
+    team_id = me.ObjectIdField() 
