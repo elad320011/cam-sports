@@ -2,9 +2,9 @@ import axios from 'axios';
 import { BACKEND_URL } from '@/globalVariables';
 
 // Customize AI Advisor
-const customizeAIAdvisor = async (custom_info: string) => {
+const customizeAIAdvisor = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/customize_ai_advisor`, { custom_info });
+    const response = await axios.post(`${BACKEND_URL}/ai_advior/customize_ai_advisor`, data);
     return response.data;
   } catch (error) {
     console.log('Error customizing AI Advisor:', error);
@@ -12,12 +12,9 @@ const customizeAIAdvisor = async (custom_info: string) => {
 };
 
 // Send a basic AI Advisor message of type 'text'
-const sendAIAdvisorTextMessage = async (message: object) => {
+const sendAIAdvisorTextMessage = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, {
-      type: 'text',
-      message: JSON.stringify(message),
-    });
+    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, data);
     return response.data;
   } catch (error) {
     console.log('Error sending text message to AI Advisor:', error);
@@ -25,12 +22,16 @@ const sendAIAdvisorTextMessage = async (message: object) => {
 };
 
 // Send a basic AI Advisor message of type 'statistic_doc_id'
-const sendAIAdvisorStatisticDocId = async (docId: string) => {
+// {
+//   "email": "player@example.com",
+//   "user_type": "player",
+//   "type": "statistic_doc_id",
+//   "message": "67826a86889979335402a7c3"
+// }
+
+const sendAIAdvisorStatisticDocId = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, {
-      type: 'statistic_doc_id',
-      message: docId,
-    });
+    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, data);
     return response.data;
   } catch (error) {
     console.log('Error sending statistic_doc_id message to AI Advisor:', error);

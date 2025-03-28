@@ -4,6 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
+import { customizeAIAdvisor } from '@/services/aiAdvisorService';
 
 const DateTimePickerComponent = Platform.OS === 'web' ? null : DateTimePicker;
 
@@ -64,6 +65,7 @@ export default function RegisterScreen() {
         });
         
         if (response.data.redirect) {
+          setUpProfile();
           router.push('/login');
         }
       } else if (userType === 'management') {
@@ -86,6 +88,7 @@ export default function RegisterScreen() {
         });
         
         if (response.data.redirect) {
+          setUpProfile();
           router.push('/login');
         }
       } else {
@@ -118,6 +121,7 @@ export default function RegisterScreen() {
         });
         
         if (response.data.redirect) {
+          setUpProfile();
           router.push('/login');
         }
       }
@@ -138,6 +142,37 @@ export default function RegisterScreen() {
 
   const showDatepicker = () => {
     setShowDatePicker(true);
+  };
+
+  const setUpProfile = () => {
+    const customizeAIAdvisorProfile = async (custom_message: string) => {
+      try {
+        const data = {
+          email: email,
+          user_type: userType,
+          custom_info: custom_message
+        };
+        
+        await customizeAIAdvisor(data);
+      
+      }
+      catch (error) {
+        console.error('Error setting up profile:', error);
+      }
+      
+    }
+
+    if (userType === 'player') {
+      const custom_message = `My name is ${fullName}, I'm a player in team ${teamId}. My position is ${role}, I'm ${height}cm tall, and I weigh ${weight}kg.`
+      customizeAIAdvisorProfile(custom_message);
+    }
+    else if (userType === 'management') {
+      const custom_message = `My name is ${fullName}, I'm a management member of team ${teamId}.`;
+      customizeAIAdvisorProfile(custom_message);
+    }
+    else {
+
+    }
   };
 
   return (
@@ -242,7 +277,6 @@ export default function RegisterScreen() {
                 borderColor: 'gray',
                 borderWidth: 1,
                 marginBottom: 12,
-                paddingHorizontal: 8,
                 width: '100%'
               }}
               value={birthDate}

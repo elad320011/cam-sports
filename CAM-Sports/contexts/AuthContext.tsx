@@ -3,10 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter, useSegments } from 'expo-router';
 import { setAuthToken } from '@/utils/axios';
+import { BACKEND_URL } from '@/globalVariables';
 
 interface UserInfo {
   username: string;
+  email: string;
   user_type: string;
+  team_id?: string;
+  full_name?: string;
 }
 
 interface AuthContextType {
@@ -72,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const refresh_token = await AsyncStorage.getItem('refresh_token');
       if (!refresh_token) return false;
 
-      const response = await axios.post('http://127.0.0.1:5000/auth/refresh', {}, {
+      const response = await axios.post(`${BACKEND_URL}/auth/refresh`, {}, {
         headers: { Authorization: refresh_token }
       });
 
