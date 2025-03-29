@@ -42,7 +42,7 @@ const temp: PlanProps[] = [
 ];
 
 export default function Training() {
-  const { logout, userInfo } = useAuth();
+  const { logout, user } = useAuth();
   const [plans, setPlans] = useState<PlanProps[]>([]);
   const [program, setProgram] = useState<PlanProps>();
   const [displayProgram, setDisplayProgram] = useState<any>({value: null, label: "Select a program"});
@@ -53,7 +53,7 @@ export default function Training() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axiosInstance.get(`${BACKEND_URL}/training_plans/team_id/${userInfo?.team_id}`);
+        const response = await axiosInstance.get(`${BACKEND_URL}/training_plans/team_id/${user?.team_id}`);
         const responsePlans = JSON.parse(response.data.plans);
         setPlans(responsePlans);
       } catch (error) {

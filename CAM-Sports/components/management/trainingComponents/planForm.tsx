@@ -26,7 +26,7 @@ interface Section {
 }
 
 const PlanForm = (props: any) => {
-  const { logout, userInfo } = useAuth();
+  const { logout, user } = useAuth();
   const setAddMode = props.setAddMode;
   const [planName, setPlanName] = useState('');
   const [planDescription, setPlanDescription] = useState('');
@@ -139,7 +139,7 @@ const PlanForm = (props: any) => {
     const formData = {
       name: planName, // Backend expects 'name' for the plan
       description: planDescription, // Backend expects 'description' for the plan
-      team_id: userInfo?.team_id,
+      team_id: user?.team_id,
       plan_sections: formattedSections,
     };
     console.log('Form Data:', formData);
