@@ -1,5 +1,6 @@
 from flask import request, jsonify
 from models.team import Team;
+from models.player import Player;
 
 def get_team_by_code(request):
     team_code = request.args.get('team_code')
@@ -11,10 +12,42 @@ def get_team_by_code(request):
         return jsonify({"error": "Team not found"}), 404
 
     team_dict = team.to_mongo().to_dict()
-    team_dict['_id'] = str(team_dict['_id'])  
+    team_dict['_id'] = str(team_dict['_id'])
 
     return jsonify(team_dict), 200
 
+def get_team_by_name(request):
+    team_name = request.args.get('team_name')
+    if not team_name:
+        return jsonify({"error": "team_name is required"}), 400
+
+    team = Team.objects(name=team_name).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    team_dict = team.to_mongo().to_dict()
+    team_dict['_id'] = str(team_dict['_id'])
+
+    return jsonify(team_dict), 200
+
+def get_players_objects(request):
+    team_name = request.args.get('team_name')
+    if not team_name:
+        return jsonify({"error": "team_name is required"}), 400
+
+    team = Team.objects(name=team_name).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    players = []
+    for player in team.players:
+
+        player = Player.objects(email=player).first()
+        players.append(player.to_json())
+
+    print(players)
+
+    return jsonify({"players": players}), 200
 
 def create_team(request):
     data = request.get_json()
@@ -31,7 +64,7 @@ def create_team(request):
         players=players
     )
     team_object.save()
-    
+
     return jsonify({"message": "Created team successfully"})
 
 

@@ -4,7 +4,7 @@ Content-Type: application/json
 
 {
   "name": "Cool Workout",
-  "team_id": "your_team_id",
+  "team_id": "ELADS FANS",
   "description": "This plan is designed to improve your hitting skills",
   "plan_sections": [{
       "name": "Hitting lines",

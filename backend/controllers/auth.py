@@ -21,36 +21,36 @@ def create_tokens(user_id, user_type):
         'user_type': user_type,
         'exp': datetime.utcnow() + ACCESS_TOKEN_EXPIRE  # Remove .datetime
     }, JWT_SECRET, algorithm='HS256')
-    
+
     refresh_token = jwt.encode({
         'user_id': str(user_id),
         'user_type': user_type,
         'exp': datetime.utcnow() + REFRESH_TOKEN_EXPIRE  # Remove .datetime
     }, JWT_SECRET, algorithm='HS256')
-    
+
     return access_token, refresh_token
 
 def login():
     data = request.get_json()
     email = data.get('email', '').lower()
     password = data.get('password')
-    
+
     if not email or not password:
         return jsonify({"message": "Email and password are required"}), 400
-    
+
     # Try to find user in each collection
     user = None
     user_type = None
     team_id = None
     full_name = None
-    
+
     # Check Player collection
     user = Player.objects(email=email).first()
     if user and check_password_hash(user.password, password):
         user_type = 'player'
         team_id = user.team_id
         full_name = user.full_name
-    
+
     # Check Management collection
     if not user:
         user = Management.objects(email=email).first()
@@ -65,7 +65,7 @@ def login():
 
     if user and user_type:
         access_token, refresh_token = create_tokens(str(user.id), user_type)
-        
+
         # Get team name for the response
         team_id = None
         if user.team_id:
@@ -93,7 +93,7 @@ def generate_team_code(length=6):
     while True:
         # Generate a random code (uppercase letters and numbers)
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-        
+
         # Check if this code already exists
         if not Team.objects(code=code).first():  # Changed from team_id to code
             return code
@@ -106,7 +106,7 @@ def register():
 
     if user_type == 'player':
         if not all([email, data.get('full_name'), data.get('password'),
-                   data.get('role'), data.get('birth_date'), 
+                   data.get('role'), data.get('birth_date'),
                    data.get('weight'), data.get('height'), data.get('team_code')]):
             return jsonify({"message": "All fields are required"}), 400
 
@@ -178,7 +178,7 @@ def register():
 
         # Generate a unique team code
         team_code = generate_team_code()
-        
+
         try:
             team = Team(
                 name=data['team_id'],  # Save as team name
@@ -201,12 +201,12 @@ def refresh():
     refresh_token = request.headers.get('Authorization')
     if not refresh_token:
         return jsonify({"message": "Refresh token required"}), 401
-    
+
     try:
         payload = jwt.decode(refresh_token, JWT_SECRET, algorithms=['HS256'])
         user_id = payload['user_id']
         new_access_token, new_refresh_token = create_tokens(user_id, payload['user_type'])
-        
+
         return jsonify({
             "access_token": new_access_token,
             "refresh_token": new_refresh_token
@@ -222,7 +222,7 @@ def require_auth(f):
         auth_header = request.headers.get('Authorization')
         if not auth_header:
             return jsonify({"message": "No token provided"}), 401
-            
+
         try:
             # Remove 'Bearer ' prefix if present
             token = auth_header.replace('Bearer ', '')
@@ -233,5 +233,5 @@ def require_auth(f):
             return jsonify({"message": "Token has expired"}), 401
         except jwt.InvalidTokenError:
             return jsonify({"message": "Invalid token"}), 401
-            
+
     return decorated
