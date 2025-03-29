@@ -8,8 +8,11 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
+  Dimensions,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Calendar, DateData } from 'react-native-calendars';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   createEvent,
   deleteEvent,
@@ -19,7 +22,8 @@ import {
   updateEvent,
 } from '@/services/calendarService';
 import { Collapsible } from "../Collapsible";
-import DateTimePicker from '@react-native-community/datetimepicker';
+
+const { height: windowHeight } = Dimensions.get('window');
 
 interface Attendee {
   email: string;
@@ -39,7 +43,6 @@ interface MarkedDates {
   [key: string]: { marked?: boolean; dotColor?: string; selected?: boolean };
 }
 
-// Custom button component to mimic Apple style
 const AppButton = ({
   title,
   onPress,
@@ -75,7 +78,8 @@ const GameCalendar = () => {
   const [attendanceVisible, setAttendanceVisible] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-  
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
   const teamCalendarId = userInfo?.calendar_id;
 
@@ -85,8 +89,8 @@ const GameCalendar = () => {
 
   const fetchEvents = async () => {
     const fetchedEvents = await listEvents(teamCalendarId);
+    console.log(fetchedEvents)
     setEvents(fetchedEvents);
-    console.log(fetchedEvents);
     const newMarkedDates: MarkedDates = {};
     fetchedEvents.forEach((event: CalendarEvent) => {
       const date = event.start.dateTime?.split('T')[0] || event.start.date;
@@ -153,7 +157,21 @@ const GameCalendar = () => {
     setEditEventVisible(false);
     fetchEvents();
     setEventDetailsVisible(false);
+    setOpenDropdownId(null);
   };
+
+  const deleteEvents = async (eventId: string) => {
+    await deleteEvent(teamCalendarId, eventId);
+    
+    const updatedEvents = events.filter(event => event.id !== eventId);
+    setEvents(updatedEvents);
+    
+    const updatedSelectedDayEvents = selectedDayEvents.filter(event => event.id !== eventId);
+    setSelectedDayEvents(updatedSelectedDayEvents);
+    
+    setOpenDropdownId(null);
+    fetchEvents();
+  }
 
   return (
     <Collapsible title="Calendar">
@@ -181,8 +199,8 @@ const GameCalendar = () => {
           }}
         />
 
-        {/* Event Details Modal as an overlay */}
-        <Modal visible={eventDetailsVisible} transparent={true} animationType="fade">
+        {/* Event Details Modal */}
+        <Modal visible={eventDetailsVisible} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
               <ScrollView>
@@ -193,49 +211,92 @@ const GameCalendar = () => {
                 ) : (
                   selectedDayEvents.map((event) => (
                     <View key={event.id} style={styles.eventItem}>
-                      <Text style={styles.eventTitle}>{event.summary}</Text>
-                      <Text style={styles.eventDate}>
-                        {event.start.dateTime || event.start.date}
-                      </Text>
-                      <Text style={styles.eventDescription}>
-                        {event.description || 'No description'}
-                      </Text>
-                      {userInfo.user_type === 'management' && (
-                        <View style={styles.managementButtons}>
-                          <AppButton
-                            title="Edit"
+                      
+                      <View style={styles.eventHeader}>
+                        <Text style={styles.eventTitle}>{event.summary}</Text>
+                        {userInfo.user_type === 'management' && (
+                          <TouchableOpacity
+                            onPress={() =>
+                              setOpenDropdownId(
+                                openDropdownId === event.id ? null : event.id
+                              )
+                            }
+                            style={styles.moreButton}
+                          >
+                            <Ionicons
+                              name="ellipsis-horizontal-outline"
+                              size={24}
+                              color="#e88e61"
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+
+                      {openDropdownId === event.id && (
+                        <View style={styles.dropdownContainer}>
+                          <TouchableOpacity
                             onPress={() => {
                               setCurrentEvent(event);
+                              setOpenDropdownId(null);
+                              setEditEventVisible(true);
                               setEventForm({
                                 summary: event.summary,
                                 description: event.description || '',
-                                startTime: new Date(event.start.dateTime || event.start.date || Date.now()),
-                                endTime: new Date(event.end.dateTime || event.end.date || Date.now()),
+                                startTime: new Date(
+                                  event.start.dateTime ||
+                                    event.start.date ||
+                                    Date.now()
+                                ),
+                                endTime: new Date(
+                                  event.end.dateTime ||
+                                    event.end.date ||
+                                    Date.now()
+                                ),
                               });
-                              setEditEventVisible(true);
                             }}
-                            containerStyle={styles.smallButton}
-                          />
-                          <AppButton
-                            title="Delete"
-                            onPress={() => {
-                              deleteEvent(teamCalendarId, event.id);
-                              fetchEvents();
-                            }}
-                            containerStyle={styles.smallButton}
-                          />
+                            style={styles.dropdownItem}
+                          >
+                            <Ionicons
+                              name="create-outline"
+                              size={24}
+                              color="#e88e61"
+                            />
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => { deleteEvents(event.id) }}
+                            style={styles.dropdownItem}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={24}
+                              color="#FF3B30"
+                            />
+                          </TouchableOpacity>
                         </View>
                       )}
-                      <AppButton
-                        title="RSVP"
-                        onPress={() => handleRSVP(event.id)}
-                        containerStyle={styles.smallButton}
-                      />
-                      <AppButton
-                        title="Attendance"
-                        onPress={() => handleViewAttendance(event.id)}
-                        containerStyle={styles.smallButton}
-                      />
+
+                      <Text style={styles.eventDate}>
+                        {event.start.dateTime || event.start.date}
+                      </Text>
+
+                      <Text style={styles.eventDescription}>
+                        {event.description || 'No description'}
+                      </Text>
+
+                      <View style={styles.actionButtons}>
+                        <AppButton
+                          title="RSVP"
+                          onPress={() => handleRSVP(event.id)}
+                          containerStyle={styles.smallButton}
+                        />
+                        <AppButton
+                          title="Attendance"
+                          onPress={() => handleViewAttendance(event.id)}
+                          containerStyle={styles.smallButton}
+                        />
+                      </View>
+
                     </View>
                   ))
                 )}
@@ -244,16 +305,18 @@ const GameCalendar = () => {
                   onPress={() => setEventDetailsVisible(false)}
                   containerStyle={styles.closeButton}
                 />
+
               </ScrollView>
             </View>
           </View>
         </Modal>
 
-        {/* Create/Edit Event Modal as an overlay */}
+        {/* Create/Edit Event Modal */}
         {(createEventVisible || editEventVisible) && (
-          <Modal visible={true} transparent={true} animationType="fade">
+          <Modal visible={true} transparent animationType="fade">
             <View style={styles.modalOverlay}>
               <View style={styles.modalCard}>
+
                 <TextInput
                   placeholder="Event Summary"
                   value={eventForm.summary}
@@ -263,6 +326,7 @@ const GameCalendar = () => {
                   style={styles.input}
                   placeholderTextColor="#888"
                 />
+
                 <TextInput
                   placeholder="Description"
                   value={eventForm.description}
@@ -271,17 +335,25 @@ const GameCalendar = () => {
                   }
                   style={[styles.input, { height: 80 }]}
                   placeholderTextColor="#888"
-                  multiline={true}
+                  multiline
                 />
+
                 {/* Start Time Picker */}
                 <View style={styles.timePickerRow}>
                   <Text style={styles.timePickerLabel}>Start Time:</Text>
-                  <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timePickerButton}>
+                  <TouchableOpacity
+                    onPress={() => setShowStartPicker(true)}
+                    style={styles.timePickerButton}
+                  >
                     <Text style={styles.timePickerText}>
-                      {eventForm.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {eventForm.startTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </Text>
                   </TouchableOpacity>
                 </View>
+
                 {showStartPicker && (
                   <DateTimePicker
                     value={eventForm.startTime}
@@ -303,12 +375,19 @@ const GameCalendar = () => {
                 {/* End Time Picker */}
                 <View style={styles.timePickerRow}>
                   <Text style={styles.timePickerLabel}>End Time:</Text>
-                  <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timePickerButton}>
+                  <TouchableOpacity
+                    onPress={() => setShowEndPicker(true)}
+                    style={styles.timePickerButton}
+                  >
                     <Text style={styles.timePickerText}>
-                      {eventForm.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {eventForm.endTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </Text>
                   </TouchableOpacity>
                 </View>
+
                 {showEndPicker && (
                   <DateTimePicker
                     value={eventForm.endTime}
@@ -332,14 +411,17 @@ const GameCalendar = () => {
                   onPress={submitEventForm}
                   containerStyle={styles.modalButton}
                 />
+
                 <AppButton
                   title="Cancel"
                   onPress={() => {
                     setCreateEventVisible(false);
                     setEditEventVisible(false);
+                    setOpenDropdownId(null);
                   }}
                   containerStyle={styles.modalButton}
                 />
+
               </View>
             </View>
           </Modal>
@@ -363,7 +445,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F2F7',
     padding: 10,
-    paddingBottom: 80, // Extra space to prevent the button from overlapping the calendar
+    paddingBottom: 80,
   },
   modalOverlay: {
     flex: 1,
@@ -373,6 +455,7 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '90%',
+    height: windowHeight * 0.7,
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
@@ -393,26 +476,53 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   eventTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
+  },
+  moreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  moreText: {
+    marginLeft: 4,
+    fontSize: 16,
+    color: '#e88e61',
+  },
+  dropdownContainer: {
+    flexDirection: 'column',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 8,
+    gap: 15,
+    marginVertical: 4,
+    position: 'absolute',
+    right: 0,
+    top: 40,
+  },
+  dropdownItem: {
+    marginHorizontal: 8,
   },
   eventDate: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 4,
+    marginVertical: 4,
   },
   eventDescription: {
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
   },
-  managementButtons: {
+  actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 8,
+    justifyContent: 'flex-end',
+    margin: 'auto'
   },
   input: {
     borderWidth: 1,
@@ -507,228 +617,3 @@ const styles = StyleSheet.create({
 });
 
 export default GameCalendar;
-
-
-// import React, { useEffect, useState } from 'react';
-
-// // Components
-// import { View, Text, Button, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
-// import { Calendar } from 'react-native-calendars';
-
-// // Services
-// import { getCalendarByID, listCalendars, shareCalendar, createEvent, getEvent, listEvents, updateEvent, deleteEvent,
-//   rsvpEvent,
-//   showAttendance as backendShowAttendance,
-//   removeRSVP
-//  } from '@/services/calendarService';
-
-// // Define types for Calendar Events and Attendees
-// interface Attendee {
-//   email: string;
-//   responseStatus: string;
-//   self?: boolean;
-// }
-
-// interface CalendarEvent {
-//   id: string;
-//   summary: string;
-//   start: {
-//     dateTime?: string;
-//     date?: string;
-//   };
-//   end: {
-//     dateTime?: string;
-//     date?: string;
-//   };
-//   attendees?: Attendee[];
-// }
-
-// export default function GameCalendar(): JSX.Element {
-
-//   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-//   const [events, setEvents] = useState<CalendarEvent[]>([]);
-//   const [attendanceModalVisible, setAttendanceModalVisible] = useState<boolean>(false);
-//   const [currentAttendees, setCurrentAttendees] = useState<Attendee[]>([]);
-
-//   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}'); // Change ME
-//   // const { userInfo } = useAuth();
-
-//   const team_calendar_id = userInfo?.calendar_id
-
-//   useEffect(() => {
-//     (async () => {
-//       console.log(await listCalendars());
-//       console.log(await getCalendarByID(team_calendar_id));
-//     })();
-
-//     // Fetch all events
-//     fetchEvents();
-//   }, []);
-
-
-//   // Fetch events for the selected day
-//   const fetchEvents = async () => {
-//     try {
-//       // For now, always use the default calendar
-//       const fetchedEvents = await listEvents(team_calendar_id);
-      
-//       console.log('Fetched events: ', fetchedEvents);
-//       setEvents(fetchedEvents);
-
-//     } catch (error) {
-//       console.log('Failed to fetch events: ', error);
-//     }
-//   };
-
-//   // Create an event using the backend
-//   const handleCreateEvent = async (): Promise<void> => {
-//     try {
-//       // Create a test event: summary "Test Event", starting now and ending in 1 hour.
-//       const startTime = new Date();
-//       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-//       const eventData = {
-//         calendar_id: team_calendar_id,
-//         summary: "Test Event",
-//         start: startTime.toISOString(),
-//         end: endTime.toISOString(),
-//         description: "This is a test event."
-//       };
-
-//       const newEvent = await createEvent(eventData);
-      
-//       Alert.alert("Success", "Event created with id: " + newEvent.id);
-//       fetchEvents(); // Refresh the event list
-    
-//     } catch (error) {
-//       Alert.alert("Error", "Failed to create event.");
-//     }
-//   };
-  
-//   // Delete an event using the backend
-//   const handleDeleteEvent = async (): Promise<void> => {
-//     try {
-//       if (events.length === 0) {
-//         Alert.alert("No Event", "No event available to delete.");
-//         return;
-//       }
-      
-//       // For demonstration, delete the first event in the list.
-//       const eventToDelete = events[0];
-//       await deleteEvent(team_calendar_id, eventToDelete.id);
-      
-//       Alert.alert("Success", "Event deleted.");
-//       fetchEvents(); // Refresh the event list
-
-//     } catch (error) {
-//       Alert.alert("Error", "Failed to delete event.");
-//     }
-//   };
-
-//   // Edit an event using the backend
-//   const handleEditEvent = async (): Promise<void> => {
-//     try {
-//       if (events.length === 0) {
-//         Alert.alert("No Event", "No event available to edit.");
-//         return;
-//       }
-//       // For demonstration, update the first event's summary.
-//       const eventToEdit = events[0];
-//       const updatedData = {
-//         calendar_id: team_calendar_id,
-//         event_id: eventToEdit.id,
-//         summary: eventToEdit.summary + " (Updated)",
-//         // Check each field independently to support both dateTime and date formats.
-//         start: eventToEdit.start.dateTime ? eventToEdit.start.dateTime : eventToEdit.start.date,
-//         end: eventToEdit.end.dateTime ? eventToEdit.end.dateTime : eventToEdit.end.date
-//       };
-  
-//       const updatedEvent = await updateEvent(updatedData);
-//       Alert.alert("Success", "Event updated with id: " + updatedEvent.id);
-//       fetchEvents(); // Refresh the event list
-//     } catch (error) {
-//       Alert.alert("Error", "Failed to update event.");
-//     }
-//   };
-  
-  
-//   // RSVP for an event using the backend.
-//   const handleRSVP = async (eventId: string): Promise<void> => {
-//     // try {
-//     //   const userEmail = DEFAULT_EMAIL_ID; // Replace with the actual user email.
-//     //   const response = await rsvpEvent(team_calendar_id, eventId, userEmail);
-
-//     //   if (response && response.status === 'success') {
-//     //     Alert.alert("RSVP Success", "Your RSVP has been recorded.");
-//     //     fetchEvents(); // Refresh the event list.
-//     //   } else {
-//     //     Alert.alert("RSVP Error", "Failed to record RSVP.");
-//     //   }
-//     // } catch (error) {
-//     //   Alert.alert("Error", "An error occurred while sending RSVP.");
-//     // }
-//   };
-  
-//   // Show attendance by calling the backend and updating the modal.
-//   const handleShowAttendance = async (eventId: string): Promise<void> => {
-//     try {
-//       const response = await backendShowAttendance(team_calendar_id, eventId);
-//       if (response && response.status === 'success') {
-//         setCurrentAttendees(response.attendees);
-//         setAttendanceModalVisible(true);
-//       } else {
-//         Alert.alert("Error", "Failed to fetch attendance.");
-//       }
-//     } catch (error) {
-//       Alert.alert("Error", "An error occurred while fetching attendance.");
-//     }
-//   };
-
-//   // Handle calendar day selection
-//   const onDayPress = (day: { dateString: string }): void => {
-//     setSelectedDate(day.dateString);
-//     fetchEvents();
-//   };
-
-//   return (
-//     <View style={{ flex: 1, padding: 10 }}>
-  
-//       <Calendar 
-//         onDayPress={onDayPress} 
-//         markedDates={{ [selectedDate]: { selected: true } }} 
-//         style={{ marginVertical: 10 }}
-//       />
-
-//       <FlatList
-//         data={events}
-//         keyExtractor={(item) => item.id}
-//         renderItem={({ item }) => (
-//           <View style={{ paddingVertical: 10, borderBottomWidth: 1 }}>
-//             <Text style={{ fontWeight: 'bold' }}>{item.summary}</Text>
-//             <Text>{item.start.dateTime || item.start.date}</Text>
-//             <Button title="RSVP" onPress={() => handleRSVP(item.id)} />
-//             <Button title="View Attendance" onPress={() => handleShowAttendance(item.id)} />
-//           </View>
-//         )}
-//       />
-
-//       <Button title="Create Event" onPress={handleCreateEvent} />
-//       <Button title="Edit Event" onPress={handleEditEvent} />
-//       <Button title="Delete Event" onPress={handleDeleteEvent} />
-
-//       {/* Modal for Attendance List */}
-//       <Modal visible={attendanceModalVisible} animationType="slide">
-//         <View style={{ flex: 1, padding: 20 }}>
-//           <Text style={{ fontSize: 18, marginBottom: 10 }}>Attendance List</Text>
-//           <FlatList
-//             data={currentAttendees}
-//             keyExtractor={(item, index) => item.email + index.toString()}
-//             renderItem={({ item }) => (
-//               <Text>{item.email} - {item.responseStatus}</Text>
-//             )}
-//           />
-//           <Button title="Close" onPress={() => setAttendanceModalVisible(false)} />
-//         </View>
-//       </Modal>
-//     </View>
-//   );
-// }

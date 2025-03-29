@@ -94,7 +94,7 @@ def list_events():
             return jsonify({"status": "error", "message": "Missing 'calendar_id' parameter"}), 400
         
         service = get_calendar_service()
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        # now = datetime.datetime.utcnow().isoformat() + 'Z'
         
         events_result = service.events().list(
             calendarId=calendar_id,
