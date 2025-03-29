@@ -109,6 +109,7 @@ def recursive_update(original, updates):
 def update_game_statistics(request):
     data = request.get_json()
     id = data.get('id')
+    print("here", data)
 
     if not id:
         return jsonify({"error": "id is required"}), 400
@@ -126,6 +127,7 @@ def update_game_statistics(request):
                 if key == 'sets_scores':
                     # Convert sets_scores to SetScore embedded documents with string keys
                     value = {str(k): SetScore(**v) for k, v in value.items()}
+                    game_statistics.sets_scores = value
                 elif key == 'team_stats':
                     # Convert team_stats to PlayerStats embedded documents
                     for player_id, player_stats in value.items():
@@ -147,4 +149,5 @@ def update_game_statistics(request):
     except GameStatistics.DoesNotExist:
         return jsonify({"error": "Game statistics not found"}), 404
     except Exception as e:
+        print(e)
         return jsonify({"error": str(e)}), 500
