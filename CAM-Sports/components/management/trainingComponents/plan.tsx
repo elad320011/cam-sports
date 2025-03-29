@@ -33,12 +33,12 @@ export default function Plan(props: PlanProps) {
         <View>
             <Text style={styles.plan_description}>{props.description}</Text>
             {props.plan_sections.map((item, index) => (
-                <View style={styles.section}>
+                <View style={styles.section} key={`section-${index}`}>
                     <Text style={styles.drill_name}>{item.name}</Text>
                     <Text style={styles.drill_description}>{item.description}</Text>
 
-                    {item.sources.map((source, index) => (
-                        <View>
+                    {item.sources.map((source, sourceIndex) => (
+                        <View key={`source-${index}-${sourceIndex}`}>
                         {source.source_type === "Video" && (
                                 <YoutubePlayer
                                     height={200}
