@@ -1,103 +1,102 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { useRouter, useSegments } from 'expo-router';
 import { setAuthToken } from '@/utils/axios';
-import { BACKEND_URL } from '@/globalVariables';
+import axiosInstance from '@/utils/axios';
 
-interface UserInfo {
-  username: string;
+type User = {
   email: string;
+  full_name: string;
   user_type: string;
-  team_id?: string;
-  full_name?: string;
-  calendar_id?: string;
-}
+  calendar_id: string;
+  team_id: string;
+};
 
-interface AuthContextType {
-  isAuthenticated: boolean;
-  userInfo: UserInfo | null;
-  login: (data: { access_token: string; refresh_token: string; user: UserInfo }) => Promise<void>;
+type AuthData = {
+  access_token: string;
+  refresh_token: string;
+  user: User;
+};
+
+type AuthContextType = {
+  user: User | null;
+  login: (data: AuthData) => Promise<void>;
   logout: () => Promise<void>;
-  refreshTokens: () => Promise<boolean>;
-}
+  isLoading: boolean;
+};
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const router = useRouter();
-  const segments = useSegments();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check authentication and redirect accordingly
-    const inAuthGroup = segments[0] === '(auth)';
-    
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/login');
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/');
-    }
-  }, [isAuthenticated, segments]);
-
-  useEffect(() => {
-    // Check for existing token on app start
-    const initializeAuth = async () => {
-      const token = await AsyncStorage.getItem('access_token');
-      if (token) {
-        setAuthToken(token);
-        setIsAuthenticated(true);
-      }
-    };
-    initializeAuth();
+    loadStoredAuth();
   }, []);
 
-  const login = async (data: { access_token: string; refresh_token: string; user: UserInfo }) => {
-    await AsyncStorage.setItem('access_token', data.access_token);
-    await AsyncStorage.setItem('refresh_token', data.refresh_token);
-    await AsyncStorage.setItem('userInfo', JSON.stringify(data.user));
-    setAuthToken(data.access_token);
-    setUserInfo(data.user);
-    setIsAuthenticated(true);
+  const loadStoredAuth = async () => {
+    try {
+      const [storedUser, accessToken, refreshToken] = await Promise.all([
+        AsyncStorage.getItem('user'),
+        AsyncStorage.getItem('access_token'),
+        AsyncStorage.getItem('refresh_token')
+      ]);
+      
+      if (storedUser && accessToken) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setAuthToken(accessToken);
+      }
+    } catch (error) {
+      console.error('Error loading stored auth:', error);
+      // Clear any partially stored data on error
+      await AsyncStorage.multiRemove(['user', 'access_token', 'refresh_token']);
+      setUser(null);
+      setAuthToken(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login = async (data: AuthData) => {
+    try {
+      await AsyncStorage.setItem('access_token', data.access_token);
+      await AsyncStorage.setItem('refresh_token', data.refresh_token);
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      
+      setAuthToken(data.access_token);
+      setUser(data.user);
+    } catch (error) {
+      console.error('Error storing auth data:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('access_token');
-    await AsyncStorage.removeItem('refresh_token');
-    await AsyncStorage.removeItem('userInfo');
-    setAuthToken(null);
-    setUserInfo(null);
-    setIsAuthenticated(false);
-    router.replace('/login');
-  };
-
-  const refreshTokens = async (): Promise<boolean> => {
     try {
-      const refresh_token = await AsyncStorage.getItem('refresh_token');
-      if (!refresh_token) return false;
-
-      const response = await axios.post(`${BACKEND_URL}/auth/refresh`, {}, {
-        headers: { Authorization: refresh_token }
-      });
-
-      await login(response.data);
-      return true;
+      await AsyncStorage.removeItem('access_token');
+      await AsyncStorage.removeItem('refresh_token');
+      await AsyncStorage.removeItem('user');
+      
+      setAuthToken(null);
+      setUser(null);
     } catch (error) {
-      await logout();
-      return false;
+      console.error('Error during logout:', error);
+      throw error;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userInfo, login, logout, refreshTokens }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
-}; 
+} 
