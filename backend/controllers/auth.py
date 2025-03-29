@@ -32,7 +32,7 @@ def create_tokens(user_id, user_type):
 
 def login():
     data = request.get_json()
-    email = data.get('email', '').lower()  # Changed from username to email
+    email = data.get('email', '').lower()
     password = data.get('password')
     
     if not email or not password:
@@ -58,16 +58,16 @@ def login():
             user_type = 'management'
             team_id = user.team_id
             full_name = user.full_name
-    
+
     # Get calendar id for team
-    team = Team.objects(team_id=team_id).first()
+    team = Team.objects(id=team_id).first()
     calendar_id = team.calendar_id
 
     if user and user_type:
         access_token, refresh_token = create_tokens(str(user.id), user_type)
         
         # Get team name for the response
-        team_name = None
+        team_id = None
         if user.team_id:
             team = Team.objects(id=user.team_id).first()
             if team:
@@ -81,7 +81,7 @@ def login():
                 "email": email,
                 "full_name": full_name,
                 "user_type": user_type,
-                "calendar_id": calendar_id
+                "calendar_id": calendar_id,
                 "team_id": team_name  # Send team name instead of ID
             }
         })
