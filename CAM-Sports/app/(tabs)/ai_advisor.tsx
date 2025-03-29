@@ -55,7 +55,7 @@ export default function AIAdvisor() {
   const flatListRef = useRef<FlatList>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
-  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}'); // Change ME
+  const userInfo = JSON.parse(localStorage.getItem('user') || '{}'); // Change ME
   // const { userInfo } = useAuth();
 
   // Get team game statistics

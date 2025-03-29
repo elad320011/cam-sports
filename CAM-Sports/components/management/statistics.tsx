@@ -132,7 +132,7 @@ type Row = {
 
 export default function GameStatistics() {
 
-    const { logout, userInfo } = useAuth();
+    const { logout, user } = useAuth();
     const [allStats, setAllStats] = useState<GameStats[] | null>(null);
     const [addMode, setAddMode] = useState(false);
     const [currentStat, setCurrentStat] = useState<GameStats | null>(null);
@@ -156,7 +156,7 @@ export default function GameStatistics() {
             setLoading(true);
             setError(null);
             try {
-                const response = await axiosInstance.get(`${BACKEND_URL}/game_statistics/team_id/${userInfo?.team_id}`);
+                const response = await axiosInstance.get(`${BACKEND_URL}/game_statistics/team_id/${user?.team_id}`);
                 const responseData = JSON.parse(response.data.stats)
                 console.log("API Response:", response.data); // Inspect the response
 

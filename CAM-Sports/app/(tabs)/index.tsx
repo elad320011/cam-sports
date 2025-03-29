@@ -11,7 +11,7 @@ import Training from "@/components/management/training"
 import GameStatistics from "@/components/management/statistics"
 
 export default function Management() {
-  const { logout, userInfo, user, isLoading } = useAuth();
+  const { logout, user, isLoading } = useAuth();
 
   if (isLoading) {
     return null; // Or a loading spinner

@@ -80,7 +80,7 @@ const GameCalendar = () => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
   const teamCalendarId = userInfo?.calendar_id;
 
   useEffect(() => {
