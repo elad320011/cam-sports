@@ -38,6 +38,7 @@ const PlanForm = (props: any) => {
       sectionSources: [{ id: Date.now(), source_type: 'Image', source_url: '' }],
     },
   ]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAddSection = () => {
     setPlanSections([
@@ -151,8 +152,7 @@ const PlanForm = (props: any) => {
       const response = await axiosInstance.post('/training_plans/create', formData);
 
       if (response.status === 201) {
-
-        // cleanup the form
+        // Cleanup the form
         setPlanName('');
         setPlanDescription('');
         setPlanSections([
@@ -164,18 +164,26 @@ const PlanForm = (props: any) => {
           },
         ]);
 
-        // go back to the list view
+        // Go back to the list view
         setAddMode(false);
       }
-      // Optionally, you can navigate the user or show a success message here
     } catch (error: any) {
-      console.error('Error creating training plan:', error.response?.data || error.message);
-      // Optionally, you can show an error message to the user
+      if ( error.response?.data?.message === 'Training plan with this name already exists') {
+        // Set the error message
+        console.error('Training plan with this name already exists');
+        setErrorMessage('A training plan with this name already exists. Please choose a different name.');
+      } else {
+        console.error('Error creating training plan:', error.response?.data || error.message);
+      }
     }
   };
 
   return (
     <ScrollView style={styles.container}>
+      {errorMessage && (
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      )}
+
       <Text style={styles.label}>Plan Name:</Text>
       <TextInput
         style={styles.input}
@@ -196,7 +204,7 @@ const PlanForm = (props: any) => {
 
       <Text style={styles.sectionTitle}>Plan Sections
         <TouchableOpacity style={styles.addButton} onPress={handleAddSection}>
-          <Text style={{textAlign: 'right'}}>+</Text>
+          <Text style={{ textAlign: 'right' }}>+</Text>
         </TouchableOpacity>
       </Text>
 
@@ -235,7 +243,7 @@ const PlanForm = (props: any) => {
           />
 
           <Text style={styles.subTitle}>Section Sources:
-              <TouchableOpacity
+            <TouchableOpacity
               style={styles.addButtonSmall}
               onPress={() => handleAddSource(section.id)}
             >
@@ -430,6 +438,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 3,
     color: '#777',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 10,
   },
 });
 

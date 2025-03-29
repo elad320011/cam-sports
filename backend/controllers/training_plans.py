@@ -14,6 +14,10 @@ def create_training_plan(request):
     description = data.get('description')
     plan_sections_data = data.get('plan_sections', [])
 
+    # check if a training plan already exists with this name
+    if TrainingPlan.objects(team_id=team_id, name=name):
+        return jsonify({"message": "Training plan with this name already exists"}), 400
+
     # create plan sections
     plan_sections = []
     for section in plan_sections_data:
