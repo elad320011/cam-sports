@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-import { BACKEND_URL } from '@/globalVariables';
+import axiosInstance from '@/utils/axios';
 
 
 // ------------------------------
@@ -9,7 +8,7 @@ import { BACKEND_URL } from '@/globalVariables';
 
 const createCalendar = async (data: any) => {
     try {
-        const response = await axios.post(`${BACKEND_URL}/calendar/create_team_calendar`, data);
+        const response = await axiosInstance.post('/calendar/create_team_calendar', data);
         if (response.data.status === 'success') {
             return response.data.calendar;
         }
@@ -20,7 +19,7 @@ const createCalendar = async (data: any) => {
 
 const getCalendarByID = async (calendar_id: string) => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/calendar/get_team_calendar?calendar_id=${calendar_id}`);
+        const response = await axiosInstance.get(`/calendar/get_team_calendar?calendar_id=${calendar_id}`);
         if (response.data.status === 'success') {
             return response.data.calendar;
         }
@@ -31,7 +30,7 @@ const getCalendarByID = async (calendar_id: string) => {
 
 const listCalendars = async () => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/calendar/list_team_calendars`);
+        const response = await axiosInstance.get('/calendar/list_team_calendars');
         if (response.data.status === 'success') {
             return response.data.calendars;
         }
@@ -42,7 +41,7 @@ const listCalendars = async () => {
 
 const deleteCalendar = async (calendar_id: string) => {
     try {
-        const response = await axios.delete(`${BACKEND_URL}/calendar/delete_team_calendar`, {
+        const response = await axiosInstance.delete('/calendar/delete_team_calendar', {
             data: { calendar_id }
         });
         return response.data;
@@ -60,7 +59,7 @@ const shareCalendar = async (
     role: string = "reader"
 ) => {
     try {
-      const response = await axios.post(`${BACKEND_URL}/calendar/share_calendar`, {
+      const response = await axiosInstance.post('/calendar/share_calendar', {
         calendar_id,
         email,
         role
@@ -79,7 +78,7 @@ const shareCalendar = async (
 // Create an event for a given calendar
 const createEvent = async (data: any) => {
     try {
-        const response = await axios.post(`${BACKEND_URL}/events/create`, data);
+        const response = await axiosInstance.post('/events/create', data);
         if (response.data.status === 'success') {
             return response.data.event;
         }
@@ -91,7 +90,7 @@ const createEvent = async (data: any) => {
 // Get a specific event by calendar_id and event_id
 const getEvent = async (calendar_id: string, event_id: string) => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/events/get?calendar_id=${calendar_id}&event_id=${event_id}`);
+        const response = await axiosInstance.get(`/events/get?calendar_id=${calendar_id}&event_id=${event_id}`);
         if (response.data.status === 'success') {
             return response.data.event;
         }
@@ -103,7 +102,7 @@ const getEvent = async (calendar_id: string, event_id: string) => {
 // List all events for a given calendar
 const listEvents = async (calendar_id: string) => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/events/list?calendar_id=${calendar_id}`);
+        const response = await axiosInstance.get(`/events/list?calendar_id=${calendar_id}`);
         if (response.data.status === 'success') {
             return response.data.events;
         }
@@ -115,7 +114,7 @@ const listEvents = async (calendar_id: string) => {
 // Update an event (pass calendar_id, event_id, and the fields to update)
 const updateEvent = async (data: any) => {
     try {
-        const response = await axios.put(`${BACKEND_URL}/events/update`, data);
+        const response = await axiosInstance.put('/events/update', data);
         if (response.data.status === 'success') {
             return response.data.event;
         }
@@ -127,7 +126,7 @@ const updateEvent = async (data: any) => {
 // Delete an event given calendar_id and event_id
 const deleteEvent = async (calendar_id: string, event_id: string) => {
     try {
-        const response = await axios.delete(`${BACKEND_URL}/events/delete`, {
+        const response = await axiosInstance.delete('/events/delete', {
             data: { calendar_id, event_id }
         });
         return response.data;
@@ -148,7 +147,7 @@ const rsvpEvent = async (
     status: string = "accepted"
   ) => {
     try {
-      const response = await axios.post(`${BACKEND_URL}/events/rsvp`, {
+      const response = await axiosInstance.post('/events/rsvp', {
         calendar_id,
         event_id,
         email,
@@ -162,7 +161,7 @@ const rsvpEvent = async (
 
 const showAttendance = async (calendar_id: string, event_id: string) => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/events/attendance?calendar_id=${calendar_id}&event_id=${event_id}`);
+        const response = await axiosInstance.get(`/events/attendance?calendar_id=${calendar_id}&event_id=${event_id}`);
         return response.data;
     } catch (error) {
         console.log('Something went wrong with showing attendance: ' + error);
@@ -171,7 +170,7 @@ const showAttendance = async (calendar_id: string, event_id: string) => {
 
 const removeRSVP = async (calendar_id: string, event_id: string, email: string) => {
     try {
-        const response = await axios.delete(`${BACKEND_URL}/events/remove_rsvp`, {
+        const response = await axiosInstance.delete('/events/remove_rsvp', {
         data: { calendar_id, event_id, email }
         });
         return response.data;

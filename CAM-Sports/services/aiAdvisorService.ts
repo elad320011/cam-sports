@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { BACKEND_URL } from '@/globalVariables';
+import axiosInstance from '@/utils/axios';
 
 // Customize AI Advisor
 const customizeAIAdvisor = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/customize_ai_advisor`, data);
+    const response = await axiosInstance.post('/ai_advior/customize_ai_advisor', data);
     return response.data;
   } catch (error) {
     console.log('Error customizing AI Advisor:', error);
@@ -14,7 +14,7 @@ const customizeAIAdvisor = async (data: object) => {
 // Send a basic AI Advisor message of type 'text'
 const sendAIAdvisorTextMessage = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, data);
+    const response = await axiosInstance.post('/ai_advior/message_ai_advisor', data);
     return response.data;
   } catch (error) {
     console.log('Error sending text message to AI Advisor:', error);
@@ -31,7 +31,7 @@ const sendAIAdvisorTextMessage = async (data: object) => {
 
 const sendAIAdvisorStatisticDocId = async (data: object) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/ai_advior/message_ai_advisor`, data);
+    const response = await axiosInstance.post('/ai_advior/message_ai_advisor', data);
     return response.data;
   } catch (error) {
     console.log('Error sending statistic_doc_id message to AI Advisor:', error);
@@ -41,7 +41,7 @@ const sendAIAdvisorStatisticDocId = async (data: object) => {
 // Load AI Advisor conversation history
 const loadAIAdvisorHistory = async () => {
   try {
-    const response = await axios.get(`${BACKEND_URL}/ai_advior/load_conv_history`);
+    const response = await axiosInstance.get('/ai_advior/load_conv_history');
     return response.data;
   } catch (error) {
     console.log('Error loading AI Advisor conversation history:', error);
