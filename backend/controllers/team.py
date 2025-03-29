@@ -38,11 +38,11 @@ def create_team(request):
 def update_team(request):
     data = request.get_json()
 
-    team_id = data.get('team_id')
-    if not team_id:
-        return jsonify({"error": "team_id is required"}), 400
+    team_name = data.get('team_name')
+    if not team_name:
+        return jsonify({"error": "team_name is required"}), 400
 
-    team = Team.objects(team_id=team_id).first()
+    team = Team.objects(name=team_name).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
 

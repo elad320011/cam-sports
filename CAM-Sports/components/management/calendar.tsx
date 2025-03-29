@@ -89,8 +89,8 @@ const GameCalendar = () => {
 
   const fetchEvents = async () => {
     const fetchedEvents = await listEvents(teamCalendarId);
-    console.log(fetchedEvents)
     setEvents(fetchedEvents);
+    
     const newMarkedDates: MarkedDates = {};
     fetchedEvents.forEach((event: CalendarEvent) => {
       const date = event.start.dateTime?.split('T')[0] || event.start.date;
