@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
 import Dropdown from 'react-native-input-select';
+import { BACKEND_URL } from "@/globalVariables";
 import { all } from "axios";
 
 type Score = {
@@ -155,7 +156,7 @@ export default function GameStatistics() {
             setLoading(true);
             setError(null);
             try {
-                const response = await axiosInstance.get(`http://localhost:5000/game_statistics/team_id/${userInfo?.team_id}`);
+                const response = await axiosInstance.get(`${BACKEND_URL}/game_statistics/team_id/${userInfo?.team_id}`);
                 const responseData = JSON.parse(response.data.stats)
                 console.log("API Response:", response.data); // Inspect the response
 

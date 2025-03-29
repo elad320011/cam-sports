@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Dropdown from 'react-native-input-select';
 import PlanForm from "./trainingComponents/planForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { BACKEND_URL } from "@/globalVariables";
 
 
 const temp: PlanProps[] = [
@@ -52,7 +53,7 @@ export default function Training() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axiosInstance.get(`http://localhost:5000/training_plans/team_id/${userInfo?.team_id}`);
+        const response = await axiosInstance.get(`${BACKEND_URL}/training_plans/team_id/${userInfo?.team_id}`);
         const responsePlans = JSON.parse(response.data.plans);
         setPlans(responsePlans);
       } catch (error) {
