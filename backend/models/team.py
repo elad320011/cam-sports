@@ -11,12 +11,12 @@ class Team(me.Document):
     meta = {
         'collection': 'teams',
         'indexes': [
-            'team_id',  # Index on team_id
-            'code'      # Index on code
+            'name',  # Index on team name
+            'code'   # Index on code
         ]
     }
-    team_id = me.StringField(required=True, unique=True)
-    code = me.StringField(required=True, unique=True)  # Add this new field for the random code
+    name = me.StringField(required=True, unique=True)
+    code = me.StringField(required=True, unique=True)
     players = me.ListField(me.StringField(), default=[])  # Now stores player emails
     management = me.ListField(me.StringField(), default=[])    # Now stores management emails
     payment_method = me.StringField()

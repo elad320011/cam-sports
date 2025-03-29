@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
-import axios from 'axios';
-import { useRouter } from 'expo-router';
+import { View, TextInput, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter, Stack } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
 
@@ -37,53 +36,158 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }} 
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Login" onPress={handleLogin} />
-      <View style={styles.registerContainer}>
-        <Button 
-          title="Register" 
-          onPress={() => router.push('/register')} 
-        />
-      </View>
-    </View>
+      
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Welcome Back</Text>
+          
+          <View style={styles.formContainer}>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={[styles.input, error ? styles.inputError : null]}
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setError('');
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={[styles.input, error ? styles.inputError : null]}
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setError('');
+                }}
+                secureTextEntry
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity 
+                style={styles.primaryButton} 
+                onPress={handleLogin}
+              >
+                <Text style={styles.primaryButtonText}>Login</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.linkButton} 
+                onPress={() => router.push('/register')}
+              >
+                <Text style={styles.linkButtonText}>Don't have an account? Register</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 16,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+    minHeight: '100%',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  formContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 50,
+    borderColor: '#ddd',
     borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#333',
   },
-  registerContainer: {
-    marginTop: 12,
+  inputError: {
+    borderColor: '#ff6b6b',
+    borderWidth: 1.5,
   },
   error: {
-    color: 'red',
-    marginBottom: 12,
+    color: '#ff6b6b',
+    marginBottom: 20,
+    textAlign: 'center',
+    fontSize: 14,
+    padding: 10,
+    backgroundColor: '#ffe5e5',
+    borderRadius: 8,
+  },
+  buttonGroup: {
+    gap: 16,
+    marginTop: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#4a90e2',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  linkButton: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  linkButtonText: {
+    color: '#4a90e2',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

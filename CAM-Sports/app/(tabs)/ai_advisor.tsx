@@ -58,19 +58,19 @@ export default function AIAdvisor() {
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}'); // Change ME
   // const { userInfo } = useAuth();
 
-  // Get team game statistics   
+  // Get team game statistics
   useEffect(() => {
     (async () => {
       try {
         const result = await getTeamGameStatistics(userInfo?.team_id);
 
         if (result) {
-          const formattedResult = result.map((stat: any) => ({
+          const formattedResult = JSON.parse(result.stats).map((stat: any) => ({
             ...stat,
             _id: stat._id.$oid,
             game_date: new Date(stat.game_date.$date).toLocaleDateString(),
           }));
-  
+
           setGameStatistics(formattedResult);
         } else {
           console.log('No game statistics available.');
@@ -80,7 +80,7 @@ export default function AIAdvisor() {
       }
     })();
   }, [statisticsVisible]);
-  
+
   const handleSend = async () => {
     if (typing) {
       stopTyping();
@@ -136,22 +136,22 @@ export default function AIAdvisor() {
 
   const handleSendStatistic = async (statisticId: string) => {
     setStatisticsVisible(false);
-  
+
     const userMsg: Message = {
       id: Date.now().toString(),
       sender: 'user',
       text: `Analyze game statistics: ${statisticId}`,
     };
-  
+
     const loadingMsg: Message = {
       id: (Date.now() + 1).toString(),
       sender: 'ai',
       text: '',
       loading: true,
     };
-  
+
     setMessages((prev) => [...prev, userMsg, loadingMsg]);
-  
+
     try {
       const data = {
         email: userInfo?.email,
@@ -159,16 +159,16 @@ export default function AIAdvisor() {
         type: 'statistic_doc_id',
         message: statisticId,
       };
-  
+
       const aiResponse = await sendAIAdvisorTextMessage(data);
       const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
-  
+
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
           msg.id === loadingMsg.id ? { ...msg, loading: false } : msg
         )
       );
-  
+
       simulateTypingAIResponse(aiMessageText, loadingMsg.id);
     } catch (error) {
       setMessages((prevMessages) =>
@@ -181,7 +181,7 @@ export default function AIAdvisor() {
     }
   };
 
-  
+
   const simulateTypingAIResponse = (fullText: string, messageId: string) => {
     setTyping(true);
     let index = 0;
@@ -216,7 +216,7 @@ export default function AIAdvisor() {
       flatListRef.current?.scrollToEnd({ animated: true });
     }
   }, [messages]);
-  
+
 
   const renderMessage = ({ item }: { item: Message }) => (
     <View
@@ -270,7 +270,7 @@ export default function AIAdvisor() {
           <TouchableOpacity  onPress={() => setStatisticsVisible(true)} style={styles.attachButton}>
             <Text style={styles.sendIcon}>📎</Text>
           </TouchableOpacity>
-          
+
           <TextInput
             style={styles.input}
             placeholder="Message AI Advisor…"
@@ -281,7 +281,7 @@ export default function AIAdvisor() {
             returnKeyType="send"
             editable={!typing}
           />
-          
+
           <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
             <Text style={styles.sendIcon}>{typing ? '⏹' : '➤'}</Text>
           </TouchableOpacity>
