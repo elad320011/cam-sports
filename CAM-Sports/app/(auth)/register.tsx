@@ -3,9 +3,15 @@ import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable, ScrollV
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
+
 import { useRouter, Stack } from 'expo-router';
 import { customizeAIAdvisor } from '@/services/aiAdvisorService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+        
+// Services
+import { createCalendar, shareCalendar } from '@/services/calendarService';
+import { customizeAIAdvisor } from '@/services/aiAdvisorService';
+import { getTeamByCode, updateTeam } from '@/services/usersService';
 
 const DateTimePickerComponent = Platform.OS === 'web' ? null : DateTimePicker;
 
@@ -95,6 +101,7 @@ export default function RegisterScreen() {
         
         if (response.data.team_code) {
           setRegisteredTeamCode(response.data.team_code);
+          setUpProfile();
         }
       } else if (userType === 'player') {
         if (!fullName || !password || !role || !birthDate || !weight || !height || !email) {
@@ -184,7 +191,6 @@ export default function RegisterScreen() {
         });
         
         if (response.data.redirect) {
-          setUpProfile();
           router.push('/login');
         }
       }
@@ -225,16 +231,54 @@ export default function RegisterScreen() {
       
     }
 
+    const createCalendarForTeam = async () => {
+      try {
+        const calendarData = {
+          "summary": `A Calendar for team ${teamId}`,
+        }
+        
+        // Create the calendar
+        const result = await createCalendar(calendarData);
+        
+        const updatedTeamData = {
+          team_id: teamId,
+          calendar_id: result.id
+        }
+
+        // Update the team with the new calendar
+        await updateTeam(updatedTeamData);
+        
+      }
+      catch (error) {
+        console.error('Error sharing calendar with user:', error);
+      }
+      
+    }
+
+    const shareCalendarWithUser = async () => {
+      try {
+        const result = await getTeamByCode(teamCode);
+        const teamCalendarId = result.calendar_id;
+        await shareCalendar(teamCalendarId, email, userType === "player" ? "reader" : "writer" )
+      }
+      catch (error) {
+        console.error('Error sharing calendar with user:', error);
+      }
+      
+    }
+    
     if (userType === 'player') {
       const custom_message = `My name is ${fullName}, I'm a player in team ${teamId}. My position is ${role}, I'm ${height}cm tall, and I weigh ${weight}kg.`
       customizeAIAdvisorProfile(custom_message);
+      shareCalendarWithUser();
     }
     else if (userType === 'management') {
       const custom_message = `My name is ${fullName}, I'm a management member of team ${teamId}.`;
       customizeAIAdvisorProfile(custom_message);
+      shareCalendarWithUser();
     }
     else {
-
+      createCalendarForTeam();
     }
   };
 

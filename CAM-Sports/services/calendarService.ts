@@ -7,11 +7,7 @@ import { BACKEND_URL } from '@/globalVariables';
 // Calendar Services
 // ------------------------------
 
-// IMPORTENT NOTE: WHEN CREATING A USER WITH TYPE COACH OR SOMETHING CREATE A CALENDAR FOR IT
-// const data = {
-//     "summary": "Team Calendar 1"
-// }
-const createCalendar = async (data: JSON) => {
+const createCalendar = async (data: any) => {
     try {
         const response = await axios.post(`${BACKEND_URL}/calendar/create_team_calendar`, data);
         if (response.data.status === 'success') {
