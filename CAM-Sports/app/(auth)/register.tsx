@@ -3,6 +3,7 @@ import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable, ScrollV
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
+import * as Clipboard from 'expo-clipboard';
 
 import { useRouter, Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,13 +13,19 @@ import { createCalendar, shareCalendar } from '@/services/calendarService';
 import { customizeAIAdvisor } from '@/services/aiAdvisorService';
 import { getTeamByCode, updateTeam } from '@/services/usersService';
 
+// First, add this type definition at the top of the file, after the imports
+type Message = {
+  text: string;
+  type: 'success' | 'error';
+};
+
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('player');
   const [teamCode, setTeamCode] = useState('');  // For player/management registration
   const [registeredTeamCode, setRegisteredTeamCode] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<Message | null>(null);
   const [teamId, setTeamId] = useState('');
   const [role, setRole] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -87,7 +94,10 @@ export default function RegisterScreen() {
     try {
       if (userType === 'team') {
         if (!teamId) {
-          setErrorMessage('Team name is required');
+          setErrorMessage({
+            text: 'Team name is required',
+            type: 'error'
+          });
           return;
         }
 
@@ -102,12 +112,18 @@ export default function RegisterScreen() {
         }
       } else if (userType === 'player') {
         if (!fullName || !password || !role || !birthDate || !weight || !height || !email) {
-          setErrorMessage('All fields are required');
+          setErrorMessage({
+            text: 'All fields are required',
+            type: 'error'
+          });
           return;
         }
 
         if (!email.includes('@') || !email.includes('.')) {
-          setErrorMessage('Please enter a valid email address');
+          setErrorMessage({
+            text: 'Please enter a valid email address',
+            type: 'error'
+          });
           return;
         }
 
@@ -137,12 +153,18 @@ export default function RegisterScreen() {
         }
       } else if (userType === 'management') {
         if (!fullName || !password || !email) {
-          setErrorMessage('Full name, password and email are required');
+          setErrorMessage({
+            text: 'Full name, password and email are required',
+            type: 'error'
+          });
           return;
         }
 
         if (!email.includes('@') || !email.includes('.')) {
-          setErrorMessage('Please enter a valid email address');
+          setErrorMessage({
+            text: 'Please enter a valid email address',
+            type: 'error'
+          });
           return;
         }
 
@@ -160,22 +182,34 @@ export default function RegisterScreen() {
         }
       } else {
         if (!fullName || !password) {
-          setErrorMessage('Full name and password are required');
+          setErrorMessage({
+            text: 'Full name and password are required',
+            type: 'error'
+          });
           return;
         }
 
         if (fullName.length < 3) {
-          setErrorMessage('Full name must be at least 3 characters long');
+          setErrorMessage({
+            text: 'Full name must be at least 3 characters long',
+            type: 'error'
+          });
           return;
         }
 
         if (password.length < 6) {
-          setErrorMessage('Password must be at least 6 characters long');
+          setErrorMessage({
+            text: 'Password must be at least 6 characters long',
+            type: 'error'
+          });
           return;
         }
 
         if (!teamCode) {
-          setErrorMessage('Team code is required');
+          setErrorMessage({
+            text: 'Team code is required',
+            type: 'error'
+          });
           return;
         }
 
@@ -193,7 +227,10 @@ export default function RegisterScreen() {
       }
     } catch (error: any) {
       console.error('Registration error:', error.response?.data);
-      setErrorMessage(error.response?.data?.message || 'Registration failed');
+      setErrorMessage({
+        text: error.response?.data?.message || 'Registration failed',
+        type: 'error'
+      });
     }
   };
 
@@ -292,8 +329,26 @@ export default function RegisterScreen() {
     setHeight('');
     setEmail('');
     setDate(new Date());
-    setErrorMessage('');
+    setErrorMessage(null);
     await AsyncStorage.removeItem('registerFormData');
+  };
+
+  const copyTeamCode = async () => {
+    try {
+      await Clipboard.setStringAsync(registeredTeamCode);
+      setErrorMessage({
+        text: 'Team code copied to clipboard!',
+        type: 'success'
+      });
+      // Reset the message after 3 seconds
+      setTimeout(() => setErrorMessage(null), 3000);
+    } catch (error) {
+      console.error('Failed to copy team code:', error);
+      setErrorMessage({
+        text: 'Failed to copy team code',
+        type: 'error'
+      });
+    }
   };
 
   return (
@@ -308,7 +363,11 @@ export default function RegisterScreen() {
         <View style={styles.container}>
           <Text style={styles.title}>Create Account</Text>
           
-          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+          {errorMessage && (
+            <Text style={errorMessage.type === 'success' ? styles.success : styles.error}>
+              {errorMessage.text}
+            </Text>
+          )}
           
           <View style={styles.formContainer}>
             <View style={styles.pickerContainer}>
@@ -334,7 +393,7 @@ export default function RegisterScreen() {
                   value={teamId}
                   onChangeText={(text) => {
                     setTeamId(text.toUpperCase());
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoCapitalize="characters"
                   maxLength={10}
@@ -352,7 +411,7 @@ export default function RegisterScreen() {
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -365,7 +424,7 @@ export default function RegisterScreen() {
                   value={fullName}
                   onChangeText={(text) => {
                     setFullName(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoComplete="name"
                 />
@@ -375,7 +434,7 @@ export default function RegisterScreen() {
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   secureTextEntry
                 />
@@ -385,7 +444,7 @@ export default function RegisterScreen() {
                   value={teamCode}
                   onChangeText={(text) => {
                     setTeamCode(text.toUpperCase());
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoCapitalize="characters"
                   maxLength={6}
@@ -470,7 +529,7 @@ export default function RegisterScreen() {
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -482,7 +541,7 @@ export default function RegisterScreen() {
                   value={fullName}
                   onChangeText={(text) => {
                     setFullName(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoComplete="name"
                 />
@@ -492,7 +551,7 @@ export default function RegisterScreen() {
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   secureTextEntry
                 />
@@ -502,7 +561,7 @@ export default function RegisterScreen() {
                   value={teamCode}
                   onChangeText={(text) => {
                     setTeamCode(text.toUpperCase());
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoCapitalize="characters"
                   maxLength={6}
@@ -516,7 +575,7 @@ export default function RegisterScreen() {
                   value={fullName}
                   onChangeText={(text) => {
                     setFullName(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoComplete="name"
                 />
@@ -526,7 +585,7 @@ export default function RegisterScreen() {
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   secureTextEntry
                 />
@@ -536,7 +595,7 @@ export default function RegisterScreen() {
                   value={teamCode}
                   onChangeText={(text) => {
                     setTeamCode(text.toUpperCase());
-                    setErrorMessage('');
+                    setErrorMessage(null);
                   }}
                   autoCapitalize="characters"
                   maxLength={6}
@@ -572,16 +631,28 @@ export default function RegisterScreen() {
             {registeredTeamCode && (
               <View style={styles.teamCodeContainer}>
                 <Text style={styles.teamCodeLabel}>Your Team Code:</Text>
-                <Text style={styles.teamCode}>{registeredTeamCode}</Text>
+                <View style={styles.teamCodeWrapper}>
+                  <Text style={styles.teamCode}>{registeredTeamCode}</Text>
+                  <TouchableOpacity 
+                    style={styles.copyButton}
+                    onPress={copyTeamCode}
+                  >
+                    <Text style={styles.copyButtonText}>Copy</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={styles.teamCodeInstructions}>
                   Share this code with your team members for registration.{'\n'}
                   They will use this code to join your team.
                 </Text>
                 <TouchableOpacity 
                   style={styles.primaryButton}
-                  onPress={() => router.push('/login')}
+                  onPress={() => {
+                    setUserType('management');
+                    setRegisteredTeamCode('');
+                    setTeamCode(registeredTeamCode);
+                  }}
                 >
-                  <Text style={styles.primaryButtonText}>Proceed to Login</Text>
+                  <Text style={styles.primaryButtonText}>Register as Management</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -666,6 +737,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffe5e5',
     borderRadius: 8,
   },
+  success: {
+    color: '#2e7d32',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontSize: 14,
+    padding: 10,
+    backgroundColor: '#e8f5e9',
+    borderRadius: 8,
+  },
   buttonGroup: {
     gap: 12,
     marginTop: 8,
@@ -723,6 +803,12 @@ const styles = StyleSheet.create({
     color: '#2e7d32',
     marginBottom: 12,
   },
+  teamCodeWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
   teamCode: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -757,5 +843,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 4,
+  },
+  copyButton: {
+    backgroundColor: '#4a90e2',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  copyButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
