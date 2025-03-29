@@ -1,6 +1,8 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View, Button } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
+import { Redirect } from 'expo-router';
+import WelcomeHeader from '@/components/WelcomeHeader';
 
 // Components
 import GameCalendar from "@/components/management/calendar"
@@ -9,10 +11,19 @@ import Training from "@/components/management/training"
 import GameStatistics from "@/components/management/statistics"
 
 export default function Management() {
-  const { logout, userInfo } = useAuth();
+  const { logout, userInfo, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
+  if (!user) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <View style={styles.container}>
+      <WelcomeHeader />
       <View style={styles.header}>
         <Text style={styles.title}>Management</Text>
         <Button 
@@ -22,17 +33,6 @@ export default function Management() {
         />
       </View>
       
-      <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>
-          Welcome to CAM Sports, {userInfo?.full_name} ({userInfo?.user_type})!
-        </Text>
-        {userInfo?.team_id && (
-          <Text style={styles.teamText}>
-            You are a part of {userInfo.team_id} team
-          </Text>
-        )}
-      </View>
-
       <ScrollView style={styles.scrollContainer}>
         <GameCalendar />
         <GameStatistics />
@@ -60,25 +60,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-  },
-  welcomeContainer: {
-    marginBottom: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 4,  // Added margin to separate the two text lines
-  },
-  teamText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
   scrollContainer: {
     flex: 1,
