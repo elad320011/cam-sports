@@ -19,7 +19,7 @@ export default function LoginScreen() {
         return;
       }
 
-      const response = await axiosInstance.post(`${BACKEND_URL}/auth/login`, {
+      const response = await axiosInstance.post('/auth/login', {
         email: email.toLowerCase(),
         password
       });

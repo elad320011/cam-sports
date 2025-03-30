@@ -54,7 +54,7 @@ export default function Training() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axiosInstance.get(`${BACKEND_URL}/training_plans/team_id/${user?.team_id}`);
+        const response = await axiosInstance.get(`/training_plans/team_id/${user?.team_id}`);
         const responsePlans = JSON.parse(response.data.plans);
         setPlans(responsePlans);
       } catch (error) {
