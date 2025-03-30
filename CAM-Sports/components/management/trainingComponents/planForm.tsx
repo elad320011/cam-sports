@@ -28,16 +28,33 @@ interface Section {
 const PlanForm = (props: any) => {
   const { logout, user } = useAuth();
   const setAddMode = props.setAddMode;
-  const [planName, setPlanName] = useState('');
-  const [planDescription, setPlanDescription] = useState('');
-  const [planSections, setPlanSections] = useState<Section[]>([
-    {
-      id: Date.now(),
-      sectionName: '',
-      sectionDescription: '',
-      sectionSources: [{ id: Date.now(), source_type: 'Image', source_url: '' }],
-    },
-  ]);
+  const onUpdate = props.onUpdate; // Callback for updates
+  const initialData = props.initialData || {}; // Use initialData if provided
+  const [planName, setPlanName] = useState(initialData.name || '');
+  const [planDescription, setPlanDescription] = useState(initialData.description || '');
+  const [planSections, setPlanSections] = useState<Section[]>(
+    initialData.plan_sections
+      ? initialData.plan_sections.map((section: any) => ({
+          id: section.id || Date.now(), // Preserve existing ID or generate a new one
+          sectionName: section.name || '', // Map 'name' to 'sectionName'
+          sectionDescription: section.description || '', // Map 'description' to 'sectionDescription'
+          sectionSources: section.sources
+            ? section.sources.map((source: any) => ({
+                id: source.id || Date.now(), // Preserve existing ID or generate a new one
+                source_type: source.source_type || 'Image',
+                source_url: source.source_url || '',
+              }))
+            : [],
+        }))
+      : [
+          {
+            id: Date.now(),
+            sectionName: '',
+            sectionDescription: '',
+            sectionSources: [{ id: Date.now(), source_type: 'Image', source_url: '' }],
+          },
+        ]
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAddSection = () => {
@@ -116,36 +133,38 @@ const PlanForm = (props: any) => {
   };
 
   const handleSubmit = () => {
-    // remove ID and adjust keys to match backend expectations
     const formattedSections = planSections.map((section) => {
-      const {
-        id: sectionId,
-        sectionName,
-        sectionDescription,
-        sectionSources,
-        ...restOfSection
-      } = section;
-      const formattedSources = sectionSources.map((source) => {
-        const { id: sourceId, ...sourceWithoutId } = source;
-        return sourceWithoutId;
-      });
-      return {
-        name: sectionName, // Backend expects 'name' for section
-        description: sectionDescription, // Backend expects 'description' for section
-        sources: formattedSources, // Backend expects 'sources' for section sources
-        ...restOfSection,
-      };
-    });
+        const { id: sectionId, sectionName, sectionDescription, sectionSources } = section;
+        if (!sectionName) {
+            setErrorMessage("Each section must have a name.");
+            return null; // Skip invalid sections
+        }
+        const formattedSources = (sectionSources || []).map(({ id, ...sourceWithoutId }) => sourceWithoutId); // Ensure sectionSources is an array
+        return {
+            name: sectionName, // Ensure 'name' is included
+            description: sectionDescription,
+            sources: formattedSources,
+        };
+    }).filter(Boolean); // Remove null sections
+
+    if (formattedSections.length !== planSections.length) {
+        return; // Stop submission if there are invalid sections
+    }
 
     const formData = {
-      name: planName, // Backend expects 'name' for the plan
-      description: planDescription, // Backend expects 'description' for the plan
-      team_id: user?.team_id,
-      plan_sections: formattedSections,
+        plan_id: initialData.id, // Include plan_id in the payload for updates
+        name: planName,
+        description: planDescription,
+        team_id: user?.team_id,
+        plan_sections: formattedSections,
     };
-    console.log('Form Data:', formData);
-    submitPlan(formData);
-  };
+
+    if (initialData.id) {
+        updatePlan(formData); // Call update API if editing
+    } else {
+        submitPlan(formData); // Call create API if adding
+    }
+};
 
   const submitPlan = async (formData: any) => {
     try {
@@ -175,6 +194,20 @@ const PlanForm = (props: any) => {
       } else {
         console.error('Error creating training plan:', error.response?.data || error.message);
       }
+    }
+  };
+
+  const updatePlan = async (formData: any) => {
+    try {
+      const response = await axiosInstance.put('/training_plans/update', formData); // Send plan_id in the payload
+      if (response.status === 200) {
+        setAddMode(false);
+        if (onUpdate) {
+          onUpdate(formData); // Notify parent of the updated plan
+        }
+      }
+    } catch (error: any) {
+      console.error('Error updating training plan:', error.response?.data || error.message);
     }
   };
 
@@ -250,7 +283,7 @@ const PlanForm = (props: any) => {
               <Text style={styles.subTitle}>+</Text>
             </TouchableOpacity>
           </Text>
-          {section.sectionSources.map((source, sourceIndex) => (
+          {(section.sectionSources || []).map((source, sourceIndex) => (
             <View key={source.id} style={styles.sourceContainer}>
               <Text style={styles.sourceLabel}>Source {sourceIndex + 1}:</Text>
               <TouchableOpacity
@@ -299,7 +332,9 @@ const PlanForm = (props: any) => {
       ))}
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Create</Text>
+        <Text style={styles.submitButtonText}>
+          {initialData.id ? "Change" : "Create"}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
