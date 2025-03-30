@@ -1,4 +1,3 @@
-import axios from 'axios';
 import axiosInstance from '@/utils/axios';
 
 // Customize AI Advisor

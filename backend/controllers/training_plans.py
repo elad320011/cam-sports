@@ -52,3 +52,13 @@ def get_training_plan_by_team_id(team_id):
     training_plans_json = json.dumps(result)
 
     return json.dumps({"plans": training_plans_json}), 200
+
+def delete_training_plan(team_id, plan_id):
+    try:
+        training_plan = TrainingPlan.objects.get(id=plan_id, team_id=team_id)
+        training_plan.delete()
+        return jsonify({"message": "Training plan deleted successfully"}), 200
+    except me.DoesNotExist:
+        return jsonify({"message": "Training plan not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500

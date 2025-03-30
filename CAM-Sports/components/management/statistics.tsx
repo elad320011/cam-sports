@@ -155,7 +155,7 @@ export default function GameStatistics() {
             setLoading(true);
             setError(null);
             try {
-                const response = await axiosInstance.get(`/game_statistics/team_id/${userInfo?.team_id}`);
+                const response = await axiosInstance.get(`/game_statistics/team_id/${user?.team_id}`);
                 const responseData = JSON.parse(response.data.stats)
 
                 if (response.data && Array.isArray(responseData)) {
