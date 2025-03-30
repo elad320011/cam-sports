@@ -55,14 +55,13 @@ export default function AIAdvisor() {
   const flatListRef = useRef<FlatList>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
-  const userInfo = JSON.parse(localStorage.getItem('user') || '{}'); // Change ME
-  // const { userInfo } = useAuth();
+  const { user } = useAuth();
 
   // Get team game statistics
   useEffect(() => {
     (async () => {
       try {
-        const result = await getTeamGameStatistics(userInfo?.team_id);
+        const result = await getTeamGameStatistics(user?.team_id ?? '');
 
         if (result) {
           const formattedResult = JSON.parse(result.stats).map((stat: any) => ({
@@ -107,8 +106,8 @@ export default function AIAdvisor() {
 
     try {
         const data = {
-            email: userInfo?.email,
-            user_type: userInfo?.user_type,
+            email: user?.email,
+            user_type: user?.user_type,
             type: 'text',
             message: JSON.stringify(input),
         }
@@ -154,8 +153,8 @@ export default function AIAdvisor() {
 
     try {
       const data = {
-        email: userInfo?.email,
-        user_type: userInfo?.user_type,
+        email: user?.email,
+        user_type: user?.user_type,
         type: 'statistic_doc_id',
         message: statisticId,
       };

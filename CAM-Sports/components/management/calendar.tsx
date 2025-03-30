@@ -22,6 +22,7 @@ import {
   updateEvent,
 } from '@/services/calendarService';
 import { Collapsible } from "../Collapsible";
+import { useAuth } from '@/contexts/AuthContext';
 
 const { height: windowHeight } = Dimensions.get('window');
 
@@ -80,8 +81,8 @@ const GameCalendar = () => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
-  const teamCalendarId = userInfo?.calendar_id;
+  const { user } = useAuth();
+  const teamCalendarId = user?.calendar_id || JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     fetchEvents();
@@ -90,12 +91,13 @@ const GameCalendar = () => {
   const fetchEvents = async () => {
     const fetchedEvents = await listEvents(teamCalendarId);
     setEvents(fetchedEvents);
-    
     const newMarkedDates: MarkedDates = {};
-    fetchedEvents.forEach((event: CalendarEvent) => {
-      const date = event.start.dateTime?.split('T')[0] || event.start.date;
-      if (date) newMarkedDates[date] = { marked: true, dotColor: '#e88e61' };
-    });
+    if (fetchedEvents && fetchedEvents.length > 0) {
+      fetchedEvents.forEach((event: CalendarEvent) => {
+        const date = event.start.dateTime?.split('T')[0] || event.start.date;
+        if (date) newMarkedDates[date] = { marked: true, dotColor: '#e88e61' };
+      });
+    }
     setMarkedDates(newMarkedDates);
   };
 
@@ -111,7 +113,11 @@ const GameCalendar = () => {
   };
 
   const handleRSVP = async (eventId: string) => {
-    await rsvpEvent(teamCalendarId, eventId, userInfo.email);
+    if (user?.email) {
+      await rsvpEvent(teamCalendarId, eventId, user.email);
+    } else {
+      Alert.alert('Error', 'User email is not available.');
+    }
     Alert.alert('Success', 'RSVP successful.');
     fetchEvents();
   };
@@ -214,7 +220,7 @@ const GameCalendar = () => {
                       
                       <View style={styles.eventHeader}>
                         <Text style={styles.eventTitle}>{event.summary}</Text>
-                        {userInfo.user_type === 'management' && (
+                        {user?.user_type === 'management' && (
                           <TouchableOpacity
                             onPress={() =>
                               setOpenDropdownId(
@@ -427,7 +433,7 @@ const GameCalendar = () => {
           </Modal>
         )}
 
-        {userInfo.user_type === 'management' && (
+        {user?.user_type === 'management' && (
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => setCreateEventVisible(true)}
