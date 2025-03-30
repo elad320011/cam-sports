@@ -5,12 +5,12 @@ import { TextInput, StyleSheet, NativeSyntheticEvent, TextInputChangeEventData, 
 import DatePicker from 'react-native-date-picker'
 
 export default function AddStat(props: any) {
-    const { logout, userInfo } = useAuth();
+    const { logout, user } = useAuth();
     const [rivalTeam, setRivalTeam] = useState<string>('');
     const [datetime, setDatetime] = useState<string>('');
     const setCurrentMode = props.setCurrentMode;
 
-    const team_id = userInfo?.team_id;
+    const team_id = user?.team_id;
 
     const handleRivalChange = (event: NativeSyntheticEvent<TextInputChangeEventData>) => {
         setRivalTeam(event.nativeEvent.text);

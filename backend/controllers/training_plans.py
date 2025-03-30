@@ -14,6 +14,10 @@ def create_training_plan(request):
     description = data.get('description')
     plan_sections_data = data.get('plan_sections', [])
 
+    # check if a training plan already exists with this name
+    if TrainingPlan.objects(team_id=team_id, name=name):
+        return jsonify({"message": "Training plan with this name already exists"}), 400
+
     # create plan sections
     plan_sections = []
     for section in plan_sections_data:
@@ -48,3 +52,54 @@ def get_training_plan_by_team_id(team_id):
     training_plans_json = json.dumps(result)
 
     return json.dumps({"plans": training_plans_json}), 200
+
+def delete_training_plan(team_id, plan_id):
+    try:
+        training_plan = TrainingPlan.objects.get(id=plan_id, team_id=team_id)
+        training_plan.delete()
+        return jsonify({"message": "Training plan deleted successfully"}), 200
+    except me.DoesNotExist:
+        return jsonify({"message": "Training plan not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    
+def edit_training_plan(request, plan_id):
+    data = request.get_json()
+    name = data.get('name')
+    description = data.get('description')
+    plan_sections_data = data.get('plan_sections', [])
+
+    # find the training plan by id
+    try:
+        training_plan = TrainingPlan.objects.get(id=plan_id)
+    except me.DoesNotExist:
+        return jsonify({"message": "Training plan not found"}), 404
+
+    # update the training plan
+    training_plan.name = name
+    training_plan.description = description
+
+    # update plan sections
+    plan_sections = []
+    for section in plan_sections_data:
+        if 'name' not in section:
+            return jsonify({"message": "Each section must have a 'name' field"}), 400
+        sources_data = section.get('sources', [])
+        sources = [
+            PlanSource(
+                source_type=source.get('source_type', ''),
+                source_url=source.get('source_url', '')
+            )
+            for source in sources_data
+        ]
+        plan_section = PlanSection(
+            name=section['name'],
+            description=section.get('description', ''),
+            sources=sources
+        )
+        plan_sections.append(plan_section)
+
+    training_plan.plan_sections = plan_sections
+    training_plan.save()
+
+    return jsonify({"message": "Training plan updated successfully"}), 200

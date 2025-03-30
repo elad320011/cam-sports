@@ -3,6 +3,7 @@ import { View, TextInput, StyleSheet, Text, ScrollView, TouchableOpacity } from 
 import { useRouter, Stack } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
+import { BACKEND_URL } from '@/globalVariables';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');

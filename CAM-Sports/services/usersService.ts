@@ -1,9 +1,8 @@
-import axios from 'axios';
-import { BACKEND_URL } from '@/globalVariables';
+import axiosInstance from '@/utils/axios';
 
 const getTeamByCode = async (team_code: string) => {
   try {
-    const response = await axios.get(`${BACKEND_URL}/team/get_by_code?team_code=${team_code}`);
+    const response = await axiosInstance.get(`/team/get_by_code?team_code=${team_code}`);
 
     return response.data;
   } catch (error) {
@@ -14,7 +13,7 @@ const getTeamByCode = async (team_code: string) => {
 
 const updateTeam = async (data: object) => {
   try {
-    const response = await axios.put(`${BACKEND_URL}/team/update`, data);
+    const response = await axiosInstance.put('/team/update', data);
 
     return response.data;
   } catch (error) {
