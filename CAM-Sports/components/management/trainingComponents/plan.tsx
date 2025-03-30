@@ -95,15 +95,14 @@ export default function Plan(props: PlanProps) {
                                     title="Delete Plan"
                                     color="red"
                                     onPress={() => {
-                                        handleDelete(planData.id);
-                                        // Alert.alert(
-                                        //     "Confirm Delete",
-                                        //     "Are you sure you want to delete this plan?",
-                                        //     [
-                                        //         { text: "Cancel", style: "cancel" },
-                                        //         { text: "Delete", onPress: () => handleDelete(planData.id) },
-                                        //     ]
-                                        // );
+                                        Alert.alert(
+                                            "Confirm Delete",
+                                            "Are you sure you want to delete this plan?",
+                                            [
+                                                { text: "Cancel", style: "cancel" },
+                                                { text: "Delete", onPress: () => handleDelete(planData.id) },
+                                            ]
+                                        );
                                     }}
                                 />
                             </View>
