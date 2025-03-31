@@ -1,0 +1,17 @@
+name: Curl Request on Merge to Master
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  call-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: trigger ci
+        run: |
+          curl -X POST http://cam-sports.cs.colman.ac.il/ci/trigger \
+            -H "Content-Type: application/json" \
+            -d '{"hash_key": "${{ secrets.SHA_KEY }}"}'
