@@ -46,7 +46,7 @@ export default function Training() {
   const { logout, user } = useAuth();
   const [plans, setPlans] = useState<PlanProps[]>([]);
   const [program, setProgram] = useState<PlanProps>();
-  const [displayProgram, setDisplayProgram] = useState<any>({value: null, label: "Select a program"});
+  const [displayProgram, setDisplayProgram] = useState<any>({ value: null, label: "Select a program" });
   const [addMode, setAddMode] = useState(false);
 
   const tempOptions = temp.map(object => ({ value: object.id, label: object.name }));
@@ -70,6 +70,11 @@ export default function Training() {
     setProgram(selectedPlan);
     console.log(selectedPlan?.name);
     setDisplayProgram(selectedOption);
+  };
+
+  const handleCollapse = () => {
+    setProgram(undefined); // Collapse the training plans
+    setDisplayProgram({ value: null, label: "Select a program" });
   };
 
   return (
@@ -102,7 +107,7 @@ export default function Training() {
       : (
         <PlanForm setAddMode={setAddMode} />
       )}
-      {program && !addMode && <Plan {...program} />}
+      {program && !addMode && <Plan {...program} onDelete={handleCollapse} />}
     </Collapsible>
     </div>
   );

@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from "react";
 import { Text, StyleSheet, View, Image, Button, Alert } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
-import { deleteTrainingPlan } from "@/services/trainingService";
 import PlanForm from "./planForm";
+import axiosInstance from "@/utils/axios";
 
 type sources = {
     source_type: string;
@@ -23,7 +23,7 @@ export type PlanProps = {
     team_id: string; // Add team_id to props for the delete request
 };
 
-export default function Plan(props: PlanProps) {
+export default function Plan(props: PlanProps & { onDelete?: () => void }) {
     const [playing, setPlaying] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [planData, setPlanData] = useState<PlanProps>(props); // Local state for plan data
@@ -36,10 +36,17 @@ export default function Plan(props: PlanProps) {
 
     const handleDelete = async (planId: string) => {
         try {
-            await deleteTrainingPlan(planData.team_id, planId);
-            Alert.alert("Success", "Training plan deleted successfully.");
+            const response = await axiosInstance.delete('/training_plans/delete', {
+                data: { team_id: planData.team_id, plan_id: planId }, // Pass payload in the request body
+            });
+            if (response.status === 200) {
+                Alert.alert("Success", "Training plan deleted successfully.");
+                if (props.onDelete) {
+                    props.onDelete(); // Collapse the training plans
+                }
+            }
         } catch (error: any) {
-            Alert.alert("Error", error.message || "An error occurred while deleting the training plan.");
+            console.log("An error occurred while deleting the training plan:", error.message || error);
         }
     };
 
@@ -94,16 +101,7 @@ export default function Plan(props: PlanProps) {
                                 <Button
                                     title="Delete Plan"
                                     color="red"
-                                    onPress={() => {
-                                        Alert.alert(
-                                            "Confirm Delete",
-                                            "Are you sure you want to delete this plan?",
-                                            [
-                                                { text: "Cancel", style: "cancel" },
-                                                { text: "Delete", onPress: () => handleDelete(planData.id) },
-                                            ]
-                                        );
-                                    }}
+                                    onPress={() => handleDelete(planData.id)}
                                 />
                             </View>
                         </View>
