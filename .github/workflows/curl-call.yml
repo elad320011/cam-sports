@@ -3,7 +3,7 @@ name: Curl Request on Merge to Master
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   call-api:
