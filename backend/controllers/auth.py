@@ -9,11 +9,13 @@ from models.management import Management
 from models.team import Team
 import random
 import string
+import requests
 
 # Update these to use timedelta directly
 ACCESS_TOKEN_EXPIRE = timedelta(minutes=15)
 REFRESH_TOKEN_EXPIRE = timedelta(days=7)
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 
 def create_tokens(user_id, user_type):
     access_token = jwt.encode({
@@ -235,3 +237,245 @@ def require_auth(f):
             return jsonify({"message": "Invalid token"}), 401
 
     return decorated
+
+def verify_google_token(token):
+    """Verify the Google token with Google's API"""
+    try:
+        # Call Google's API to verify the token
+        response = requests.get(
+            f'https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={token}'
+        )
+        
+        if response.status_code != 200:
+            return None
+            
+        data = response.json()
+        return data
+    except Exception as e:
+        print(f"Error verifying Google token: {e}")
+        return None
+
+def get_google_user_info(token):
+    """Get user information from Google API"""
+    try:
+        response = requests.get(
+            'https://www.googleapis.com/oauth2/v2/userinfo',
+            headers={'Authorization': f'Bearer {token}'}
+        )
+        
+        if response.status_code != 200:
+            return None
+            
+        return response.json()
+    except Exception as e:
+        print(f"Error getting Google user info: {e}")
+        return None
+
+def google_auth():
+    """Handle Google authentication"""
+    data = request.get_json()
+    google_token = data.get('access_token')
+    
+    if not google_token:
+        return jsonify({"message": "Google access token is required"}), 400
+    
+    # Verify the token with Google
+    token_info = verify_google_token(google_token)
+    if not token_info:
+        return jsonify({"message": "Invalid Google token"}), 401
+    
+    # Get user information from Google
+    user_info = get_google_user_info(google_token)
+    if not user_info:
+        return jsonify({"message": "Failed to get user information from Google"}), 500
+    
+    email = user_info.get('email', '').lower()
+    
+    # Check if the user exists in our database
+    player = Player.objects(email=email).first()
+    if player:
+        # User exists as a player, create JWT tokens and log them in
+        team = Team.objects(id=player.team_id).first()
+        access_token, refresh_token = create_tokens(str(player.id), 'player')
+        
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "email": email,
+                "full_name": player.full_name,
+                "user_type": 'player',
+                "calendar_id": team.calendar_id if team else '',
+                "team_id": team.name if team else ''
+            }
+        })
+    
+    management = Management.objects(email=email).first()
+    if management:
+        # User exists as management, create JWT tokens and log them in
+        team = Team.objects(id=management.team_id).first()
+        access_token, refresh_token = create_tokens(str(management.id), 'management')
+        
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "email": email,
+                "full_name": management.full_name,
+                "user_type": 'management',
+                "calendar_id": team.calendar_id if team else '',
+                "team_id": team.name if team else ''
+            }
+        })
+    
+    # User doesn't exist yet, return their information for registration
+    return jsonify({
+        "message": "User not registered",
+        "needs_registration": True,
+        "email": email,
+        "name": user_info.get('name', ''),
+        "google_id": user_info.get('id', '')
+    }), 200
+
+def google_complete():
+    """Complete Google user registration"""
+    data = request.get_json()
+    email = data.get('email', '').lower()
+    full_name = data.get('full_name')
+    google_id = data.get('google_id')
+    user_type = data.get('user_type')
+    
+    if not all([email, full_name, google_id, user_type]):
+        return jsonify({"message": "Email, name, Google ID, and user type are required"}), 400
+    
+    # Create a random secure password for Google users
+    # They'll never use this directly as they authenticate via Google
+    random_password = ''.join(random.choices(string.ascii_letters + string.digits, k=20))
+    hashed_password = generate_password_hash(random_password)
+    
+    if user_type == 'player':
+        team_code = data.get('team_code')
+        role = data.get('role')
+        birth_date_str = data.get('birth_date')
+        weight = data.get('weight')
+        height = data.get('height')
+        
+        if not all([team_code, role, birth_date_str, weight, height]):
+            return jsonify({"message": "All player fields are required"}), 400
+        
+        # Verify team code exists
+        team = Team.objects(code=team_code).first()
+        if not team:
+            return jsonify({"message": "Invalid team code"}), 400
+        
+        try:
+            birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"message": "Invalid date format. Use YYYY-MM-DD"}), 400
+        
+        # Create the player
+        player = Player(
+            email=email,
+            full_name=full_name,
+            password=hashed_password,  # Use the hashed random password
+            role=role,
+            birth_date=birth_date,
+            weight=float(weight),
+            height=float(height),
+            team_id=team.id
+        )
+        player.save()
+        
+        # Add player to team
+        team.update(push__players=email)
+        
+        # Create tokens and login the user
+        access_token, refresh_token = create_tokens(str(player.id), 'player')
+        
+        return jsonify({
+            "message": "Registration successful",
+            "redirect": True,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "email": email,
+                "full_name": full_name,
+                "user_type": 'player',
+                "calendar_id": team.calendar_id,
+                "team_id": team.name
+            }
+        }), 201
+        
+    elif user_type == 'management':
+        team_code = data.get('team_code')
+        
+        if not team_code:
+            return jsonify({"message": "Team code is required"}), 400
+        
+        # Verify team code exists
+        team = Team.objects(code=team_code).first()
+        if not team:
+            return jsonify({"message": "Invalid team code"}), 400
+        
+        # Create the management user
+        management = Management(
+            email=email,
+            full_name=full_name,
+            password=hashed_password,  # Use the hashed random password
+            team_id=team.id
+        )
+        management.save()
+        
+        # Add management to team
+        team.update(push__management=email)
+        
+        # Create tokens and login the user
+        access_token, refresh_token = create_tokens(str(management.id), 'management')
+        
+        return jsonify({
+            "message": "Registration successful",
+            "redirect": True,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": {
+                "email": email,
+                "full_name": full_name,
+                "user_type": 'management',
+                "calendar_id": team.calendar_id,
+                "team_id": team.name
+            }
+        }), 201
+        
+    elif user_type == 'team':
+        team_id = data.get('team_id')
+        
+        if not team_id:
+            return jsonify({"message": "Team name is required"}), 400
+        
+        # Check if team name already exists
+        existing_team = Team.objects(name=team_id).first()
+        if existing_team:
+            return jsonify({"message": "Team name already exists"}), 400
+        
+        # Generate a unique team code
+        team_code = generate_team_code()
+        
+        try:
+            team = Team(
+                name=team_id,
+                code=team_code,
+                players=[],
+                management=[]
+            )
+            team.save()
+            
+            return jsonify({
+                "message": "Team registered successfully",
+                "team_code": team_code
+            }), 201
+        except Exception as e:
+            return jsonify({"message": "Error creating team: " + str(e)}), 500
+    
+    return jsonify({"message": "Invalid user type"}), 400
