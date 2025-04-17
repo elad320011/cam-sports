@@ -4,6 +4,10 @@ import { useRouter, Stack } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
 import { BACKEND_URL } from '@/globalVariables';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -11,6 +15,51 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const router = useRouter();
+  
+  // Google Auth configuration
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Expo client ID
+    iosClientId: 'YOUR_IOS_CLIENT_ID', // Replace with your iOS client ID
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Replace with your Android client ID
+    webClientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Web client ID
+  });
+  
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      handleGoogleLogin(authentication.accessToken);
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (accessToken) => {
+    try {
+      const response = await axiosInstance.post('/auth/google', {
+        access_token: accessToken
+      });
+
+      if (response.data.needs_registration) {
+        // User doesn't exist yet, redirect to complete profile
+        router.push({
+          pathname: '/complete-google-profile',
+          params: {
+            email: response.data.email,
+            name: response.data.name,
+            google_id: response.data.google_id
+          }
+        });
+      } else {
+        // User exists, log them in
+        await login({
+          access_token: response.data.access_token,
+          refresh_token: response.data.refresh_token,
+          user: response.data.user
+        });
+        router.replace('/');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Google login failed');
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -89,6 +138,14 @@ export default function LoginScreen() {
                 onPress={handleLogin}
               >
                 <Text style={styles.primaryButtonText}>Login</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.googleButton} 
+                onPress={() => promptAsync()}
+                disabled={!request}
+              >
+                <Text style={styles.googleButtonText}>Sign in with Google</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -179,6 +236,19 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  googleButton: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dddddd',
+  },
+  googleButtonText: {
+    color: '#757575',
     fontSize: 16,
     fontWeight: '600',
   },
