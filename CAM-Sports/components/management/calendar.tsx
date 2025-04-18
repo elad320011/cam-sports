@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
   Modal,
   Alert,
   StyleSheet,
@@ -18,6 +19,7 @@ import {
   deleteEvent,
   listEvents,
   rsvpEvent,
+  removeRSVP,
   showAttendance,
   updateEvent,
 } from '@/services/calendarService';
@@ -54,6 +56,7 @@ const AppButton = ({
   onPress: () => void;
   containerStyle?: any;
   textStyle?: any;
+  disabled?: boolean;
 }) => (
   <TouchableOpacity onPress={onPress} style={[styles.appButton, containerStyle]}>
     <Text style={[styles.appButtonText, textStyle]}>{title}</Text>
@@ -75,11 +78,14 @@ const GameCalendar = () => {
   const [createEventVisible, setCreateEventVisible] = useState(false);
   const [editEventVisible, setEditEventVisible] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<CalendarEvent | null>(null);
-  const [attendanceList, setAttendanceList] = useState<Attendee[]>([]);
+  const [attendanceList, setAttendanceList] = useState<[]>([]);
   const [attendanceVisible, setAttendanceVisible] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  const [RSVPLoader, setRSVPLoader] = useState<boolean>(false);
+  const [attendanceLoader, setAttendanceLoader] = useState<boolean>(false);
 
   const { user } = useAuth();
   const teamCalendarId = user?.calendar_id || JSON.parse(localStorage.getItem('user') || '{}');
@@ -111,23 +117,61 @@ const GameCalendar = () => {
     setSelectedDayEvents(dayEvents);
     setEventDetailsVisible(true);
   };
-
+  
   const handleRSVP = async (eventId: string) => {
-    if (user?.email) {
-      await rsvpEvent(teamCalendarId, eventId, user.email);
-    } else {
+    if (!user?.email) {
       Alert.alert('Error', 'User email is not available.');
+      return;
     }
-    Alert.alert('Success', 'RSVP successful.');
-    fetchEvents();
+    
+    setRSVPLoader(true);
+
+    try {
+      // Get current attendance
+      const response = await showAttendance(teamCalendarId, eventId);
+      console.log(response);
+      const rsvps = response.attendees || [];
+
+      // Check if user already RSVPed
+      const alreadyRSVPed = rsvps.some(
+        (email: string) => email.toLowerCase() === user.email.toLowerCase()
+      );
+
+      if (alreadyRSVPed) {
+        // Remove RSVP if it already exists
+        await removeRSVP(teamCalendarId, eventId, user.email);
+        Alert.alert('Removed', 'You have been removed from attendance.');
+      } else {
+        // Otherwise, RSVP
+        await rsvpEvent(teamCalendarId, eventId, user.email);
+        Alert.alert('Success', 'RSVP successful.');
+      }
+
+      // Refresh the event list
+      fetchEvents();
+
+    } catch (error) {
+      console.error('RSVP toggle error:', error);
+      Alert.alert('Error', 'Something went wrong while toggling RSVP.');
+    } finally {
+      setRSVPLoader(false); 
+    }
   };
 
   const handleViewAttendance = async (eventId: string) => {
-    const response = await showAttendance(teamCalendarId, eventId);
-    setAttendanceList(response.attendees);
     setAttendanceVisible(true);
+    setAttendanceLoader(true);
+  
+    try {
+      const response = await showAttendance(teamCalendarId, eventId);
+      setAttendanceList(response.attendees || []);
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+    } finally {
+      setAttendanceLoader(false);
+    }
   };
-
+  
   const submitEventForm = async () => {
     let fullStart, fullEnd;
     if (selectedDate && selectedDate.split('-').length === 3) {
@@ -159,6 +203,7 @@ const GameCalendar = () => {
         end: fullEnd.toISOString(),
       });
     }
+
     setCreateEventVisible(false);
     setEditEventVisible(false);
     fetchEvents();
@@ -179,6 +224,17 @@ const GameCalendar = () => {
     fetchEvents();
   }
 
+  const getCleanDescription = (description: string) => {
+    if (!description) return 'No description';
+  
+    return description
+      .split('\n') 
+      .filter(line => !line.startsWith('RSVPs:'))
+      .join('\n')
+      .trim();
+  };
+
+  
   return (
     <Collapsible title="Calendar">
       <View style={styles.container}>
@@ -287,14 +343,15 @@ const GameCalendar = () => {
                       </Text>
 
                       <Text style={styles.eventDescription}>
-                        {event.description || 'No description'}
+                        {getCleanDescription(event.description || 'No description')}
                       </Text>
 
                       <View style={styles.actionButtons}>
                         <AppButton
-                          title="RSVP"
+                          title={RSVPLoader ? "Loading..." : "RSVP"}
                           onPress={() => handleRSVP(event.id)}
                           containerStyle={styles.smallButton}
+                          disabled={RSVPLoader}
                         />
                         <AppButton
                           title="Attendance"
@@ -441,6 +498,50 @@ const GameCalendar = () => {
             <Text style={styles.createButtonText}>Create Event</Text>
           </TouchableOpacity>
         )}
+
+        
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={attendanceVisible}
+          onRequestClose={() => {
+            setAttendanceList([]);
+            setAttendanceVisible(false)
+          }}
+        >
+          <View style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)'
+          }}>
+            <View style={{
+              width: '80%',
+              backgroundColor: 'white',
+              padding: 20,
+              borderRadius: 10
+            }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Attendees</Text>
+             
+                {attendanceLoader ? (
+                  <View style={{ padding: 20 }}>
+                    <ActivityIndicator size="large" color="#e88e61" />
+                  </View>
+                ) : attendanceList.length === 0 ? (
+                  <Text style={{ padding: 5 }}>No one has RSVPed yet.</Text>
+                ) : (
+                  attendanceList.map((person, idx) => (
+                  <Text key={idx} style={{ padding: 5 }}>• {person}</Text>
+                  ))
+                )}
+              <AppButton title="Close" onPress={() => {
+                setAttendanceVisible(false)
+                setAttendanceList([]);
+              }} />
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </Collapsible>
   );

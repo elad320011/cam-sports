@@ -182,30 +182,33 @@ def rsvp_event():
         calendar_id = data['calendar_id']
         event_id = data['event_id']
         email = data['email']
-        status = data.get('status', 'accepted')
 
-        # service = get_calendar_service()
-        service = get_calendar_service(email)
-
+        service = get_calendar_service()
         event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
-        print(event)
-        print("1")
-        attendees = event.get('attendees', [])
-        attendee_found = False
-        for attendee in attendees:
-            if attendee.get('email', '').lower() == email.lower():
-                attendee['responseStatus'] = status
-                attendee_found = True
-                break
-
-        if not attendee_found:
-            attendees.append({'email': email, 'responseStatus': status})
         
-        event['attendees'] = attendees
+        # Fetch the current description
+        description = event.get('description', '')
         
-        print(event)
-        # service = get_calendar_service(email)
+        # Normalize email to lowercase for case-insensitive comparison
+        email_lower = email.lower()
 
+        # Extract existing RSVPs from the description, and strip the status part
+        existing_rsvps = []
+        for line in description.split("\n"):
+            if line.startswith("RSVPs:"):
+                # Remove status part and normalize the email comparison
+                email_in_rsvp = line.split("-")[0].strip().lower()  # Extract the email part
+                existing_rsvps.append(email_in_rsvp)
+
+        # Check if the email already exists in the RSVP list
+        if email_lower in existing_rsvps:
+            return jsonify({"status": "error", "message": f"{email} has already RSVPed."}), 400
+
+        # Add the new RSVP at the end of the current description
+        updated_description = f"{description}\nRSVPs: {email} - Attending"
+        event['description'] = updated_description
+
+        # Save the updated event
         updated_event = service.events().update(
             calendarId=calendar_id,
             eventId=event_id,
@@ -213,6 +216,7 @@ def rsvp_event():
         ).execute()
 
         return jsonify({"status": "success", "event": updated_event}), 200
+
     except HttpError as err:
         if err.resp.status == 404:
             return jsonify({"status": "error", "message": "Event not found"}), 404
@@ -220,27 +224,23 @@ def rsvp_event():
             return jsonify({"status": "error", "message": err._get_reason()}), err.resp.status
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 def show_attendance():
-    try:
-        calendar_id = request.args.get("calendar_id")
-        event_id = request.args.get("event_id")
-        if not calendar_id or not event_id:
-            return jsonify({"status": "error", "message": "Missing 'calendar_id' or 'event_id' parameter"}), 400
+    calendar_id = request.args.get('calendar_id')
+    event_id = request.args.get('event_id')
 
-        service = get_calendar_service()
-        event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
-        attendees = event.get('attendees', [])
-        return jsonify({"status": "success", "attendees": attendees}), 200
-    except HttpError as err:
-        if err.resp.status == 404:
-            return jsonify({"status": "error", "message": "Event not found"}), 404
-        else:
-            return jsonify({"status": "error", "message": err._get_reason()}), err.resp.status
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    if not calendar_id or not event_id:
+        return jsonify({"status": "error", "message": "Missing calendar_id or event_id"}), 400
 
+    service = get_calendar_service()
+    event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
+
+    description = event.get('description', '')
+
+    attendance_lines = [line for line in description.split("\n") if line.lower().startswith("rsvps:")]
+    emails = [line.split(":", 1)[1].split("-")[0].strip() for line in attendance_lines]
+
+    return jsonify({"status": "success", "attendees": emails}), 200
 
 def remove_rsvp():
     try:
@@ -248,17 +248,34 @@ def remove_rsvp():
         for field in ['calendar_id', 'event_id', 'email']:
             if field not in data:
                 return jsonify({"status": "error", "message": f"Missing '{field}' field"}), 400
+        
         calendar_id = data['calendar_id']
         event_id = data['event_id']
-        email = data['email']
+        email = data['email'].lower()
 
         service = get_calendar_service()
         event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
-        attendees = event.get('attendees', [])
 
-        # Remove the attendee with the matching email
-        new_attendees = [att for att in attendees if att.get('email', '').lower() != email.lower()]
-        event['attendees'] = new_attendees
+        description = event.get('description', '')
+
+        updated_lines = []
+        found = False
+
+        for line in description.split("\n"):
+            if line.lower().startswith("rsvps:"):
+                try:
+                    rsvp_email = line.split("RSVPs:")[1].split("-")[0].strip().lower()
+                    if rsvp_email == email:
+                        found = True
+                        continue
+                except:
+                    pass
+            updated_lines.append(line)
+
+        if not found:
+            return jsonify({"status": "error", "message": f"{email} has not RSVPed yet."}), 400
+
+        event['description'] = "\n".join(updated_lines)
 
         updated_event = service.events().update(
             calendarId=calendar_id,
@@ -267,6 +284,7 @@ def remove_rsvp():
         ).execute()
 
         return jsonify({"status": "success", "event": updated_event}), 200
+
     except HttpError as err:
         if err.resp.status == 404:
             return jsonify({"status": "error", "message": "Event not found"}), 404
@@ -274,3 +292,4 @@ def remove_rsvp():
             return jsonify({"status": "error", "message": err._get_reason()}), err.resp.status
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
