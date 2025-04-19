@@ -5,10 +5,11 @@ import { Redirect } from 'expo-router';
 import WelcomeHeader from '@/components/WelcomeHeader';
 
 // Components
-import GameCalendar from "@/components/management/calendar"
-import Messages from "@/components/management/messages"
-import Training from "@/components/management/training"
-import GameStatistics from "@/components/management/statistics"
+import GameCalendar from "@/components/management/calendar";
+import Messages from "@/components/management/messages";
+import Training from "@/components/management/training";
+import GameStatistics from "@/components/management/statistics";
+import Formations from "@/components/management/formations";
 
 export default function Management() {
   const { logout, user, isLoading } = useAuth();
@@ -38,6 +39,7 @@ export default function Management() {
         <GameStatistics />
         <Training />
         <Messages />
+        <Formations /> {/* Add Formations component */}
       </ScrollView>
     </View>
   );
