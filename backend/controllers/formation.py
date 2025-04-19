@@ -5,8 +5,11 @@ import mongoengine as me
 
 def create_formation():
     try:
-        # Extract data from the request
+        # Log the incoming request data for debugging
         data = request.get_json()
+        print("Incoming request data:", data)
+
+        # Extract and validate data
         name = data.get('name')
         team_id = data.get('team_id')
 
@@ -39,6 +42,40 @@ def create_formation():
         return jsonify({"message": "Formation created successfully", "formation_id": str(formation.id)}), 201
 
     except me.ValidationError as e:
+        print("Validation error:", e)
         return jsonify({"message": "Validation error", "error": str(e)}), 400
+    except Exception as e:
+        print("Unexpected error:", e)
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+def list_formations():
+    try:
+        # Extract team_id from the request arguments
+        team_id = request.args.get('team_id')
+
+        if not team_id:
+            return jsonify({"message": "team_id is required"}), 400
+
+        # Retrieve all formations for the given team_id
+        formations = Formation.objects(team_id=team_id)
+        result = []
+
+        for formation in formations:
+            result.append({
+                "id": str(formation.id),
+                "name": formation.name,
+                "team_id": formation.team_id,
+                "roles": {
+                    "role_1": str(formation.role_1.player_id) if formation.role_1 else None,
+                    "role_2": str(formation.role_2.player_id) if formation.role_2 else None,
+                    "role_3": str(formation.role_3.player_id) if formation.role_3 else None,
+                    "role_4": str(formation.role_4.player_id) if formation.role_4 else None,
+                    "role_5": str(formation.role_5.player_id) if formation.role_5 else None,
+                    "role_6": str(formation.role_6.player_id) if formation.role_6 else None,
+                }
+            })
+
+        return jsonify({"formations": result}), 200
+
     except Exception as e:
         return jsonify({"message": "An error occurred", "error": str(e)}), 500

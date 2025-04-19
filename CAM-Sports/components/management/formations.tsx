@@ -1,33 +1,83 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from "react";
+import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator } from "react-native";
+import { Collapsible } from "../Collapsible";
+import { useRouter } from "expo-router";
+import { useIsFocused } from "@react-navigation/native"; // Import useIsFocused
+import axiosInstance from "@/utils/axios";
+import { useAuth } from "@/contexts/AuthContext";
 
-const Formations = () => {
+export default function Formations() {
+  const { user } = useAuth();
   const router = useRouter();
+  const isFocused = useIsFocused(); // Hook to detect if the tab is focused
+  const [formations, setFormations] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleNavigate = () => {
-    router.push('../formations');
+  const fetchFormations = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/formations/list", {
+        params: { team_id: user?.team_id },
+      });
+      setFormations(response.data.formations || []);
+    } catch (error) {
+      console.error("Error fetching formations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchFormations(); // Fetch formations when the tab is focused
+    }
+  }, [isFocused]); // Dependency array includes isFocused
+
+  const handleNavigate = (formationId: string) => {
+    router.push({
+      pathname: `../formations`,
+      params: { formationId },
+    });
+  };
+
+  const handleCreateFormation = () => {
+    router.push({
+      pathname: "../formations",
+      params: { isNew: "true" },
+    });
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handleNavigate}>
-      <Text style={styles.text}>Formations</Text>
-    </TouchableOpacity>
+    <Collapsible title="Formations">
+      <View>
+        {loading ? (
+          <ActivityIndicator size="large" color="#0000ff" />
+        ) : (
+          <FlatList
+            data={[{ id: "create", name: "Create Formation" }, ...formations]}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() =>
+                  item.id === "create" ? handleCreateFormation() : handleNavigate(item.id)
+                }
+              >
+                <Text style={styles.text}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+      </View>
+    </Collapsible>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#e0e0e0',
+  text: { fontSize: 16 },
+  item: {
     padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  text: {
-    fontSize: 16,
-    color: '#333',
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
   },
 });
-
-export default Formations;
