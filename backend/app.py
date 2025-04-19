@@ -13,6 +13,7 @@ from routes.training_plans import training_plans_bp
 from routes.calendar import calendar_bp
 from routes.events import calendar_events_bp
 from routes.ci import ci_bp
+from routes.formations import formations_bp
 
 load_dotenv()
 app = Flask(__name__)
@@ -38,6 +39,7 @@ app.register_blueprint(payment_bp, url_prefix='/payment')
 app.register_blueprint(team_bp, url_prefix='/team')
 app.register_blueprint(training_plans_bp, url_prefix='/training_plans')
 app.register_blueprint(ci_bp, url_prefix='/ci')
+app.register_blueprint(formations_bp, url_prefix='/formations')
 
 
 if __name__ == '__main__':
