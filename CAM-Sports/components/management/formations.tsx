@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator }
 import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native"; // Import useIsFocused
+import { MaterialIcons } from '@expo/vector-icons'; // Import MaterialIcons for the "+" icon
 import axiosInstance from "@/utils/axios";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -58,12 +59,22 @@ export default function Formations() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={styles.item}
+                style={[
+                  styles.item,
+                  item.id === "create" && styles.createItem, // Apply different style for "Create Formation"
+                ]}
                 onPress={() =>
                   item.id === "create" ? handleCreateFormation() : handleNavigate(item.id)
                 }
               >
-                <Text style={styles.text}>{item.name}</Text>
+                {item.id === "create" ? (
+                  <View style={styles.createContainer}>
+                    <MaterialIcons name="add" size={24} color="#fff" /> {/* Add "+" icon */}
+                    <Text style={[styles.text, styles.createText]}>{item.name}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.text}>{item.name}</Text>
+                )}
               </TouchableOpacity>
             )}
           />
@@ -79,5 +90,16 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+  },
+  createItem: {
+    backgroundColor: "#87ceeb",
+  },
+  createText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  createContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

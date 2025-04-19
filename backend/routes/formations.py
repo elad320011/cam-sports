@@ -1,5 +1,5 @@
 from flask import Blueprint
-from controllers.formation import create_formation, list_formations
+from controllers.formation import create_formation, list_formations, get_formation
 
 formations_bp = Blueprint('formations', __name__)
 
@@ -10,3 +10,7 @@ def create_formation_route():
 @formations_bp.route('/list', methods=['GET'])
 def list_formations_route():
     return list_formations()
+
+@formations_bp.route('/<formation_id>', methods=['GET'])
+def get_formation_route(formation_id):
+    return get_formation(formation_id)

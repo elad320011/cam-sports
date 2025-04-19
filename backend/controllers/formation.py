@@ -79,3 +79,32 @@ def list_formations():
 
     except Exception as e:
         return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+def get_formation(formation_id):
+    try:
+        # Retrieve the formation by ID
+        formation = Formation.objects(id=formation_id).first()
+
+        if not formation:
+            return jsonify({"message": "Formation not found"}), 404
+
+        # Prepare the response data
+        result = {
+            "id": str(formation.id),
+            "name": formation.name,
+            "team_id": formation.team_id,
+            "roles": {
+                "role_1": str(formation.role_1.player_id) if formation.role_1 else None,
+                "role_2": str(formation.role_2.player_id) if formation.role_2 else None,
+                "role_3": str(formation.role_3.player_id) if formation.role_3 else None,
+                "role_4": str(formation.role_4.player_id) if formation.role_4 else None,
+                "role_5": str(formation.role_5.player_id) if formation.role_5 else None,
+                "role_6": str(formation.role_6.player_id) if formation.role_6 else None,
+            }
+        }
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print("Unexpected error:", e)
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
