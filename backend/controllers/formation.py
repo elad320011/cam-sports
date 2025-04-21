@@ -1,15 +1,14 @@
 from flask import request, jsonify
 from models.formation import Formation
 from models.role import Role
+from models.player import Player
 import mongoengine as me
 
 def create_formation():
     try:
-        # Log the incoming request data for debugging
-        data = request.get_json()
-        print("Incoming request data:", data)
-
         # Extract and validate data
+        data = request.get_json()
+
         name = data.get('name')
         team_id = data.get('team_id')
 
@@ -39,13 +38,50 @@ def create_formation():
         )
         formation.save()
 
-        return jsonify({"message": "Formation created successfully", "formation_id": str(formation.id)}), 201
+        # Prepare the response data
+        result = {
+            "id": str(formation.id),
+            "name": formation.name,
+            "team_id": formation.team_id,
+            "roles": {
+                "role_1": {
+                    "player_id": None,
+                    "name": "Unassigned",
+                    "instructions": "",
+                },
+                "role_2": {
+                    "player_id": None,
+                    "name": "Unassigned",
+                    "instructions": "",
+                },
+                "role_3": {
+                    "player_id": None,
+                    "name": "Unassigned",
+                    "instructions": "",
+                },
+                "role_4": {
+                    "player_id": None,
+                    "name": "Unassigned",
+                    "instructions": "",
+                },
+                "role_5": {
+                    "player_id": None,
+                    "name": "Unassigned",
+                    "instructions": "",
+                },
+                "role_6": {
+                    "player_id": None,
+                    "name": "Unassigned",
+                    "instructions": "",
+                },
+            }
+        }
+
+        return jsonify(result), 201
 
     except me.ValidationError as e:
-        print("Validation error:", e)
         return jsonify({"message": "Validation error", "error": str(e)}), 400
     except Exception as e:
-        print("Unexpected error:", e)
         return jsonify({"message": "An error occurred", "error": str(e)}), 500
 
 def list_formations():
@@ -94,28 +130,49 @@ def get_formation(formation_id):
             "name": formation.name,
             "team_id": formation.team_id,
             "roles": {
-                "role_1": str(formation.role_1.player_id) if formation.role_1 else None,
-                "role_2": str(formation.role_2.player_id) if formation.role_2 else None,
-                "role_3": str(formation.role_3.player_id) if formation.role_3 else None,
-                "role_4": str(formation.role_4.player_id) if formation.role_4 else None,
-                "role_5": str(formation.role_5.player_id) if formation.role_5 else None,
-                "role_6": str(formation.role_6.player_id) if formation.role_6 else None,
+                "role_1": {
+                    "player_id": str(formation.role_1.player_id.id) if formation.role_1 and formation.role_1.player_id else None,
+                    "name": formation.role_1.player_id.full_name if formation.role_1 and formation.role_1.player_id else "Unassigned",
+                    "instructions": formation.role_1.instructions if formation.role_1 else "",
+                },
+                "role_2": {
+                    "player_id": str(formation.role_2.player_id.id) if formation.role_2 and formation.role_2.player_id else None,
+                    "name": formation.role_2.player_id.full_name if formation.role_2 and formation.role_2.player_id else "Unassigned",
+                    "instructions": formation.role_2.instructions if formation.role_2 else "",
+                },
+                "role_3": {
+                    "player_id": str(formation.role_3.player_id.id) if formation.role_3 and formation.role_3.player_id else None,
+                    "name": formation.role_3.player_id.full_name if formation.role_3 and formation.role_3.player_id else "Unassigned",
+                    "instructions": formation.role_3.instructions if formation.role_3 else "",
+                },
+                "role_4": {
+                    "player_id": str(formation.role_4.player_id.id) if formation.role_4 and formation.role_4.player_id else None,
+                    "name": formation.role_4.player_id.full_name if formation.role_4 and formation.role_4.player_id else "Unassigned",
+                    "instructions": formation.role_4.instructions if formation.role_4 else "",
+                },
+                "role_5": {
+                    "player_id": str(formation.role_5.player_id.id) if formation.role_5 and formation.role_5.player_id else None,
+                    "name": formation.role_5.player_id.full_name if formation.role_5 and formation.role_5.player_id else "Unassigned",
+                    "instructions": formation.role_5.instructions if formation.role_5 else "",
+                },
+                "role_6": {
+                    "player_id": str(formation.role_6.player_id.id) if formation.role_6 and formation.role_6.player_id else None,
+                    "name": formation.role_6.player_id.full_name if formation.role_6 and formation.role_6.player_id else "Unassigned",
+                    "instructions": formation.role_6.instructions if formation.role_6 else "",
+                },
             }
         }
 
         return jsonify(result), 200
 
     except Exception as e:
-        print("Unexpected error:", e)
         return jsonify({"message": "An error occurred", "error": str(e)}), 500
 
 def edit_formation(formation_id):
     try:
-        # Log the incoming request data for debugging
-        data = request.get_json()
-        print("Incoming request data for edit:", data)
-
         # Retrieve the formation by ID
+        data = request.get_json()
+
         formation = Formation.objects(id=formation_id).first()
 
         if not formation:
@@ -135,10 +192,23 @@ def edit_formation(formation_id):
             if role and isinstance(role_data, dict):  # Ensure role_data is a dictionary
                 player_id = role_data.get('player_id')
                 instructions = role_data.get('instructions')
-                if player_id is not None:
-                    role.player_id = player_id
+
+                # Validate and update player_id
+                if player_id is None or player_id == "None":
+                    role.player_id = None
+                else:
+                    try:
+                        player_object = Player.objects(id=player_id).first()
+                        if not player_object:
+                            raise ValueError(f"Player with id {player_id} not found.")
+                        role.player_id = player_object
+                    except Exception as e:
+                        return jsonify({"message": f"Invalid player_id for {role_key}: {player_id}", "error": str(e)}), 400
+
+                # Update instructions
                 if instructions is not None:
                     role.instructions = instructions
+
                 role.save()
 
         formation.save()
@@ -146,8 +216,6 @@ def edit_formation(formation_id):
         return jsonify({"message": "Formation updated successfully"}), 200
 
     except me.ValidationError as e:
-        print("Validation error during edit:", e)
         return jsonify({"message": "Validation error", "error": str(e)}), 400
     except Exception as e:
-        print("Unexpected error during edit:", e)
         return jsonify({"message": "An error occurred", "error": str(e)}), 500
