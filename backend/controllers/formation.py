@@ -108,3 +108,46 @@ def get_formation(formation_id):
     except Exception as e:
         print("Unexpected error:", e)
         return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+def edit_formation(formation_id):
+    try:
+        # Log the incoming request data for debugging
+        data = request.get_json()
+        print("Incoming request data for edit:", data)
+
+        # Retrieve the formation by ID
+        formation = Formation.objects(id=formation_id).first()
+
+        if not formation:
+            return jsonify({"message": "Formation not found"}), 404
+
+        # Update formation fields
+        name = data.get('name')
+        if name:
+            formation.name = name
+
+        roles_data = data.get('roles', {})
+        if not isinstance(roles_data, dict):
+            return jsonify({"message": "Invalid roles format. Expected a dictionary."}), 400
+
+        for role_key, role_data in roles_data.items():
+            role = getattr(formation, role_key, None)
+            if role and isinstance(role_data, dict):  # Ensure role_data is a dictionary
+                player_id = role_data.get('player_id')
+                instructions = role_data.get('instructions')
+                if player_id is not None:
+                    role.player_id = player_id
+                if instructions is not None:
+                    role.instructions = instructions
+                role.save()
+
+        formation.save()
+
+        return jsonify({"message": "Formation updated successfully"}), 200
+
+    except me.ValidationError as e:
+        print("Validation error during edit:", e)
+        return jsonify({"message": "Validation error", "error": str(e)}), 400
+    except Exception as e:
+        print("Unexpected error during edit:", e)
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500

@@ -55,7 +55,9 @@ const FormationsPage = () => {
   const { isNew, formationId } = useLocalSearchParams(); // Retrieve query parameters
   const isNewFormation = isNew === 'true'; // Check if it's a new formation
   const [formationName, setFormationName] = useState(isNewFormation ? '' : 'Default Formation');
+  const [originalFormationName, setOriginalFormationName] = useState(formationName); // Store the original name
   const [isEditing, setIsEditing] = useState(isNewFormation);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track unsaved changes
   interface FormationData {
     roles: {
       role_1?: { player_id?: string; instructions?: string };
@@ -75,7 +77,9 @@ const FormationsPage = () => {
       const fetchFormation = async () => {
         try {
           const response = await axiosInstance.get(`/formations/${formationId}`);
-          setFormationName(response.data.name || 'Unnamed Formation');
+          const fetchedName = response.data.name || 'Unnamed Formation';
+          setFormationName(fetchedName);
+          setOriginalFormationName(fetchedName); // Store the original name
           setFormationData(response.data); // Store the retrieved formation data
         } catch (error) {
           console.error('Error fetching formation:', error);
@@ -97,19 +101,42 @@ const FormationsPage = () => {
           name: formationName,
           team_id: user?.team_id, // Send the team_id in the request body
         });
-        console.log("Request payload:", { name: formationName, team_id: user?.team_id }); // Log the payload for debugging
         if (response.status === 201) {
           Alert.alert('Success', 'Formation created successfully.');
           setIsEditing(false);
+          setHasUnsavedChanges(false); // Reset unsaved changes
         }
       } catch (error) {
         console.error('Error creating formation:', error);
         Alert.alert('Error', 'Failed to create formation.');
       }
     } else {
-      setIsEditing(false);
-      Alert.alert('Success', 'Formation name saved.');
+      try {
+        const response = await axiosInstance.put(`/formations/${formationId}/edit`, {
+          name: formationName,
+          roles: formationData?.roles, // Send updated roles
+        });
+        if (response.status === 200) {
+          Alert.alert('Success', 'Formation updated successfully.');
+          setIsEditing(false);
+          setHasUnsavedChanges(false); // Reset unsaved changes
+        }
+      } catch (error) {
+        console.error('Error updating formation:', error);
+        Alert.alert('Error', 'Failed to update formation.');
+      }
     }
+  };
+
+  const handleCancel = () => {
+    setFormationName(originalFormationName); // Revert to the original name
+    setIsEditing(false);
+    setHasUnsavedChanges(false); // Reset unsaved changes
+  };
+
+  const handleChange = (newName: string) => {
+    setFormationName(newName);
+    setHasUnsavedChanges(true); // Mark as having unsaved changes
   };
 
   const positions = formationData
@@ -125,17 +152,22 @@ const FormationsPage = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack.Screen options={{ headerTitle: '' }} />
+      <Stack.Screen
+        options={{
+          headerTitle: '',
+        }}
+      />
       <View style={styles.container}>
         {isEditing ? (
           <View style={styles.editContainer}>
             <TextInput
               style={styles.input}
               value={formationName}
-              onChangeText={setFormationName}
+              onChangeText={handleChange}
               placeholder="Enter formation name"
             />
             <Button title="Save" onPress={handleSave} />
+            <Button title="Cancel" onPress={handleCancel} color="red" />
           </View>
         ) : (
           <View style={styles.nameContainer}>
