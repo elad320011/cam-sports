@@ -4,11 +4,11 @@ import Constants from 'expo-constants';
 import { BACKEND_URL } from '@/globalVariables';
 
 // Replace 192.168.1.X with your actual local IP address
-const BASE_URL = __DEV__ 
+const BASE_URL = __DEV__
   ? BACKEND_URL  // For iOS simulator
   // or 'http://10.0.2.2:5000' // For Android emulator
   // or 'http://YOUR_LOCAL_IP:5000' // For physical device (e.g., 192.168.1.100:5000)
-  : 'https://your-production-url.com';
+  : 'https://cam-sports.cs.colman.ac.il';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL
@@ -42,7 +42,7 @@ axiosInstance.interceptors.response.use(
         });
 
         const { access_token, refresh_token: new_refresh_token } = response.data;
-        
+
         await AsyncStorage.setItem('access_token', access_token);
         await AsyncStorage.setItem('refresh_token', new_refresh_token);
 
@@ -60,4 +60,4 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export default axiosInstance; 
+export default axiosInstance;
