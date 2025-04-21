@@ -219,3 +219,25 @@ def edit_formation(formation_id):
         return jsonify({"message": "Validation error", "error": str(e)}), 400
     except Exception as e:
         return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+def delete_formation(formation_id):
+    try:
+        # Retrieve the formation by ID
+        formation = Formation.objects(id=formation_id).first()
+
+        if not formation:
+            return jsonify({"message": "Formation not found"}), 404
+
+        # Delete associated roles
+        for role_key in ['role_1', 'role_2', 'role_3', 'role_4', 'role_5', 'role_6']:
+            role = getattr(formation, role_key, None)
+            if role:
+                role.delete()
+
+        # Delete the formation
+        formation.delete()
+
+        return jsonify({"message": "Formation deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500

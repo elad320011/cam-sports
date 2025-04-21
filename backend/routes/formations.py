@@ -1,5 +1,5 @@
 from flask import Blueprint
-from controllers.formation import create_formation, list_formations, get_formation, edit_formation
+from controllers.formation import create_formation, list_formations, get_formation, edit_formation, delete_formation
 
 formations_bp = Blueprint('formations', __name__)
 
@@ -18,3 +18,7 @@ def get_formation_route(formation_id):
 @formations_bp.route('/<formation_id>/edit', methods=['PUT'])
 def edit_formation_route(formation_id):
     return edit_formation(formation_id)
+
+@formations_bp.route('/<formation_id>/delete', methods=['DELETE'])
+def delete_formation_route(formation_id):
+    return delete_formation(formation_id)
