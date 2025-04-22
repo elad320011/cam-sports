@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable, ScrollView, TouchableOpacity } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
+// import { Picker } from '@react-native-picker/picker';
+// import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
 import * as Clipboard from 'expo-clipboard';
 
@@ -373,7 +373,7 @@ export default function RegisterScreen() {
             <View style={styles.pickerContainer}>
               <Text style={styles.label}>Register as:</Text>
               <View style={styles.pickerWrapper}>
-                <Picker
+                {/* <Picker
                   selectedValue={userType}
                   style={styles.picker}
                   onValueChange={(itemValue: string) => setUserType(itemValue)}
@@ -381,7 +381,7 @@ export default function RegisterScreen() {
                   <Picker.Item label="Player" value="player" />
                   <Picker.Item label="Management" value="management" />
                   <Picker.Item label="Team" value="team" />
-                </Picker>
+                </Picker> */}
               </View>
             </View>
 
@@ -449,7 +449,7 @@ export default function RegisterScreen() {
                   autoCapitalize="characters"
                   maxLength={6}
                 />
-                <Picker
+                {/* <Picker
                   selectedValue={role}
                   style={styles.picker}
                   onValueChange={(itemValue: string) => setRole(itemValue)}
@@ -461,7 +461,7 @@ export default function RegisterScreen() {
                   <Picker.Item label="Setter" value="Setter" />
                   <Picker.Item label="Libero" value="Libero" />
                   <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
-                </Picker>
+                </Picker> */}
 
                 <Text style={styles.inputLabel}>Birth Date:</Text>
                 {Platform.OS === 'web' ? (
@@ -490,7 +490,7 @@ export default function RegisterScreen() {
                       </Text>
                     </Pressable>
 
-                    {showDatePicker && (
+                    {/* {showDatePicker && (
                       <DateTimePicker
                         testID="dateTimePicker"
                         value={date}
@@ -501,7 +501,7 @@ export default function RegisterScreen() {
                         maximumDate={new Date()}
                         minimumDate={new Date(1900, 0, 1)}
                       />
-                    )}
+                    )} */}
                   </>
                 )}
 

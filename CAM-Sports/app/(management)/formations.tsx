@@ -5,7 +5,7 @@ import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
-import { Picker } from '@react-native-picker/picker'; // Import Picker for dropdown
+import Picker from '@react-native-community/datetimepicker'; // Import Picker for dropdown
 
 interface Player {
   id: string; // MongoDB ObjectId
@@ -128,7 +128,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
           <View style={styles.modalContent}>
             {isEditing ? (
               <>
-                <Picker
+                {/* <Picker
                   selectedValue={editedName}
                   onValueChange={(itemValue) => setEditedName(itemValue)} // Ensure editedName is updated on selection
                   style={styles.picker}
@@ -136,7 +136,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
                   {players.map((player) => (
                     <Picker.Item key={player.id} label={player.fullName} value={player.id} />
                   ))}
-                </Picker>
+                </Picker> */}
                 <TextInput
                   style={[styles.input, { height: 80 }]}
                   value={editedInstructions}

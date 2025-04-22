@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
-import { Picker } from '@react-native-picker/picker';
+import Picker from '@react-native-community/datetimepicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
@@ -218,7 +218,7 @@ export default function CompleteGoogleProfileScreen() {
                   autoCapitalize="characters"
                   maxLength={6}
                 />
-                <Picker
+                {/* <Picker
                   selectedValue={role}
                   style={styles.picker}
                   onValueChange={(itemValue: string) => setRole(itemValue)}
@@ -230,7 +230,7 @@ export default function CompleteGoogleProfileScreen() {
                   <Picker.Item label="Setter" value="Setter" />
                   <Picker.Item label="Libero" value="Libero" />
                   <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
-                </Picker>
+                </Picker> */}
 
                 <Text style={styles.inputLabel}>Birth Date:</Text>
                 {Platform.OS === 'web' ? (
