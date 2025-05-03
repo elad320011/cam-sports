@@ -84,8 +84,9 @@ const GameCalendar = () => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  const [RSVPLoader, setRSVPLoader] = useState<boolean>(false);
+  const [RSVPLoader, setRSVPLoader] = useState<{ [key: string]: boolean }>({});
   const [attendanceLoader, setAttendanceLoader] = useState<boolean>(false);
+  const [userRSVPStatus, setUserRSVPStatus] = useState<{ [key: string]: boolean }>({});
 
   const { user } = useAuth();
   const teamCalendarId = user?.calendar_id || JSON.parse(localStorage.getItem('user') || '{}');
@@ -107,7 +108,26 @@ const GameCalendar = () => {
     setMarkedDates(newMarkedDates);
   };
 
-  const handleDayPress = (day: DateData) => {
+  const checkUserRSVPStatus = async (eventId: string) => {
+    if (!user?.email) return false;
+    
+    try {
+      const response = await showAttendance(teamCalendarId, eventId);
+      const rsvps = response.attendees || [];
+      const hasRSVPed = rsvps.some(
+        (email: string) => email.toLowerCase() === user.email.toLowerCase()
+      );
+      setUserRSVPStatus(prev => ({ ...prev, [eventId]: hasRSVPed }));
+      return hasRSVPed;
+    } catch (error) {
+      console.error('Error checking RSVP status:', error);
+      return false;
+    } finally {
+      setRSVPLoader(prev => ({ ...prev, [eventId]: false }));
+    }
+  };
+
+  const handleDayPress = async (day: DateData) => {
     setSelectedDate(day.dateString);
     const dayEvents = events.filter(
       (event) =>
@@ -116,6 +136,18 @@ const GameCalendar = () => {
     );
     setSelectedDayEvents(dayEvents);
     setEventDetailsVisible(true);
+    
+    // Set loading state for all events at once
+    const loadingState = dayEvents.reduce((acc, event) => ({
+      ...acc,
+      [event.id]: true
+    }), {});
+    setRSVPLoader(prev => ({ ...prev, ...loadingState }));
+    
+    // Check RSVP status for each event
+    for (const event of dayEvents) {
+      await checkUserRSVPStatus(event.id);
+    }
   };
   
   const handleRSVP = async (eventId: string) => {
@@ -124,7 +156,8 @@ const GameCalendar = () => {
       return;
     }
     
-    setRSVPLoader(true);
+    // Show loading state during the action
+    setRSVPLoader(prev => ({ ...prev, [eventId]: true }));
 
     try {
       // Get current attendance
@@ -147,6 +180,9 @@ const GameCalendar = () => {
         Alert.alert('Success', 'RSVP successful.');
       }
 
+      // Update the RSVP status after successful action
+      setUserRSVPStatus(prev => ({ ...prev, [eventId]: !prev[eventId] }));
+
       // Refresh the event list
       fetchEvents();
 
@@ -154,7 +190,7 @@ const GameCalendar = () => {
       console.error('RSVP toggle error:', error);
       Alert.alert('Error', 'Something went wrong while toggling RSVP.');
     } finally {
-      setRSVPLoader(false); 
+      setRSVPLoader(prev => ({ ...prev, [eventId]: false }));
     }
   };
 
@@ -348,10 +384,10 @@ const GameCalendar = () => {
 
                       <View style={styles.actionButtons}>
                         <AppButton
-                          title={RSVPLoader ? "Loading..." : "RSVP"}
+                          title={RSVPLoader[event.id] ? "Loading..." : (userRSVPStatus[event.id] ? "Remove RSVP" : "RSVP")}
                           onPress={() => handleRSVP(event.id)}
                           containerStyle={styles.smallButton}
-                          disabled={RSVPLoader}
+                          disabled={RSVPLoader[event.id]}
                         />
                         <AppButton
                           title="Attendance"

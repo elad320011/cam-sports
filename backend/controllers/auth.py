@@ -7,6 +7,7 @@ from functools import wraps
 from models.player import Player
 from models.management import Management
 from models.team import Team
+from models.message_board import MessageBoard
 import random
 import string
 import requests

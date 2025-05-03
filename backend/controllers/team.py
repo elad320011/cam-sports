@@ -56,7 +56,6 @@ def create_team(request):
     staff = data.get('staff')
     players = data.get('players')
 
-
     team_object = Team(
         name=team_name,
         manager=manager,
