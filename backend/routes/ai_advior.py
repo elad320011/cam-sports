@@ -1,5 +1,5 @@
 from flask import Blueprint
-from controllers.ai_advior import message_ai_advisor, customize_ai_advisor, load_conv_history
+from controllers.ai_advior import message_ai_advisor, customize_ai_advisor, load_conv_history, clean_temp_messages
 
 ai_advior_bp = Blueprint('ai_advior', __name__)
 
@@ -16,3 +16,7 @@ def message_ai_advisor_route():
 @ai_advior_bp.route("/customize_ai_advisor", methods=['POST'])
 def customize_ai_advisor_route():
     return customize_ai_advisor()
+
+@ai_advior_bp.route("/clean_temp_messages", methods=['POST'])
+def clean_temp_messages_route():
+    return clean_temp_messages()

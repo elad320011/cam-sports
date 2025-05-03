@@ -47,9 +47,20 @@ const loadAIAdvisorHistory = async () => {
   }
 };
 
+// Clean temporary messages
+const cleanTempMessages = async (data: object) => {
+  try {
+    const response = await axiosInstance.post('/ai_advior/clean_temp_messages', data);
+    return response.data;
+  } catch (error) {
+    console.log('Error cleaning temporary messages:', error);
+  }
+};
+
 export {
   customizeAIAdvisor,
   sendAIAdvisorTextMessage,
   sendAIAdvisorStatisticDocId,
   loadAIAdvisorHistory,
+  cleanTempMessages,
 };

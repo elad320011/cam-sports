@@ -24,6 +24,7 @@ def message_ai_advisor():
     user_type = request.json.get('user_type')
     conv_message_type = request.json.get("type")
     message = request.json.get("message")
+    is_temp = request.json.get("isTemp", False)
     
     if not all([email, user_type, conv_message_type, message]):
         return jsonify({"error": "Missing required fields"}), 400
@@ -50,8 +51,17 @@ def message_ai_advisor():
     else:
         return jsonify({"error": "Invalid conversation message type"}), 400
 
-    history.append({"role": "user", "content": message})
-    history.append({"role": "assistant", "content": response})
+    # Add user message
+    message_obj = {"role": "user", "content": message}
+    if is_temp:
+        message_obj["isTemp"] = True
+    history.append(message_obj)
+
+    # Add assistant message
+    message_obj = {"role": "assistant", "content": response}
+    if is_temp:
+        message_obj["isTemp"] = True
+    history.append(message_obj)
 
     conversation.history = history
     conversation.last_updated = datetime.utcnow()
@@ -77,62 +87,20 @@ def customize_ai_advisor():
 
     return jsonify({"success": True, "message": "System message added successfully"}), 200
 
+def clean_temp_messages():
+    email = request.json.get('email')
+    user_type = request.json.get('user_type')
 
-# from flask import request, jsonify
-# import os
-# import json
-# from services.ai_advior import get_response
-# from controllers.game_statistics import get_game_statistics_by_id
+    if not all([email, user_type]):
+        return jsonify({"error": "Missing required fields"}), 400
 
-# # TEMPORARY - for production we will use a database
-# conversation_history = [{"role": "system", "content": os.getenv("OPENAI_STATISTICS_OVERVIEW_ROLE")}]
+    conversation = Conversation.objects(email=email, user_type=user_type).first()
+    if not conversation:
+        return jsonify({"error": "Conversation not found"}), 404
 
-# # Load the conversation history
-# def load_conv_history():
-#     global conversation_history  # Access from memory- TEMPORARY
+    # Filter out messages that have isTemp flag
+    conversation.history = [msg for msg in conversation.history if not msg.get('isTemp')]
+    conversation.last_updated = datetime.utcnow()
+    conversation.save()
 
-#     return jsonify({"conversation_history": conversation_history})
-
-# # Send a message to the AI advisor
-# def message_ai_advisor():
-#     global conversation_history  # Access from memory- TEMPORARY
-    
-#     conv_message_type = request.json.get("type")
-#     message = request.json.get("message")
-    
-#     if not conv_message_type:
-#         return jsonify({"error": "No conversation message type provided"}), 400
-    
-#     if not message:
-#         return jsonify({"error": "No message provided"}), 400
-
-#     # Detect message type and get appropriate response
-#     response = ""
-#     if conv_message_type == "text":
-#         response = get_response(conversation_history, message)
-#     elif conv_message_type == "statistic_doc_id":
-#         game_statistics_response, status_code = get_game_statistics_by_id(message)
-#         if status_code == 200:
-#             game_statistics_json = game_statistics_response.get_json()
-#             game_statistics = json.dumps(game_statistics_json)
- 
-#             response = get_response(conversation_history, game_statistics)
-#         else:
-#             return game_statistics_response
-#     else:
-#         return jsonify({"error": "Invalid conversation message type"}), 400
-
-#     return jsonify({"message": response})
-
-# # Customize the AI advisor
-# def customize_ai_advisor():
-#     global conversation_history  # Access from memory- TEMPORARY
-    
-#     submitted_text = request.json.get("custom_info")
-#     if not submitted_text:
-#         return jsonify({"error": "No message provided"}), 400
-
-#     # Add the new system message
-#     conversation_history.append({"role": "system", "content": submitted_text})
-
-#     return jsonify({"success": True, "message": "System message added successfully"}), 200
+    return jsonify({"success": True, "message": "Temporary messages cleaned successfully"}), 200
