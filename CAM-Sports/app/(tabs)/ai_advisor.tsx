@@ -16,7 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 
 import { getTeamGameStatistics } from '@/services/gameStatsService';
-import { sendAIAdvisorTextMessage } from '@/services/aiAdvisorService';
+import { sendAIAdvisorTextMessage, cleanTempMessages } from '@/services/aiAdvisorService';
+import { getTeamFormations } from '@/services/formationService';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
@@ -48,7 +49,6 @@ export default function AIAdvisor() {
   const [input, setInput] = useState('');
   const [statisticsVisible, setStatisticsVisible] = useState(false);
 
-
   const [gameStatistics, setGameStatistics] = useState<GameStatistic[]>([]);
   const [typing, setTyping] = useState(false);
   const typingRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,12 +57,20 @@ export default function AIAdvisor() {
 
   const { user } = useAuth();
 
+  // Initialize conversation with formations
+  useEffect(() => {
+    (async () => {
+      await cleanTempMessagesFromHistory();
+      await loadFormationsToHistory();
+    })();
+  }, []);
+  
   // Get team game statistics
   useEffect(() => {
     (async () => {
       try {
         const result = await getTeamGameStatistics(user?.team_id ?? '');
-
+        
         if (result) {
           const formattedResult = JSON.parse(result.stats).map((stat: any) => ({
             ...stat,
@@ -79,6 +87,56 @@ export default function AIAdvisor() {
       }
     })();
   }, [statisticsVisible]);
+
+
+  // Functions
+
+  const cleanTempMessagesFromHistory = async () => {
+    try {
+      const data = {
+        email: user?.email,
+        user_type: user?.user_type,
+      }
+      await cleanTempMessages(data);
+    } catch (error) {
+      console.error('Error cleaning temp messages:', error);
+    }
+  };
+
+  const loadFormationsToHistory = async () => {
+    try {
+      const formationsResponse = await getTeamFormations(user?.team_id ?? '');
+      
+      if (formationsResponse.formations) {
+        // Format formations into a detailed readable string
+        const formationsText = formationsResponse.formations
+          .map(formation => {
+            const rolesText = Object.entries(formation.roles)
+              .map(([roleKey, roleInfo]) => {
+                if (!roleInfo) return `${roleKey}: Unassigned`;
+                return `${roleKey}: ${roleInfo.name}${roleInfo.instructions ? ` (Instructions: ${roleInfo.instructions})` : ''}`;
+              })
+              .join('\n  ');
+
+            return `${formation.name} (ID: ${formation.id}):\n  ${rolesText}`;
+          })
+          .join('\n\n');
+
+        const messageData = {
+          email: user?.email,
+          user_type: user?.user_type,
+          type: 'text',
+          message: `Current formations:\n${formationsText}\nUse this information to help you analyze the game and provide better advice, Don't specify any ids or non relevent information other then volleyball related information.`,
+          isTemp: true
+        };
+        
+        await sendAIAdvisorTextMessage(messageData);
+      }
+    } catch (error) {
+      console.error('Error loading formations:', error);
+    }
+  };
+
 
   const handleSend = async () => {
     if (typing) {

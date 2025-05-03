@@ -24,6 +24,7 @@ def message_ai_advisor():
     user_type = request.json.get('user_type')
     conv_message_type = request.json.get("type")
     message = request.json.get("message")
+    is_temp = request.json.get("isTemp", False)
     
     if not all([email, user_type, conv_message_type, message]):
         return jsonify({"error": "Missing required fields"}), 400
@@ -50,8 +51,17 @@ def message_ai_advisor():
     else:
         return jsonify({"error": "Invalid conversation message type"}), 400
 
-    history.append({"role": "user", "content": message})
-    history.append({"role": "assistant", "content": response})
+    # Add user message
+    message_obj = {"role": "user", "content": message}
+    if is_temp:
+        message_obj["isTemp"] = True
+    history.append(message_obj)
+
+    # Add assistant message
+    message_obj = {"role": "assistant", "content": response}
+    if is_temp:
+        message_obj["isTemp"] = True
+    history.append(message_obj)
 
     conversation.history = history
     conversation.last_updated = datetime.utcnow()
@@ -76,3 +86,21 @@ def customize_ai_advisor():
     conversation.save()
 
     return jsonify({"success": True, "message": "System message added successfully"}), 200
+
+def clean_temp_messages():
+    email = request.json.get('email')
+    user_type = request.json.get('user_type')
+
+    if not all([email, user_type]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    conversation = Conversation.objects(email=email, user_type=user_type).first()
+    if not conversation:
+        return jsonify({"error": "Conversation not found"}), 404
+
+    # Filter out messages that have isTemp flag
+    conversation.history = [msg for msg in conversation.history if not msg.get('isTemp')]
+    conversation.last_updated = datetime.utcnow()
+    conversation.save()
+
+    return jsonify({"success": True, "message": "Temporary messages cleaned successfully"}), 200
