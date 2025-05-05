@@ -10,6 +10,7 @@ import Messages from "@/components/management/messages";
 import Training from "@/components/management/training";
 import GameStatistics from "@/components/management/statistics";
 import Formations from "@/components/management/formations";
+import Footage from "@/components/management/footage";
 
 export default function Management() {
   const { logout, user, isLoading } = useAuth();
@@ -27,19 +28,20 @@ export default function Management() {
       <WelcomeHeader />
       <View style={styles.header}>
         <Text style={styles.title}>Management</Text>
-        <Button 
-          title="Logout" 
+        <Button
+          title="Logout"
           onPress={logout}
           color="#ff4444"  // Red color for logout button
         />
       </View>
-      
+
       <ScrollView style={styles.scrollContainer}>
         <GameCalendar />
         <GameStatistics />
         <Training />
         <Messages />
         <Formations /> {/* Add Formations component */}
+        <Footage teamId={user?.team_id}/>
       </ScrollView>
     </View>
   );
