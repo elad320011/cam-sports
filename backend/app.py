@@ -15,6 +15,7 @@ from routes.events import calendar_events_bp
 from routes.ci import ci_bp
 from routes.formations import formations_bp
 from routes.message_board_routes import message_board_bp
+from routes.footage import footage_bp
 
 load_dotenv()
 app = Flask(__name__)
@@ -42,6 +43,7 @@ app.register_blueprint(training_plans_bp, url_prefix='/training_plans')
 app.register_blueprint(ci_bp, url_prefix='/ci')
 app.register_blueprint(formations_bp, url_prefix='/formations')
 app.register_blueprint(message_board_bp, url_prefix='/message_board')
+app.register_blueprint(footage_bp, url_prefix='/footage')
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
