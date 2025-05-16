@@ -3,6 +3,28 @@ from models.player import Player
 from models.team import Team
 from bson import ObjectId
 
+def get_player_details(request):
+    email = request.args.get('email')
+    
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+    
+    player = Player.objects(email=email).first()
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+    
+    # Convert to dict for JSON response
+    player_data = {
+        "email": player.email,
+        "full_name": player.full_name,
+        "role": player.role,
+        "birth_date": player.birth_date.strftime('%Y-%m-%d') if player.birth_date else None,
+        "weight": player.weight,
+        "height": player.height
+    }
+    
+    return jsonify(player_data), 200
+
 def update_player(request):
     data = request.get_json()
     email = data.get('email')

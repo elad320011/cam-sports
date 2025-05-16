@@ -3,6 +3,24 @@ from models.management import Management
 from models.team import Team
 from bson import ObjectId
 
+def get_management_details(request):
+    email = request.args.get('email')
+    
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+    
+    management = Management.objects(email=email).first()
+    if not management:
+        return jsonify({"error": "Management user not found"}), 404
+    
+    # Convert to dict for JSON response
+    management_data = {
+        "email": management.email,
+        "full_name": management.full_name,
+    }
+    
+    return jsonify(management_data), 200
+
 def update_management(request):
     data = request.get_json()
     email = data.get('email')

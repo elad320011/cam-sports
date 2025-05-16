@@ -10,6 +10,8 @@ import { useRouter } from 'expo-router';
 interface Teammate {
   full_name: string;
   email: string;
+  role?: string;
+  user_type?: 'player' | 'management' | 'unknown';
 }
 
 interface TeamInfo {
@@ -73,12 +75,62 @@ export default function ProfileScreen() {
   
   const fetchTeammates = async () => {
     try {
-      const response = await axiosInstance.get(`/team/get_players?team_name=${user.team_id}`);
-      if (response.data && response.data.players) {
-        setTeammates(response.data.players);
+      // Step 1: Get the team information with the list of player/management emails
+      const teamResponse = await axiosInstance.get(`/team/get_by_name?team_name=${user.team_id}`);
+      const team = teamResponse.data;
+      
+      console.log("Team data:", team);
+      
+      // Determine which list to use based on current user type
+      const memberEmails = user?.user_type === 'player' ? 
+        [...team.players || []] : // Include other players if current user is a player
+        [...team.management || [], ...team.players || []]; // Include both if current user is management
+      
+      console.log("Member emails to fetch:", memberEmails);
+      
+      // Empty array to collect member details
+      const memberDetails: Teammate[] = [];
+      
+      // Step 2: Fetch details for each member
+      for (const email of memberEmails) {
+        if (email === user.email) continue; // Skip current user
+        
+        try {
+          // Try to fetch as player first
+          const playerResponse = await axiosInstance.get(`/player/details?email=${email}`);
+          memberDetails.push({
+            email: email,
+            full_name: playerResponse.data.full_name,
+            role: playerResponse.data.role || 'Player',
+            user_type: 'player' as const
+          });
+        } catch (error) {
+          // If not a player, try as management
+          try {
+            const managementResponse = await axiosInstance.get(`/management/details?email=${email}`);
+            memberDetails.push({
+              email: email,
+              full_name: managementResponse.data.full_name,
+              role: 'Team Manager',
+              user_type: 'management' as const
+            });
+          } catch (innerError) {
+            // If both fail, just add the email
+            memberDetails.push({
+              email: email,
+              full_name: email,
+              role: 'Unknown',
+              user_type: 'unknown' as const
+            });
+          }
+        }
       }
+      
+      console.log("Fetched member details:", memberDetails);
+      setTeammates(memberDetails);
     } catch (error) {
       console.error('Error fetching teammates:', error);
+      setTeammates([]);
     }
   };
   
@@ -256,13 +308,10 @@ export default function ProfileScreen() {
     }
   };
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.replace('/login');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to log out. Please try again.');
-    }
+  // Direct logout function - simple approach like in index.tsx
+  const handleLogout = () => {
+    // Just call logout directly, without any confirmation or navigation
+    logout();
   };
 
   return (
@@ -307,10 +356,15 @@ export default function ProfileScreen() {
           <Collapsible title="Team Members">
             <View style={styles.section}>
               {teammates.length > 0 ? (
-                teammates.map((player, index) => (
+                teammates.map((member, index) => (
                   <View key={index} style={styles.teammateContainer}>
-                    <Text style={styles.teammateText}>{player.full_name}</Text>
-                    <Text style={styles.teammateRoleText}>{player.email}</Text>
+                    <View>
+                      <Text style={styles.teammateText}>{member.full_name}</Text>
+                      <Text style={styles.teammateRoleText}>{member.role}</Text>
+                    </View>
+                    <Text style={styles.teammateTypeText}>
+                      {member.user_type === 'player' ? 'Player' : 'Manager'}
+                    </Text>
                   </View>
                 ))
               ) : (
@@ -378,7 +432,8 @@ export default function ProfileScreen() {
                 style={styles.input}
                 placeholder="Enter team code"
                 value={teamCodeToJoin}
-                onChangeText={setTeamCodeToJoin}
+                onChangeText={(text) => setTeamCodeToJoin(text.toUpperCase())}
+                autoCapitalize="characters"
               />
             </View>
             
@@ -565,16 +620,23 @@ const styles = StyleSheet.create({
   teammateContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
   teammateText: {
     fontSize: 16,
+    fontWeight: '500',
   },
   teammateRoleText: {
     fontSize: 14,
     color: '#666',
+    marginTop: 4,
+  },
+  teammateTypeText: {
+    fontSize: 14,
+    color: '#4a90e2',
+    fontStyle: 'italic',
   },
   noDataText: {
     fontSize: 16,
