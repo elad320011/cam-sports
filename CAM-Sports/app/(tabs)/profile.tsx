@@ -360,7 +360,7 @@ export default function ProfileScreen() {
                   <View key={index} style={styles.teammateContainer}>
                     <View>
                       <Text style={styles.teammateText}>{member.full_name}</Text>
-                      <Text style={styles.teammateRoleText}>{member.role}</Text>
+                      <Text style={styles.teammateRoleText}>{member.email}</Text>
                     </View>
                     <Text style={styles.teammateTypeText}>
                       {member.user_type === 'player' ? 'Player' : 'Manager'}
