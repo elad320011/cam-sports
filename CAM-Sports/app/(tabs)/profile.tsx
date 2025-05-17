@@ -97,10 +97,18 @@ export default function ProfileScreen() {
       
       console.log("Team data:", team);
       
-      // Determine which list to use based on current user type
-      const memberEmails = user?.user_type === 'player' ? 
-        [...team.players || []] : // Include other players if current user is a player
-        [...team.management || [], ...team.players || []]; // Include both if current user is management
+      // For both player and management, show all team members
+      let memberEmails: string[] = [];
+      
+      // Include all players
+      if (team.players && team.players.length > 0) {
+        memberEmails = [...memberEmails, ...team.players];
+      }
+      
+      // Include all management
+      if (team.management && team.management.length > 0) {
+        memberEmails = [...memberEmails, ...team.management];
+      }
       
       console.log("Member emails to fetch:", memberEmails);
       
@@ -454,27 +462,28 @@ export default function ProfileScreen() {
           </Collapsible>
         )}
         
-        {user?.user_type === 'management' && (
-          <Collapsible title="Team Members">
-            <View style={styles.section}>
-              {teammates.length > 0 ? (
-                teammates.map((member, index) => (
-                  <View key={index} style={styles.teammateContainer}>
-                    <View>
-                      <Text style={styles.teammateText}>{member.full_name}</Text>
-                      <Text style={styles.teammateRoleText}>{member.email}</Text>
-                    </View>
-                    <Text style={styles.teammateTypeText}>
-                      {member.user_type === 'player' ? 'Player' : 'Manager'}
-                    </Text>
+        <Collapsible title="Team Members">
+          <View style={styles.section}>
+            {teammates.length > 0 ? (
+              teammates.map((member, index) => (
+                <View key={index} style={styles.teammateContainer}>
+                  <View>
+                    <Text style={styles.teammateText}>{member.full_name}</Text>
+                    <Text style={styles.teammateRoleText}>{member.email}</Text>
+                    {member.role && member.user_type === 'player' && (
+                      <Text style={styles.teammatePositionText}>Position: {member.role}</Text>
+                    )}
                   </View>
-                ))
-              ) : (
-                <Text style={styles.noDataText}>No team members yet</Text>
-              )}
-            </View>
-          </Collapsible>
-        )}
+                  <Text style={styles.teammateTypeText}>
+                    {member.user_type === 'player' ? 'Player' : 'Manager'}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No team members yet</Text>
+            )}
+          </View>
+        </Collapsible>
         
         {user?.user_type === 'player' && (
           <Collapsible title="Edit Profile">
@@ -738,6 +747,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  teammatePositionText: {
+    fontSize: 14,
+    color: '#4a90e2',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   teammateTypeText: {
     fontSize: 14,
