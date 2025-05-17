@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 
+import { getTeamMembers } from '@/services/usersService';
 import { getTeamGameStatistics } from '@/services/gameStatsService';
 import { sendAIAdvisorTextMessage, cleanTempMessages } from '@/services/aiAdvisorService';
 import { getTeamFormations } from '@/services/formationService';
@@ -34,6 +35,16 @@ interface GameStatistic {
     team_sets_won_count: number;
     team_sets_lost_count: number;
     game_date: string;
+}
+
+interface Player {
+    _id?: { $oid: string };
+    full_name?: string;
+    email?: string;
+    role?: string;
+    height?: number;
+    weight?: number;
+    birth_date?: { $date: string };
 }
 
 export default function AIAdvisor() {
@@ -61,6 +72,7 @@ export default function AIAdvisor() {
   useEffect(() => {
     (async () => {
       await cleanTempMessagesFromHistory();
+      await loadAllTeamMembers();
       await loadFormationsToHistory();
     })();
   }, []);
@@ -106,38 +118,74 @@ export default function AIAdvisor() {
   const loadFormationsToHistory = async () => {
     try {
       const formationsResponse = await getTeamFormations(user?.team_id ?? '');
-      
+  
       if (formationsResponse.formations) {
-        // Format formations into a detailed readable string
         const formationsText = formationsResponse.formations
           .map(formation => {
             const rolesText = Object.entries(formation.roles)
               .map(([roleKey, roleInfo]) => {
-                if (!roleInfo) return `${roleKey}: Unassigned`;
-                return `${roleKey}: ${roleInfo.name}${roleInfo.instructions ? ` (Instructions: ${roleInfo.instructions})` : ''}`;
+                const playerInfo = roleInfo?.player_id ? `Player ID: ${roleInfo.player_id}` : 'Unassigned';
+                const instructionText = roleInfo?.instructions ? ` (Instructions: ${roleInfo.instructions})` : '';
+                return `${roleKey}: ${playerInfo}${instructionText}`;
               })
               .join('\n  ');
-
+  
             return `${formation.name} (ID: ${formation.id}):\n  ${rolesText}`;
           })
           .join('\n\n');
-
+  
         const messageData = {
           email: user?.email,
           user_type: user?.user_type,
           type: 'text',
-          message: `Current formations:\n${formationsText}\nUse this information to help you analyze the game and provide better advice, Don't specify any ids or non relevent information other then volleyball related information.`,
+          message: `Current formations:\n${formationsText}\nUse this information to help you analyze the game and provide better advice. Don't specify any ids or non-relevant information other than volleyball-related information. Be specific and dont give any unneccessary information that are not relevent to the formation and improvment of it`,
           isTemp: true
         };
-        
+  
         await sendAIAdvisorTextMessage(messageData);
       }
     } catch (error) {
       console.error('Error loading formations:', error);
     }
   };
-
-
+  
+  const loadAllTeamMembers = async () => {
+    try {
+      const teamMembersResponse = await getTeamMembers(user?.team_id ?? '');
+  
+      if (teamMembersResponse.players && Array.isArray(teamMembersResponse.players)) {
+        const parsedPlayers = teamMembersResponse.players.map((playerStr: string) => JSON.parse(playerStr) as Player);
+  
+        const playersText = parsedPlayers.map((player: Player) => {
+          const id = player._id?.$oid ?? 'Unknown';
+          const fullName = player.full_name || 'Unknown';
+          const email = player.email || 'Unknown';
+          const role = player.role || 'Unknown';
+          const height = player.height ? `${player.height} cm` : 'Unknown';
+          const weight = player.weight ? `${player.weight} kg` : 'Unknown';
+          const birthDate = player.birth_date?.$date
+          ? new Date(player.birth_date.$date).toLocaleDateString()
+          : 'Unknown';
+          
+          return `ID: ${id} \n Name: ${fullName}\n  Email: ${email}\n  Role: ${role}\n  Height: ${height}\n  Weight: ${weight}\n birthDate: ${birthDate}`;
+        }).join('\n\n');
+  
+        const messageData = {
+          email: user?.email,
+          user_type: user?.user_type,
+          type: 'text',
+          message: `Current team members:\n\n${playersText}\n\nUse this information to gather insights about players for the formation, statistics, and anything else to give the best answer possible. When referancing one of the players use their names not id`,
+          isTemp: true
+        };
+        
+        await sendAIAdvisorTextMessage(messageData);
+      }
+    } catch (error) {
+      console.error('Error loading team members:', error);
+    }
+  };
+  
+  
   const handleSend = async () => {
     if (typing) {
       stopTyping();

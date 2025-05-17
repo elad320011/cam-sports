@@ -7,6 +7,9 @@ import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 
+import { getTeamByCode } from '@/services/usersService'
+import { shareCalendar } from '@/services/calendarService';
+
 // Define types for our data structures
 interface Teammate {
   full_name: string;
@@ -340,7 +343,7 @@ export default function ProfileScreen() {
           
           console.log('Current team list:', currentTeamList);
           console.log('Updated team list:', updatedList);
-          
+  
           // Update the team with the filtered list
           await axiosInstance.put('/team/update', {
             team_name: user.team_id,
@@ -403,6 +406,15 @@ export default function ProfileScreen() {
         } else {
           throw profileError;
         }
+      }
+
+      // Step 4: Add player to calendar
+      try {
+        const result = await getTeamByCode(teamCodeToJoin);
+        const teamCalendarId = result.calendar_id;
+        await shareCalendar(teamCalendarId, user.email, user.user_type === "management" ? "writer" : "reader" )
+      } catch (profileError: any) {
+        throw profileError;  
       }
       
       // If we get here, the team change was at least partially successful
