@@ -3,25 +3,19 @@ import { View, StyleSheet, Text, TextInput, Button, Alert, Modal } from 'react-n
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
-import { Picker } from '@react-native-picker/picker'; // Import Picker for dropdown
-
-interface Player {
-  id: string; // MongoDB ObjectId
-  fullName: string; // Player's full name
-}
+import { Picker } from '@react-native-picker/picker';
+import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo } from '@/services/formationService';
 
 const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId }: { number: number; positionName: string; initialX: number; initialY: number; playerInfo: { name: string; instructions: string }; formationId: string }) => {
   const translateX = useSharedValue(initialX);
   const translateY = useSharedValue(initialY);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isEditing, setIsEditing] = useState(false); // Track edit mode
-  const [editedName, setEditedName] = useState(playerInfo.name); // Editable name
-  const [editedInstructions, setEditedInstructions] = useState(playerInfo.instructions); // Editable instructions
-  const [players, setPlayers] = useState<Player[]>([]); // List of players
-  
-  const { user } = useAuth(); // Access user context
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(playerInfo.name);
+  const [editedInstructions, setEditedInstructions] = useState(playerInfo.instructions);
+  const [players, setPlayers] = useState<PlayerInfo[]>([]);
+  const { user } = useAuth();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -40,27 +34,10 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
       if (!user?.team_id) {
         return;
       }
-
-      const response = await axiosInstance.get('/team/get_players', {
-        params: { team_name: user.team_id }, // Use team ID from user context
-      });
-
-      if (response.status === 200) {
-        const rawPlayers: string[] = response.data.players;
-
-        const parsedPlayers: Player[] = rawPlayers.map((raw: string) => {
-          let obj: any;
-          try {
-            obj = JSON.parse(raw);
-          } catch (err) {
-            return { id: '', fullName: 'Unnamed Player' }; // Fallback for invalid data
-          }
-          return { id: obj._id.$oid, fullName: obj.full_name || 'Unnamed Player' }; // Extract _id and full_name
-        });
-
-        setPlayers(parsedPlayers);
-      }
+      const teamPlayers = await getTeamPlayers(user.team_id);
+      setPlayers(teamPlayers);
     } catch (error) {
+      console.error('Error fetching players:', error);
     }
   };
 
@@ -72,22 +49,11 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
 
   const handleSave = async () => {
     try {
-      // Map positionName to the correct role key (e.g., 'RB' -> 'role_1')
-      const roleKey = `role_${number}`;
-      const response = await axiosInstance.put(`/formations/${formationId}/edit`, {
-        roles: {
-          [roleKey]: {
-            player_id: editedName, // Send the player's _id as player_id
-            instructions: editedInstructions,
-          },
-        },
-      });
-      if (response.status === 200) {
-        playerInfo.name = players.find((player) => player.id === editedName)?.fullName || 'Unassigned'; // Update player info locally
-        playerInfo.instructions = editedInstructions;
-        Alert.alert('Success', 'Player information updated successfully.');
-        setIsEditing(false); // Exit edit mode
-      }
+      await updatePlayerRole(formationId, number, editedName, editedInstructions);
+      playerInfo.name = players.find((player) => player.id === editedName)?.fullName || 'Unassigned';
+      playerInfo.instructions = editedInstructions;
+      Alert.alert('Success', 'Player information updated successfully.');
+      setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to update player information.');
     }
@@ -162,37 +128,27 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
 };
 
 const FormationsPage = () => {
-  const { user } = useAuth(); // Ensure useAuth is used within an AuthProvider
-  const { isNew, formationId } = useLocalSearchParams(); // Retrieve query parameters
-  const isNewFormation = isNew === 'true'; // Check if it's a new formation
+  const { user } = useAuth();
+  const { isNew, formationId } = useLocalSearchParams();
+  const isNewFormation = isNew === 'true';
   const [formationName, setFormationName] = useState(isNewFormation ? '' : 'Default Formation');
-  const [originalFormationName, setOriginalFormationName] = useState(formationName); // Store the original name
+  const [originalFormationName, setOriginalFormationName] = useState(formationName);
   const [isEditing, setIsEditing] = useState(isNewFormation);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track unsaved changes
-  interface FormationData {
-    roles: {
-      role_1?: { player_id?: string; name?: string; instructions?: string };
-      role_2?: { player_id?: string; name?: string; instructions?: string };
-      role_3?: { player_id?: string; name?: string; instructions?: string };
-      role_4?: { player_id?: string; name?: string; instructions?: string };
-      role_5?: { player_id?: string; name?: string; instructions?: string };
-      role_6?: { player_id?: string; name?: string; instructions?: string };
-    };
-  }
-  
-  const [formationData, setFormationData] = useState<FormationData | null>(null); // State to store formation data
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [formationData, setFormationData] = useState<Formation | null>(null);
+  const [currentFormationId, setCurrentFormationId] = useState<string>(formationId as string);
 
   useEffect(() => {
     if (formationId && !isNewFormation) {
-      // Fetch the formation details using the formationId
       const fetchFormation = async () => {
         try {
-          const response = await axiosInstance.get(`/formations/${formationId}`);
-          const fetchedName = response.data.name || 'Unnamed Formation';
-          setFormationName(fetchedName);
-          setOriginalFormationName(fetchedName); // Store the original name
-          setFormationData(response.data); // Store the retrieved formation data
+          const formation = await getFormation(formationId as string);
+          setFormationName(formation.name);
+          setOriginalFormationName(formation.name);
+          setFormationData(formation);
+          setCurrentFormationId(formationId as string);
         } catch (error) {
+          Alert.alert('Error', 'Failed to fetch formation details.');
         }
       };
       fetchFormation();
@@ -207,40 +163,35 @@ const FormationsPage = () => {
 
     if (isNewFormation) {
       try {
-        const response = await axiosInstance.post('/formations/create', {
-          name: formationName,
-          team_id: user?.team_id, // Send the team_id in the request body
-        });
-        if (response.status === 201) {
-          const createdFormation = response.data;
-          setFormationData(createdFormation); // Set the newly created formation data
-          setIsEditing(false);
-          setHasUnsavedChanges(false); // Reset unsaved changes
-          Alert.alert('Success', 'Formation created successfully.');
-        }
+        const createdFormation = await createFormation(formationName, user?.team_id || '');
+        setFormationData(createdFormation);
+        setCurrentFormationId(createdFormation.id);
+        // Update the URL with the new formation ID
+        window.history.replaceState(
+          {},
+          '',
+          `/formations?id=${createdFormation.id}&isNew=false`
+        );
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
+        Alert.alert('Success', 'Formation created successfully.');
       } catch (error) {
         Alert.alert('Error', 'Failed to create formation.');
       }
     } else {
       try {
-        const response = await axiosInstance.put(`/formations/${formationId}/edit`, {
-          name: formationName,
-          roles: formationData?.roles, // Send updated roles
-        });
-        if (response.status === 200) {
-          Alert.alert('Success', 'Formation updated successfully.');
-          setIsEditing(false);
-          setHasUnsavedChanges(false); // Reset unsaved changes
+        if (!formationData?.roles) {
+          throw new Error('No formation data available');
         }
+        await updateFormation(currentFormationId, formationName, formationData.roles);
+        Alert.alert('Success', 'Formation updated successfully.');
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
       } catch (error) {
         Alert.alert('Error', 'Failed to update formation.');
       }
     }
   };
-
-  // Ensure roles are displayed correctly when formationData is updated
-  useEffect(() => {
-  }, [formationData]);
 
   const handleCancel = () => {
     setFormationName(originalFormationName); // Revert to the original name
@@ -358,7 +309,7 @@ const FormationsPage = () => {
               initialX={pos.x}
               initialY={pos.y}
               playerInfo={pos.playerInfo}
-              formationId={formationId as string} // Pass formationId to Player
+              formationId={currentFormationId}
             />
           ))}
         </View>
