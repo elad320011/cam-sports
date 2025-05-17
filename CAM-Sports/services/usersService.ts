@@ -22,7 +22,20 @@ const updateTeam = async (data: object) => {
   }
 };
 
+const getTeamMembers = async (teamName: string) => {
+  try {
+    const response = await axiosInstance.get(`/team/get_players?team_name=${teamName}`);
+
+    return response.data;
+  } catch (error) {
+    console.log('Failed to update team information:', error);
+    throw error;
+  }
+};
+
+
 export { 
   getTeamByCode,
-  updateTeam
+  updateTeam,
+  getTeamMembers
 };
