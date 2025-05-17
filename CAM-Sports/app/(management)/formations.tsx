@@ -3,25 +3,28 @@ import { View, StyleSheet, Text, TextInput, Button, Alert, Modal } from 'react-n
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
-import { Picker } from '@react-native-picker/picker'; // Import Picker for dropdown
+import { Picker } from '@react-native-picker/picker';
+import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo, getUsedPlayerIds } from '@/services/formationService';
 
-interface Player {
-  id: string; // MongoDB ObjectId
-  fullName: string; // Player's full name
-}
-
-const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId }: { number: number; positionName: string; initialX: number; initialY: number; playerInfo: { name: string; instructions: string }; formationId: string }) => {
+const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId, formationData }: { 
+    number: number; 
+    positionName: string; 
+    initialX: number; 
+    initialY: number; 
+    playerInfo: { name: string; instructions: string }; 
+    formationId: string;
+    formationData: Formation | null;
+}) => {
   const translateX = useSharedValue(initialX);
   const translateY = useSharedValue(initialY);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isEditing, setIsEditing] = useState(false); // Track edit mode
-  const [editedName, setEditedName] = useState(playerInfo.name); // Editable name
-  const [editedInstructions, setEditedInstructions] = useState(playerInfo.instructions); // Editable instructions
-  const [players, setPlayers] = useState<Player[]>([]); // List of players
-  
-  const { user } = useAuth(); // Access user context
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(playerInfo.name);
+  const [editedInstructions, setEditedInstructions] = useState(playerInfo.instructions);
+  const [players, setPlayers] = useState<PlayerInfo[]>([]);
+  const [currentFormationData, setCurrentFormationData] = useState<Formation | null>(formationData);
+  const { user } = useAuth();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -40,54 +43,42 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
       if (!user?.team_id) {
         return;
       }
-
-      const response = await axiosInstance.get('/team/get_players', {
-        params: { team_name: user.team_id }, // Use team ID from user context
-      });
-
-      if (response.status === 200) {
-        const rawPlayers: string[] = response.data.players;
-
-        const parsedPlayers: Player[] = rawPlayers.map((raw: string) => {
-          let obj: any;
-          try {
-            obj = JSON.parse(raw);
-          } catch (err) {
-            return { id: '', fullName: 'Unnamed Player' }; // Fallback for invalid data
-          }
-          return { id: obj._id.$oid, fullName: obj.full_name || 'Unnamed Player' }; // Extract _id and full_name
-        });
-
-        setPlayers(parsedPlayers);
-      }
+      const teamPlayers = await getTeamPlayers(user.team_id);
+      setPlayers(teamPlayers);
     } catch (error) {
+      console.error('Error fetching players:', error);
+    }
+  };
+
+  const fetchCurrentFormation = async () => {
+    try {
+      if (!formationId) return;
+      const formation = await getFormation(formationId);
+      setCurrentFormationData(formation);
+    } catch (error) {
+      console.error('Error fetching current formation:', error);
     }
   };
 
   useEffect(() => {
     if (isEditing) {
-      fetchPlayers(); // Fetch players when entering edit mode
+      fetchPlayers();
+      fetchCurrentFormation();
     }
   }, [isEditing]);
 
   const handleSave = async () => {
     try {
-      // Map positionName to the correct role key (e.g., 'RB' -> 'role_1')
-      const roleKey = `role_${number}`;
-      const response = await axiosInstance.put(`/formations/${formationId}/edit`, {
-        roles: {
-          [roleKey]: {
-            player_id: editedName, // Send the player's _id as player_id
-            instructions: editedInstructions,
-          },
-        },
-      });
-      if (response.status === 200) {
-        playerInfo.name = players.find((player) => player.id === editedName)?.fullName || 'Unassigned'; // Update player info locally
-        playerInfo.instructions = editedInstructions;
-        Alert.alert('Success', 'Player information updated successfully.');
-        setIsEditing(false); // Exit edit mode
-      }
+      await updatePlayerRole(formationId, number, editedName, editedInstructions);
+      // Update the display name based on the selected player
+      const selectedPlayer = players.find((player) => player.id === editedName);
+      playerInfo.name = selectedPlayer?.fullName || 'Unassigned';
+      playerInfo.instructions = editedInstructions;
+      // Refresh formation data after update
+      await fetchCurrentFormation();
+      Alert.alert('Success', 'Player information updated successfully.');
+      setIsEditing(false);
+      setModalVisible(false); // Close the modal after successful save
     } catch (error) {
       Alert.alert('Error', 'Failed to update player information.');
     }
@@ -97,24 +88,33 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     // Initialize editedName with the correct player ID if it exists
     const matchingPlayer = players.find((player) => player.fullName === playerInfo.name);
     if (matchingPlayer) {
-      setEditedName(matchingPlayer.id); // Set to the matching player's ID
-    } else if (players.length > 0) {
-      setEditedName(players[0].id); // Default to the first player's ID
+      setEditedName(matchingPlayer.id);
     } else {
-      setEditedName(''); // Fallback to an empty string if no players exist
+      setEditedName(''); // Default to Unassigned
     }
 
-    // Initialize editedInstructions with the current instructions or an empty string
     setEditedInstructions(playerInfo.instructions || '');
     setIsEditing(true);
   };
+
+  // Get the list of players that are already assigned to other roles
+  const usedPlayerIds = getUsedPlayerIds(currentFormationData);
+  // Filter out the current role's player ID from the used list
+  const currentRoleKey = `role_${number}` as keyof Formation['roles'];
+  const currentPlayerId = currentFormationData?.roles[currentRoleKey]?.player_id;
+  const otherUsedPlayerIds = usedPlayerIds.filter(id => id !== currentPlayerId);
 
   return (
     <>
       <PanGestureHandler onGestureEvent={handleGesture}>
         <Animated.View style={[styles.player, animatedStyle]}>
-          <Text style={styles.playerText} onPress={() => setModalVisible(true)}>
-            {`${number} (${positionName})`}
+          <View style={styles.playerCircle} onTouchEnd={() => setModalVisible(true)}>
+            <Text style={styles.playerText}>
+              {`${number} (${positionName})`}
+            </Text>
+          </View>
+          <Text style={styles.playerName} numberOfLines={1}>
+            {playerInfo.name}
           </Text>
         </Animated.View>
       </PanGestureHandler>
@@ -130,12 +130,21 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
               <>
                 <Picker
                   selectedValue={editedName}
-                  onValueChange={(itemValue) => setEditedName(itemValue)} // Ensure editedName is updated on selection
+                  onValueChange={(itemValue) => setEditedName(itemValue)}
                   style={styles.picker}
                 >
-                  {players.map((player) => (
-                    <Picker.Item key={player.id} label={player.fullName} value={player.id} />
-                  ))}
+                  {players.map((player) => {
+                    // Disable already used players (except for the current role)
+                    const isDisabled = otherUsedPlayerIds.includes(player.id);
+                    return (
+                      <Picker.Item 
+                        key={player.id} 
+                        label={isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName} 
+                        value={player.id}
+                        enabled={!isDisabled}
+                      />
+                    );
+                  })}
                 </Picker>
                 <TextInput
                   style={[styles.input, { height: 80 }]}
@@ -162,37 +171,27 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
 };
 
 const FormationsPage = () => {
-  const { user } = useAuth(); // Ensure useAuth is used within an AuthProvider
-  const { isNew, formationId } = useLocalSearchParams(); // Retrieve query parameters
-  const isNewFormation = isNew === 'true'; // Check if it's a new formation
+  const { user } = useAuth();
+  const { isNew, formationId } = useLocalSearchParams();
+  const isNewFormation = isNew === 'true';
   const [formationName, setFormationName] = useState(isNewFormation ? '' : 'Default Formation');
-  const [originalFormationName, setOriginalFormationName] = useState(formationName); // Store the original name
+  const [originalFormationName, setOriginalFormationName] = useState(formationName);
   const [isEditing, setIsEditing] = useState(isNewFormation);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Track unsaved changes
-  interface FormationData {
-    roles: {
-      role_1?: { player_id?: string; name?: string; instructions?: string };
-      role_2?: { player_id?: string; name?: string; instructions?: string };
-      role_3?: { player_id?: string; name?: string; instructions?: string };
-      role_4?: { player_id?: string; name?: string; instructions?: string };
-      role_5?: { player_id?: string; name?: string; instructions?: string };
-      role_6?: { player_id?: string; name?: string; instructions?: string };
-    };
-  }
-  
-  const [formationData, setFormationData] = useState<FormationData | null>(null); // State to store formation data
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [formationData, setFormationData] = useState<Formation | null>(null);
+  const [currentFormationId, setCurrentFormationId] = useState<string>(formationId as string);
 
   useEffect(() => {
     if (formationId && !isNewFormation) {
-      // Fetch the formation details using the formationId
       const fetchFormation = async () => {
         try {
-          const response = await axiosInstance.get(`/formations/${formationId}`);
-          const fetchedName = response.data.name || 'Unnamed Formation';
-          setFormationName(fetchedName);
-          setOriginalFormationName(fetchedName); // Store the original name
-          setFormationData(response.data); // Store the retrieved formation data
+          const formation = await getFormation(formationId as string);
+          setFormationName(formation.name);
+          setOriginalFormationName(formation.name);
+          setFormationData(formation);
+          setCurrentFormationId(formationId as string);
         } catch (error) {
+          Alert.alert('Error', 'Failed to fetch formation details.');
         }
       };
       fetchFormation();
@@ -207,40 +206,35 @@ const FormationsPage = () => {
 
     if (isNewFormation) {
       try {
-        const response = await axiosInstance.post('/formations/create', {
-          name: formationName,
-          team_id: user?.team_id, // Send the team_id in the request body
-        });
-        if (response.status === 201) {
-          const createdFormation = response.data;
-          setFormationData(createdFormation); // Set the newly created formation data
-          setIsEditing(false);
-          setHasUnsavedChanges(false); // Reset unsaved changes
-          Alert.alert('Success', 'Formation created successfully.');
-        }
+        const createdFormation = await createFormation(formationName, user?.team_id || '');
+        setFormationData(createdFormation);
+        setCurrentFormationId(createdFormation.id);
+        // Update the URL with the new formation ID
+        window.history.replaceState(
+          {},
+          '',
+          `/formations?id=${createdFormation.id}&isNew=false`
+        );
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
+        Alert.alert('Success', 'Formation created successfully.');
       } catch (error) {
         Alert.alert('Error', 'Failed to create formation.');
       }
     } else {
       try {
-        const response = await axiosInstance.put(`/formations/${formationId}/edit`, {
-          name: formationName,
-          roles: formationData?.roles, // Send updated roles
-        });
-        if (response.status === 200) {
-          Alert.alert('Success', 'Formation updated successfully.');
-          setIsEditing(false);
-          setHasUnsavedChanges(false); // Reset unsaved changes
+        if (!formationData?.roles) {
+          throw new Error('No formation data available');
         }
+        await updateFormation(currentFormationId, formationName, formationData.roles);
+        Alert.alert('Success', 'Formation updated successfully.');
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
       } catch (error) {
         Alert.alert('Error', 'Failed to update formation.');
       }
     }
   };
-
-  // Ensure roles are displayed correctly when formationData is updated
-  useEffect(() => {
-  }, [formationData]);
 
   const handleCancel = () => {
     setFormationName(originalFormationName); // Revert to the original name
@@ -358,7 +352,8 @@ const FormationsPage = () => {
               initialX={pos.x}
               initialY={pos.y}
               playerInfo={pos.playerInfo}
-              formationId={formationId as string} // Pass formationId to Player
+              formationId={currentFormationId}
+              formationData={formationData}
             />
           ))}
         </View>
@@ -411,18 +406,32 @@ const styles = StyleSheet.create({
   },
   player: {
     width: 70,
+    height: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+  },
+  playerCircle: {
+    width: 70,
     height: 70,
     backgroundColor: '#4caf50',
     borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
   },
   playerText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 12,
     textAlign: 'center',
+  },
+  playerName: {
+    color: '#333',
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+    width: '100%',
+    paddingHorizontal: 4,
   },
   modalContainer: {
     flex: 1,
