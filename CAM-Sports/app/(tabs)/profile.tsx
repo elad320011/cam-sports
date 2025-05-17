@@ -5,6 +5,7 @@ import { Redirect } from 'expo-router';
 import { Collapsible } from '@/components/Collapsible';
 import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
+import { Picker } from '@react-native-picker/picker';
 
 // Define types for our data structures
 interface Teammate {
@@ -44,10 +45,25 @@ export default function ProfileScreen() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifiedTeam, setVerifiedTeam] = useState<TeamInfo | null>(null);
   
+  // State for player details displayed at the top
+  const [playerRole, setPlayerRole] = useState('');
+  const [playerWeight, setPlayerWeight] = useState('');
+  const [playerHeight, setPlayerHeight] = useState('');
+  
+  // State for the form inputs (editable)
+  const [inputRole, setInputRole] = useState('');
+  const [inputWeight, setInputWeight] = useState('');
+  const [inputHeight, setInputHeight] = useState('');
+  
   useEffect(() => {
     if (user?.team_id) {
       fetchTeamCode();
       fetchTeammates();
+    }
+    
+    // Fetch player details if user is a player
+    if (user?.user_type === 'player') {
+      fetchPlayerDetails();
     }
   }, [user]);
   
@@ -81,10 +97,18 @@ export default function ProfileScreen() {
       
       console.log("Team data:", team);
       
-      // Determine which list to use based on current user type
-      const memberEmails = user?.user_type === 'player' ? 
-        [...team.players || []] : // Include other players if current user is a player
-        [...team.management || [], ...team.players || []]; // Include both if current user is management
+      // For both player and management, show all team members
+      let memberEmails: string[] = [];
+      
+      // Include all players
+      if (team.players && team.players.length > 0) {
+        memberEmails = [...memberEmails, ...team.players];
+      }
+      
+      // Include all management
+      if (team.management && team.management.length > 0) {
+        memberEmails = [...memberEmails, ...team.management];
+      }
       
       console.log("Member emails to fetch:", memberEmails);
       
@@ -134,23 +158,96 @@ export default function ProfileScreen() {
     }
   };
   
+  // Fetch player details from the backend
+  const fetchPlayerDetails = async () => {
+    try {
+      const response = await axiosInstance.get(`/player/details?email=${user.email}`);
+      if (response.data) {
+        // Set the display values
+        setPlayerRole(response.data.role || '');
+        setPlayerWeight(response.data.weight?.toString() || '');
+        setPlayerHeight(response.data.height?.toString() || '');
+        
+        // Initialize the form inputs with the same values
+        setInputRole(response.data.role || '');
+        setInputWeight(response.data.weight?.toString() || '');
+        setInputHeight(response.data.height?.toString() || '');
+      }
+    } catch (error) {
+      console.error('Error fetching player details:', error);
+    }
+  };
+  
+  // Input validation handlers
+  const validateAndSetWeight = (text: string) => {
+    // Only allow numeric input
+    if (text === '' || /^\d+$/.test(text)) {
+      const numValue = parseInt(text || '0', 10);
+      // Ensure value is between 0-250
+      if (text === '' || (numValue >= 0 && numValue <= 250)) {
+        setInputWeight(text);
+      }
+    }
+  };
+
+  const validateAndSetHeight = (text: string) => {
+    // Only allow numeric input
+    if (text === '' || /^\d+$/.test(text)) {
+      const numValue = parseInt(text || '0', 10);
+      // Ensure value is between 0-250
+      if (text === '' || (numValue >= 0 && numValue <= 250)) {
+        setInputHeight(text);
+      }
+    }
+  };
+
   const handleUpdateProfile = async () => {
     if (user?.user_type !== 'player') return;
+    
+    // Validate weight and height before submitting
+    if (inputWeight && (parseInt(inputWeight) < 0 || parseInt(inputWeight) > 250)) {
+      setError('Weight must be between 0-250 kg');
+      return;
+    }
+    
+    if (inputHeight && (parseInt(inputHeight) < 0 || parseInt(inputHeight) > 250)) {
+      setError('Height must be between 0-250 cm');
+      return;
+    }
     
     setIsUpdating(true);
     setError('');
     setSuccess('');
     
     try {
-      const updateData: Record<string, string | number> = {};
-      if (role) updateData.role = role;
-      if (weight) updateData.weight = parseFloat(weight);
-      if (height) updateData.height = parseFloat(height);
+      const updateData: Record<string, string | number> = {
+        email: user.email // Add email to identify the user
+      };
+      
+      // Only include fields that have values and have changed
+      if (inputRole !== playerRole) updateData.role = inputRole;
+      if (inputWeight !== playerWeight) updateData.weight = parseFloat(inputWeight || '0');
+      if (inputHeight !== playerHeight) updateData.height = parseFloat(inputHeight || '0');
+      
+      // If nothing has changed, don't send the update
+      if (Object.keys(updateData).length <= 1) { // Only email is in the data
+        setSuccess('No changes to update');
+        setIsUpdating(false);
+        return;
+      }
+      
+      console.log('Sending update with data:', updateData);
       
       const response = await axiosInstance.put('/player/update', updateData);
       setSuccess('Profile updated successfully');
+      
+      // Update the displayed values with the newly saved ones
+      setPlayerRole(inputRole);
+      setPlayerWeight(inputWeight);
+      setPlayerHeight(inputHeight);
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to update profile');
+      console.error('Update profile error:', error.response?.data || error);
+      setError(error.response?.data?.error || 'Failed to update profile');
     } finally {
       setIsUpdating(false);
     }
@@ -172,17 +269,28 @@ export default function ProfileScreen() {
     setSuccess('');
     
     try {
-      const response = await axiosInstance.put('/auth/change-password', {
+      // Use the dedicated password change endpoints we just created
+      const endpoint = user?.user_type === 'management' 
+        ? '/management/change-password' 
+        : '/player/change-password';
+      
+      console.log(`Using password change endpoint: ${endpoint}`);
+      
+      const payload = {
+        email: user.email,
         current_password: currentPassword,
         new_password: newPassword
-      });
+      };
+      
+      const response = await axiosInstance.put(endpoint, payload);
       
       setSuccess('Password changed successfully');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to change password');
+      console.error('Password change error:', error.response?.data || error.message || error);
+      setError(error.response?.data?.error || error.response?.data?.message || 'Failed to change password');
     } finally {
       setIsUpdating(false);
     }
@@ -318,12 +426,6 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.replace('/')}
-        >
-          <Text style={styles.backButtonText}>Back to Dashboard</Text>
-        </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.scrollContainer}>
@@ -334,6 +436,14 @@ export default function ProfileScreen() {
             {user?.user_type === 'player' ? 'Player' : 'Team Manager'}
           </Text>
           <Text style={styles.teamText}>Team: {user?.team_id}</Text>
+          
+          {user?.user_type === 'player' && (
+            <View style={styles.playerDetailsContainer}>
+              {playerRole && <Text style={styles.playerDetailText}>Role: {playerRole}</Text>}
+              {playerHeight && <Text style={styles.playerDetailText}>Height: {playerHeight} cm</Text>}
+              {playerWeight && <Text style={styles.playerDetailText}>Weight: {playerWeight} kg</Text>}
+            </View>
+          )}
         </View>
         
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -352,49 +462,60 @@ export default function ProfileScreen() {
           </Collapsible>
         )}
         
-        {user?.user_type === 'management' && (
-          <Collapsible title="Team Members">
-            <View style={styles.section}>
-              {teammates.length > 0 ? (
-                teammates.map((member, index) => (
-                  <View key={index} style={styles.teammateContainer}>
-                    <View>
-                      <Text style={styles.teammateText}>{member.full_name}</Text>
-                      <Text style={styles.teammateRoleText}>{member.email}</Text>
-                    </View>
-                    <Text style={styles.teammateTypeText}>
-                      {member.user_type === 'player' ? 'Player' : 'Manager'}
-                    </Text>
+        <Collapsible title="Team Members">
+          <View style={styles.section}>
+            {teammates.length > 0 ? (
+              teammates.map((member, index) => (
+                <View key={index} style={styles.teammateContainer}>
+                  <View>
+                    <Text style={styles.teammateText}>{member.full_name}</Text>
+                    <Text style={styles.teammateRoleText}>{member.email}</Text>
+                    {member.role && member.user_type === 'player' && (
+                      <Text style={styles.teammatePositionText}>Position: {member.role}</Text>
+                    )}
                   </View>
-                ))
-              ) : (
-                <Text style={styles.noDataText}>No team members yet</Text>
-              )}
-            </View>
-          </Collapsible>
-        )}
+                  <Text style={styles.teammateTypeText}>
+                    {member.user_type === 'player' ? 'Player' : 'Manager'}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noDataText}>No team members yet</Text>
+            )}
+          </View>
+        </Collapsible>
         
         {user?.user_type === 'player' && (
           <Collapsible title="Edit Profile">
             <View style={styles.section}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Role</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Your position/role"
-                  value={role}
-                  onChangeText={setRole}
-                />
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={inputRole}
+                    style={styles.picker}
+                    onValueChange={(itemValue: string) => setInputRole(itemValue)}
+                  >
+                    <Picker.Item label="Select Position" value="" />
+                    <Picker.Item label="Outside Hitter" value="Outside Hitter" />
+                    <Picker.Item label="Middle Blocker" value="Middle Blocker" />
+                    <Picker.Item label="Opposite Hitter" value="Opposite Hitter" />
+                    <Picker.Item label="Setter" value="Setter" />
+                    <Picker.Item label="Libero" value="Libero" />
+                    <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
+                  </Picker>
+                </View>
               </View>
               
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Weight (kg)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your weight in kg"
-                  value={weight}
-                  onChangeText={setWeight}
+                  placeholder="Your weight in kg (0-250)"
+                  value={inputWeight}
+                  onChangeText={validateAndSetWeight}
                   keyboardType="numeric"
+                  maxLength={3}
                 />
               </View>
               
@@ -402,10 +523,11 @@ export default function ProfileScreen() {
                 <Text style={styles.label}>Height (cm)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your height in cm"
-                  value={height}
-                  onChangeText={setHeight}
+                  placeholder="Your height in cm (0-250)"
+                  value={inputHeight}
+                  onChangeText={validateAndSetHeight}
                   keyboardType="numeric"
+                  maxLength={3}
                 />
               </View>
               
@@ -550,13 +672,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    color: '#4a90e2',
-    fontSize: 16,
-  },
   scrollContainer: {
     flex: 1,
   },
@@ -632,6 +747,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  teammatePositionText: {
+    fontSize: 14,
+    color: '#4a90e2',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   teammateTypeText: {
     fontSize: 14,
@@ -709,5 +830,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  }
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    marginBottom: 16,
+  },
+  picker: {
+    height: 50,
+    backgroundColor: 'transparent',
+  },
+  playerDetailsContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  playerDetailText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
 });
