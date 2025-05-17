@@ -5,9 +5,17 @@ import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { Picker } from '@react-native-picker/picker';
-import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo } from '@/services/formationService';
+import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo, getUsedPlayerIds } from '@/services/formationService';
 
-const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId }: { number: number; positionName: string; initialX: number; initialY: number; playerInfo: { name: string; instructions: string }; formationId: string }) => {
+const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId, formationData }: { 
+    number: number; 
+    positionName: string; 
+    initialX: number; 
+    initialY: number; 
+    playerInfo: { name: string; instructions: string }; 
+    formationId: string;
+    formationData: Formation | null;
+}) => {
   const translateX = useSharedValue(initialX);
   const translateY = useSharedValue(initialY);
   const [modalVisible, setModalVisible] = useState(false);
@@ -15,6 +23,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   const [editedName, setEditedName] = useState(playerInfo.name);
   const [editedInstructions, setEditedInstructions] = useState(playerInfo.instructions);
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
+  const [currentFormationData, setCurrentFormationData] = useState<Formation | null>(formationData);
   const { user } = useAuth();
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -41,19 +50,35 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     }
   };
 
+  const fetchCurrentFormation = async () => {
+    try {
+      if (!formationId) return;
+      const formation = await getFormation(formationId);
+      setCurrentFormationData(formation);
+    } catch (error) {
+      console.error('Error fetching current formation:', error);
+    }
+  };
+
   useEffect(() => {
     if (isEditing) {
-      fetchPlayers(); // Fetch players when entering edit mode
+      fetchPlayers();
+      fetchCurrentFormation();
     }
   }, [isEditing]);
 
   const handleSave = async () => {
     try {
       await updatePlayerRole(formationId, number, editedName, editedInstructions);
-      playerInfo.name = players.find((player) => player.id === editedName)?.fullName || 'Unassigned';
+      // Update the display name based on the selected player
+      const selectedPlayer = players.find((player) => player.id === editedName);
+      playerInfo.name = selectedPlayer?.fullName || 'Unassigned';
       playerInfo.instructions = editedInstructions;
+      // Refresh formation data after update
+      await fetchCurrentFormation();
       Alert.alert('Success', 'Player information updated successfully.');
       setIsEditing(false);
+      setModalVisible(false); // Close the modal after successful save
     } catch (error) {
       Alert.alert('Error', 'Failed to update player information.');
     }
@@ -63,24 +88,33 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     // Initialize editedName with the correct player ID if it exists
     const matchingPlayer = players.find((player) => player.fullName === playerInfo.name);
     if (matchingPlayer) {
-      setEditedName(matchingPlayer.id); // Set to the matching player's ID
-    } else if (players.length > 0) {
-      setEditedName(players[0].id); // Default to the first player's ID
+      setEditedName(matchingPlayer.id);
     } else {
-      setEditedName(''); // Fallback to an empty string if no players exist
+      setEditedName(''); // Default to Unassigned
     }
 
-    // Initialize editedInstructions with the current instructions or an empty string
     setEditedInstructions(playerInfo.instructions || '');
     setIsEditing(true);
   };
+
+  // Get the list of players that are already assigned to other roles
+  const usedPlayerIds = getUsedPlayerIds(currentFormationData);
+  // Filter out the current role's player ID from the used list
+  const currentRoleKey = `role_${number}` as keyof Formation['roles'];
+  const currentPlayerId = currentFormationData?.roles[currentRoleKey]?.player_id;
+  const otherUsedPlayerIds = usedPlayerIds.filter(id => id !== currentPlayerId);
 
   return (
     <>
       <PanGestureHandler onGestureEvent={handleGesture}>
         <Animated.View style={[styles.player, animatedStyle]}>
-          <Text style={styles.playerText} onPress={() => setModalVisible(true)}>
-            {`${number} (${positionName})`}
+          <View style={styles.playerCircle} onTouchEnd={() => setModalVisible(true)}>
+            <Text style={styles.playerText}>
+              {`${number} (${positionName})`}
+            </Text>
+          </View>
+          <Text style={styles.playerName} numberOfLines={1}>
+            {playerInfo.name}
           </Text>
         </Animated.View>
       </PanGestureHandler>
@@ -96,12 +130,21 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
               <>
                 <Picker
                   selectedValue={editedName}
-                  onValueChange={(itemValue) => setEditedName(itemValue)} // Ensure editedName is updated on selection
+                  onValueChange={(itemValue) => setEditedName(itemValue)}
                   style={styles.picker}
                 >
-                  {players.map((player) => (
-                    <Picker.Item key={player.id} label={player.fullName} value={player.id} />
-                  ))}
+                  {players.map((player) => {
+                    // Disable already used players (except for the current role)
+                    const isDisabled = otherUsedPlayerIds.includes(player.id);
+                    return (
+                      <Picker.Item 
+                        key={player.id} 
+                        label={isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName} 
+                        value={player.id}
+                        enabled={!isDisabled}
+                      />
+                    );
+                  })}
                 </Picker>
                 <TextInput
                   style={[styles.input, { height: 80 }]}
@@ -310,6 +353,7 @@ const FormationsPage = () => {
               initialY={pos.y}
               playerInfo={pos.playerInfo}
               formationId={currentFormationId}
+              formationData={formationData}
             />
           ))}
         </View>
@@ -362,18 +406,32 @@ const styles = StyleSheet.create({
   },
   player: {
     width: 70,
+    height: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+  },
+  playerCircle: {
+    width: 70,
     height: 70,
     backgroundColor: '#4caf50',
     borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
   },
   playerText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 12,
     textAlign: 'center',
+  },
+  playerName: {
+    color: '#333',
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+    width: '100%',
+    paddingHorizontal: 4,
   },
   modalContainer: {
     flex: 1,

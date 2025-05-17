@@ -29,6 +29,15 @@ interface FormationsResponse {
     formations: Formation[];
 }
 
+// Helper function to get used player IDs from a formation
+export const getUsedPlayerIds = (formation: Formation | null): string[] => {
+    if (!formation) return [];
+    
+    return Object.values(formation.roles)
+        .map(role => role.player_id)
+        .filter((id): id is string => id !== null && id !== '');
+};
+
 export const getTeamPlayers = async (teamId: string): Promise<PlayerInfo[]> => {
     try {
         const response = await axiosInstance.get('/team/get_players', {
@@ -37,7 +46,7 @@ export const getTeamPlayers = async (teamId: string): Promise<PlayerInfo[]> => {
         
         if (response.status === 200) {
             const rawPlayers: string[] = response.data.players;
-            return rawPlayers.map((raw: string) => {
+            const players = rawPlayers.map((raw: string) => {
                 try {
                     const obj = JSON.parse(raw);
                     return {
@@ -48,11 +57,13 @@ export const getTeamPlayers = async (teamId: string): Promise<PlayerInfo[]> => {
                     return { id: '', fullName: 'Unnamed Player' };
                 }
             });
+            // Add Unassigned option at the top of the list
+            return [{ id: '', fullName: 'Unassigned' }, ...players];
         }
-        return [];
+        return [{ id: '', fullName: 'Unassigned' }];
     } catch (error) {
         console.error('Error fetching team players:', error);
-        throw error;
+        return [{ id: '', fullName: 'Unassigned' }];
     }
 };
 
@@ -110,6 +121,11 @@ export const updatePlayerRole = async (
     instructions: string
 ): Promise<void> => {
     try {
+        // If playerId is empty (Unassigned), don't make the API call
+        if (!playerId) {
+            return;
+        }
+
         const roleKey = `role_${roleNumber}`;
         await axiosInstance.put(`/formations/${formationId}/edit`, {
             roles: {
