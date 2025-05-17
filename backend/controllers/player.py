@@ -2,6 +2,7 @@ from flask import request, jsonify
 from models.player import Player
 from models.team import Team
 from bson import ObjectId
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_player_details(request):
     email = request.args.get('email')
@@ -65,4 +66,30 @@ def update_player(request):
         player.save()
         return jsonify({"message": "Player updated successfully"}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to update player: {str(e)}"}), 500 
+        return jsonify({"error": f"Failed to update player: {str(e)}"}), 500
+
+def change_player_password(request):
+    data = request.get_json()
+    email = data.get('email')
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    if not all([email, current_password, new_password]):
+        return jsonify({"error": "Email, current password, and new password are required"}), 400
+    
+    player = Player.objects(email=email).first()
+    if not player:
+        return jsonify({"error": "Player not found"}), 404
+    
+    # Verify current password
+    if not check_password_hash(player.password, current_password):
+        return jsonify({"error": "Current password is incorrect"}), 401
+    
+    # Update password
+    player.password = generate_password_hash(new_password)
+    
+    try:
+        player.save()
+        return jsonify({"message": "Password updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to update password: {str(e)}"}), 500 

@@ -2,6 +2,7 @@ from flask import request, jsonify
 from models.management import Management
 from models.team import Team
 from bson import ObjectId
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_management_details(request):
     email = request.args.get('email')
@@ -52,4 +53,30 @@ def update_management(request):
         management.save()
         return jsonify({"message": "Management user updated successfully"}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to update management user: {str(e)}"}), 500 
+        return jsonify({"error": f"Failed to update management user: {str(e)}"}), 500
+
+def change_management_password(request):
+    data = request.get_json()
+    email = data.get('email')
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    if not all([email, current_password, new_password]):
+        return jsonify({"error": "Email, current password, and new password are required"}), 400
+    
+    management = Management.objects(email=email).first()
+    if not management:
+        return jsonify({"error": "Management user not found"}), 404
+    
+    # Verify current password
+    if not check_password_hash(management.password, current_password):
+        return jsonify({"error": "Current password is incorrect"}), 401
+    
+    # Update password
+    management.password = generate_password_hash(new_password)
+    
+    try:
+        management.save()
+        return jsonify({"message": "Password updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to update password: {str(e)}"}), 500 

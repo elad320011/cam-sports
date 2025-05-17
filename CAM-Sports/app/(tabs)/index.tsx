@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View, Button } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
 import { Redirect } from 'expo-router';
 import WelcomeHeader from '@/components/WelcomeHeader';
@@ -13,7 +13,7 @@ import Formations from "@/components/management/formations";
 import Footage from "@/components/management/footage";
 
 export default function Management() {
-  const { logout, user, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return null; // Or a loading spinner
@@ -28,11 +28,6 @@ export default function Management() {
       <WelcomeHeader />
       <View style={styles.header}>
         <Text style={styles.title}>Management</Text>
-        <Button
-          title="Logout"
-          onPress={logout}
-          color="#ff4444"  // Red color for logout button
-        />
       </View>
 
       <ScrollView style={styles.scrollContainer}>
