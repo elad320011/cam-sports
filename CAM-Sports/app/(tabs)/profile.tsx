@@ -6,6 +6,7 @@ import { Collapsible } from '@/components/Collapsible';
 import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
+import * as Clipboard from 'expo-clipboard';
 
 import { getTeamByCode } from '@/services/usersService'
 import { shareCalendar } from '@/services/calendarService';
@@ -117,10 +118,21 @@ export default function ProfileScreen() {
       
       // Empty array to collect member details
       const memberDetails: Teammate[] = [];
-      
-      // Step 2: Fetch details for each member
+
+      // Step 2: Fetch details for each member (including current user)
       for (const email of memberEmails) {
-        if (email === user.email) continue; // Skip current user
+        let isCurrentUser = email === user.email;
+        
+        if (isCurrentUser) {
+          // Add current user with (You) indicator
+          memberDetails.push({
+            email: user.email,
+            full_name: `${user.full_name} (You)`,
+            role: user.user_type === 'player' ? playerRole || 'Player' : 'Team Manager',
+            user_type: user.user_type as 'player' | 'management' | 'unknown'
+          });
+          continue;
+        }
         
         try {
           // Try to fetch as player first
@@ -229,8 +241,11 @@ export default function ProfileScreen() {
       
       // Only include fields that have values and have changed
       if (inputRole !== playerRole) updateData.role = inputRole;
-      if (inputWeight !== playerWeight) updateData.weight = parseFloat(inputWeight || '0');
-      if (inputHeight !== playerHeight) updateData.height = parseFloat(inputHeight || '0');
+      // Only include weight/height if they're not empty AND have changed
+      if (inputWeight !== playerWeight && inputWeight !== '') 
+        updateData.weight = parseFloat(inputWeight);
+      if (inputHeight !== playerHeight && inputHeight !== '') 
+        updateData.height = parseFloat(inputHeight);
       
       // If nothing has changed, don't send the update
       if (Object.keys(updateData).length <= 1) { // Only email is in the data
@@ -434,6 +449,19 @@ export default function ProfileScreen() {
     logout();
   };
 
+  // Add a function to copy team code to clipboard
+  const copyTeamCode = async () => {
+    try {
+      await Clipboard.setStringAsync(teamCode);
+      setSuccess('Team code copied to clipboard!');
+      // Clear the success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Failed to copy team code:', error);
+      setError('Failed to copy team code');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -469,6 +497,12 @@ export default function ProfileScreen() {
               </Text>
               <View style={styles.codeContainer}>
                 <Text style={styles.codeText}>{teamCode}</Text>
+                <TouchableOpacity 
+                  style={styles.copyButton}
+                  onPress={copyTeamCode}
+                >
+                  <Text style={styles.copyButtonText}>Copy</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Collapsible>
@@ -738,11 +772,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
   },
   codeText: {
     fontSize: 24,
     fontWeight: 'bold',
     letterSpacing: 2,
+  },
+  copyButton: {
+    backgroundColor: '#4a90e2',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  copyButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   teammateContainer: {
     flexDirection: 'row',
