@@ -38,7 +38,7 @@ export default function Management() {
         <Messages />
         <Formations />
         <Footage teamId={user?.team_id}/>
-        <Payments />
+        <Payments isManager={user?.user_type === 'management'} />
       </ScrollView>
     </View>
   );

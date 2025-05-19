@@ -83,6 +83,18 @@ def create_payment():
         )
         payment.save()
 
+        # Send message to message board about new payment
+        message_content = f"New Payment Created:\nAmount: ${payment.amount}\nDue Date: {payment.due_date.strftime('%Y-%m-%d')}\nPayment Link: {payment.link}"
+        if description:
+            message_content += f"\nDescription: {description}"
+        
+        MessageBoardController.add_message(
+            team_id=team_id,
+            content=message_content,
+            message_type="payment_created",
+            creator_email="system@camsports.com"
+        )
+
         # Schedule reminders
         for reminder in payment.reminders:
             schedule_reminder(str(payment.id), reminder.date)
@@ -122,13 +134,22 @@ def edit_payment(payment_id: str):
         if not payment:
             return jsonify({"message": "Payment not found"}), 404
 
+        # Track changes for message notification
+        changes = []
+        
         # Update basic payment information
         if 'link' in data:
             payment.link = data['link']
         if 'amount' in data:
+            old_amount = payment.amount
             payment.amount = float(data['amount'])
+            if old_amount != payment.amount:
+                changes.append(f"Amount changed from ${old_amount} to ${payment.amount}")
         if 'description' in data:
+            old_description = payment.description
             payment.description = data['description']
+            if old_description != payment.description:
+                changes.append(f"Description updated: {payment.description}")
         if 'due_date' in data:
             try:
                 due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
@@ -152,6 +173,17 @@ def edit_payment(payment_id: str):
 
         # Save the updated payment
         payment.save()
+
+        # Send message to message board if there were changes
+        if changes:
+            message_content = f"Payment Updated:\nPayment Link: {payment.link}\nDue Date: {payment.due_date.strftime('%Y-%m-%d')}\n\nChanges made:\n" + "\n".join(changes)
+            
+            MessageBoardController.add_message(
+                team_id=payment.team_id,
+                content=message_content,
+                message_type="payment_updated",
+                creator_email="system@camsports.com"
+            )
 
         # Reschedule reminders
         scheduler = current_app.apscheduler
@@ -209,6 +241,106 @@ def delete_payment(payment_id: str):
         payment.delete()
 
         return jsonify({"message": "Payment and associated reminders deleted successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+def list_payments():
+    try:
+        team_id = request.args.get('team_id')
+        payment_id = request.args.get('payment_id')
+        
+        if payment_id:
+            # If payment_id is provided, return just that payment
+            payment = Payment.objects(id=payment_id).first()
+            if not payment:
+                return jsonify({"message": "Payment not found"}), 404
+                
+            result = {
+                "id": str(payment.id),
+                "link": payment.link,
+                "amount": payment.amount,
+                "description": payment.description,
+                "due_date": payment.due_date.isoformat(),
+                "team_id": payment.team_id,
+                "reminders": [
+                    {
+                        "date": reminder.date.isoformat(),
+                        "created_at": reminder.created_at.isoformat(),
+                        "updated_at": reminder.updated_at.isoformat()
+                    }
+                    for reminder in payment.reminders
+                ],
+                "created_at": payment.created_at.isoformat(),
+                "updated_at": payment.updated_at.isoformat()
+            }
+            return jsonify(result), 200
+            
+        # If no payment_id, return all payments for the team
+        if not team_id:
+            return jsonify({"message": "Team ID is required"}), 400
+
+        # Query payments for the team
+        payments = Payment.objects(team_id=team_id).order_by('-created_at')
+
+        # Format the response
+        result = {
+            "payments": [
+                {
+                    "id": str(payment.id),
+                    "link": payment.link,
+                    "amount": payment.amount,
+                    "description": payment.description,
+                    "due_date": payment.due_date.isoformat(),
+                    "team_id": payment.team_id,
+                    "reminders": [
+                        {
+                            "date": reminder.date.isoformat(),
+                            "created_at": reminder.created_at.isoformat(),
+                            "updated_at": reminder.updated_at.isoformat()
+                        }
+                        for reminder in payment.reminders
+                    ],
+                    "created_at": payment.created_at.isoformat(),
+                    "updated_at": payment.updated_at.isoformat()
+                }
+                for payment in payments
+            ]
+        }
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({"message": "An error occurred", "error": str(e)}), 500
+
+def get_payment(payment_id: str):
+    try:
+        payment = Payment.objects(id=payment_id).first()
+
+        if not payment:
+            return jsonify({"message": "Payment not found"}), 404
+
+        # Format the response
+        result = {
+            "id": str(payment.id),
+            "link": payment.link,
+            "amount": payment.amount,
+            "description": payment.description,
+            "due_date": payment.due_date.isoformat(),
+            "team_id": payment.team_id,
+            "reminders": [
+                {
+                    "date": reminder.date.isoformat(),
+                    "created_at": reminder.created_at.isoformat(),
+                    "updated_at": reminder.updated_at.isoformat()
+                }
+                for reminder in payment.reminders
+            ],
+            "created_at": payment.created_at.isoformat(),
+            "updated_at": payment.updated_at.isoformat()
+        }
+
+        return jsonify(result), 200
 
     except Exception as e:
         return jsonify({"message": "An error occurred", "error": str(e)}), 500

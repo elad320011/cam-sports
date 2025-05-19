@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, Pressable } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '@/contexts/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { createPayment, getPayments, updatePayment, Payment } from '@/services/paymentService';
 
 interface Reminder {
   id: string;
@@ -13,19 +14,80 @@ interface Reminder {
 
 export default function PaymentPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const isEditMode = params.paymentId !== undefined;
   const [paymentLink, setPaymentLink] = useState('');
   const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [showReminderPickers, setShowReminderPickers] = useState<{ [key: string]: boolean }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isEditMode && params.paymentId) {
+      fetchPaymentData(params.paymentId as string);
+    }
+  }, [isEditMode, params.paymentId]);
+
+  const fetchPaymentData = async (paymentId: string) => {
+    try {
+      const response = await getPayments(user?.team_id || '');
+      const payment = response.find(p => p.id === paymentId);
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
+      setPaymentLink(payment.link);
+      setAmount(payment.amount.toString());
+      setDescription(payment.description || '');
+      const dueDate = new Date(payment.due_date);
+      setDate(dueDate);
+      setDueDate(dueDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
+      setReminders(payment.reminders.map(reminder => ({
+        id: reminder.id,
+        date: new Date(reminder.date),
+        dateString: new Date(reminder.date).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
+      })));
+    } catch (error) {
+      console.error('Error fetching payment:', error);
+      Alert.alert('Error', 'Failed to load payment data');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('he-IL', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      timeZone: 'Asia/Jerusalem'
+    });
+  };
+
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDateTimeForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);
-      setDueDate(selectedDate.toLocaleDateString());
+      setDueDate(selectedDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
     } else {
       setDate(new Date());
       setDueDate('');
@@ -37,13 +99,13 @@ export default function PaymentPage() {
     if (selectedDate) {
       setReminders(prev => prev.map(reminder => 
         reminder.id === reminderId 
-          ? { ...reminder, date: selectedDate, dateString: selectedDate.toLocaleDateString() }
+          ? { ...reminder, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
           : reminder
       ));
     } else {
       setReminders(prev => prev.map(reminder => 
         reminder.id === reminderId 
-          ? { ...reminder, date: new Date(), dateString: 'Select reminder date' }
+          ? { ...reminder, date: new Date(), dateString: 'Select reminder date and time' }
           : reminder
       ));
     }
@@ -53,7 +115,7 @@ export default function PaymentPage() {
     const newReminder: Reminder = {
       id: Date.now().toString(),
       date: new Date(),
-      dateString: 'Select reminder date'
+      dateString: 'Select reminder date and time'
     };
     setReminders([...reminders, newReminder]);
   };
@@ -69,15 +131,41 @@ export default function PaymentPage() {
 
   const handleSubmit = async () => {
     if (!paymentLink || !amount || !dueDate) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     try {
-      // TODO: Implement payment creation logic
-      Alert.alert('Success', 'Payment created successfully');
+      setIsSubmitting(true);
+
+      const paymentData = {
+        link: paymentLink,
+        amount: parseFloat(amount),
+        description: description,
+        due_date: date.toISOString(),
+        team_id: user?.team_id || '',
+        reminders: reminders.map(reminder => ({
+          id: reminder.id,
+          date: reminder.date.toISOString(),
+          dateString: reminder.dateString
+        }))
+      };
+
+      if (isEditMode && params.paymentId) {
+        await updatePayment(params.paymentId as string, paymentData);
+        router.replace('/(tabs)');
+        Alert.alert('Success', 'Payment updated successfully');
+      } else {
+        await createPayment(paymentData);
+        router.replace('/(tabs)');
+        Alert.alert('Success', 'Payment created successfully');
+      }
+      
     } catch (error) {
-      Alert.alert('Error', 'Failed to create payment');
+      console.error('Error saving payment:', error);
+      Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'create'} payment. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -85,7 +173,7 @@ export default function PaymentPage() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: 'Create Payment',
+          headerTitle: isEditMode ? 'Edit Payment' : 'Create Payment',
         }}
       />
       
@@ -113,6 +201,19 @@ export default function PaymentPage() {
         </View>
 
         <View style={styles.inputContainer}>
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, styles.descriptionInput]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Enter payment description"
+            multiline={true}
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
           <Text style={styles.label}>Due Date</Text>
           {Platform.OS === 'web' ? (
             <input
@@ -128,13 +229,13 @@ export default function PaymentPage() {
                 fontSize: 16,
                 backgroundColor: '#fff',
               }}
-              value={dueDate ? new Date(dueDate).toISOString().split('T')[0] : ''}
+              value={formatDateForInput(date)}
               onChange={(e) => {
                 const selectedDate = new Date(e.target.value);
                 setDate(selectedDate);
-                setDueDate(selectedDate.toLocaleDateString());
+                setDueDate(selectedDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
               }}
-              min={new Date().toISOString().split('T')[0]}
+              min={formatDateForInput(new Date())}
             />
           ) : (
             <>
@@ -177,7 +278,7 @@ export default function PaymentPage() {
             <View key={reminder.id} style={styles.reminderItem}>
               {Platform.OS === 'web' ? (
                 <input
-                  type="date"
+                  type="datetime-local"
                   style={{
                     height: 48,
                     borderColor: '#ddd',
@@ -188,17 +289,17 @@ export default function PaymentPage() {
                     fontSize: 16,
                     backgroundColor: '#fff',
                   }}
-                  value={reminder.date.toISOString().split('T')[0]}
+                  value={formatDateTimeForInput(reminder.date)}
                   onChange={(e) => {
                     const selectedDate = new Date(e.target.value);
                     setReminders(prev => prev.map(r => 
                       r.id === reminder.id 
-                        ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleDateString() }
+                        ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
                         : r
                     ));
                   }}
-                  min={new Date().toISOString().split('T')[0]}
-                  max={date.toISOString().split('T')[0]}
+                  min={formatDateTimeForInput(new Date())}
+                  max={formatDateTimeForInput(date)}
                 />
               ) : (
                 <>
@@ -206,7 +307,7 @@ export default function PaymentPage() {
                     style={[styles.input, styles.dateInput]} 
                     onPress={() => setShowReminderPickers(prev => ({ ...prev, [reminder.id]: true }))}
                   >
-                    <Text style={reminder.dateString !== 'Select reminder date' ? styles.dateText : styles.placeholderText}>
+                    <Text style={reminder.dateString !== 'Select reminder date and time' ? styles.dateText : styles.placeholderText}>
                       {reminder.dateString}
                     </Text>
                   </Pressable>
@@ -215,8 +316,7 @@ export default function PaymentPage() {
                     <DateTimePicker
                       testID={`reminderDateTimePicker-${reminder.id}`}
                       value={reminder.date}
-                      mode="date"
-                      is24Hour={true}
+                      mode="datetime"
                       display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                       onChange={(event, date) => onReminderDateChange(reminder.id, event, date)}
                       minimumDate={new Date()}
@@ -236,10 +336,13 @@ export default function PaymentPage() {
         </View>
 
         <TouchableOpacity
-          style={styles.submitButton}
+          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}
+          disabled={isSubmitting}
         >
-          <Text style={styles.submitButtonText}>Create Payment</Text>
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? 'Saving...' : isEditMode ? 'Update Payment' : 'Create Payment'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -325,5 +428,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  descriptionInput: {
+    height: 80,
+    textAlignVertical: 'top',
+    paddingTop: 12,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
 });
