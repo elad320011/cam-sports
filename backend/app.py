@@ -2,6 +2,7 @@ from flask import Flask
 import os
 from dotenv import load_dotenv
 from flask_cors import CORS  # Import CORS
+from flask_apscheduler import APScheduler
 
 # Routes
 from routes.auth import auth_bp
@@ -21,6 +22,7 @@ from routes.management import management_bp
 
 load_dotenv()
 app = Flask(__name__)
+scheduler = APScheduler()
 
 # Configure CORS - Allow all origins
 CORS(app, resources={
@@ -32,6 +34,13 @@ CORS(app, resources={
         "supports_credentials": True
     }
 })
+
+# Configure APScheduler
+app.config['SCHEDULER_API_ENABLED'] = True
+app.config['SCHEDULER_TIMEZONE'] = "UTC"
+
+# Initialize scheduler
+scheduler.init_app(app)
 
 # Routes
 app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -48,6 +57,9 @@ app.register_blueprint(message_board_bp, url_prefix='/message_board')
 app.register_blueprint(footage_bp, url_prefix='/footage')
 app.register_blueprint(player_bp, url_prefix='/player')
 app.register_blueprint(management_bp, url_prefix='/management')
+
+# Start the scheduler
+scheduler.start()
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
