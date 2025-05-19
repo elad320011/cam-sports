@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from services.ai_advior import get_response
 from controllers.game_statistics import get_game_statistics_by_id
+from controllers.training_plans import get_training_plan_by_id
 from models.conversation import Conversation
 
 def load_conv_history():
@@ -48,6 +49,14 @@ def message_ai_advisor():
             response = get_response(history, game_statistics)
         else:
             return game_statistics_response
+    elif conv_message_type == "training_plan_id":
+        training_plan_response, status_code = get_training_plan_by_id(message)
+        if status_code == 200:
+            training_plan_json = training_plan_response.get_json()
+            training_plan = json.dumps(training_plan_json)
+            response = get_response(history, training_plan)
+        else:
+            return training_plan_response
     else:
         return jsonify({"error": "Invalid conversation message type"}), 400
 

@@ -10,13 +10,18 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
-  Modal
+  Modal,
+  ImageResizeMode,
+  ViewStyle,
+  TextStyle,
+  ImageStyle
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 
 import { getTeamMembers } from '@/services/usersService';
 import { getTeamGameStatistics } from '@/services/gameStatsService';
+import { getTrainingPlans } from '@/services/trainingPlansService';
 import { sendAIAdvisorTextMessage, cleanTempMessages } from '@/services/aiAdvisorService';
 import { getTeamFormations } from '@/services/formationService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,6 +73,10 @@ export default function AIAdvisor() {
 
   const { user } = useAuth();
 
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [trainingPlansVisible, setTrainingPlansVisible] = useState(false);
+  const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
+
   // Initialize conversation with formations
   useEffect(() => {
     (async () => {
@@ -78,28 +87,27 @@ export default function AIAdvisor() {
   }, []);
   
   // Get team game statistics
-  useEffect(() => {
-    (async () => {
-      try {
-        const result = await getTeamGameStatistics(user?.team_id ?? '');
-        
-        if (result) {
-          const formattedResult = JSON.parse(result.stats).map((stat: any) => ({
-            ...stat,
-            _id: stat._id.$oid,
-            game_date: new Date(stat.game_date.$date).toLocaleDateString(),
-          }));
+  const loadGameStatistics = async () => {
+    try {
+      const result = await getTeamGameStatistics(user?.team_id ?? '');
+      
+      if (result) {
+        const formattedResult = JSON.parse(result.stats).map((stat: any) => ({
+          ...stat,
+          _id: stat._id.$oid,
+          game_date: new Date(stat.game_date.$date).toLocaleDateString(),
+        }));
 
-          setGameStatistics(formattedResult);
-        } else {
-          console.log('No game statistics available.');
-        }
-      } catch (error) {
-        console.error('Error fetching game statistics:', error);
+        setGameStatistics(formattedResult);
+      } else {
+        console.log('No game statistics available.');
+        setGameStatistics([]);
       }
-    })();
-  }, [statisticsVisible]);
-
+    } catch (error) {
+      console.error('Error fetching game statistics:', error);
+      setGameStatistics([]);
+    }
+  };
 
   // Functions
 
@@ -289,18 +297,38 @@ export default function AIAdvisor() {
 
   const simulateTypingAIResponse = (fullText: string, messageId: string) => {
     setTyping(true);
+    
+    // Extract images and remove them from the text
+    const imageRegex = /!\[.*?\]\(.*?\)/g;
+    const images = fullText.match(imageRegex) || [];
+    let textWithoutImages = fullText;
+    images.forEach(img => {
+      textWithoutImages = textWithoutImages.replace(img, '');
+    });
+
     let index = 0;
+    let currentText = textWithoutImages;
 
     const typeCharacter = () => {
-      if (index <= fullText.length) {
+      if (index <= textWithoutImages.length) {
+        currentText = textWithoutImages.slice(0, index);
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
-            msg.id === messageId ? { ...msg, text: fullText.slice(0, index) } : msg
+            msg.id === messageId ? { ...msg, text: currentText } : msg
           )
         );
         index += 1;
         typingRef.current = setTimeout(typeCharacter, 15);
       } else {
+        // After text is done, add all images
+        if (images.length > 0) {
+          currentText = textWithoutImages + '\n\n' + images.join('\n\n');
+          setMessages((prevMessages) =>
+            prevMessages.map((msg) =>
+              msg.id === messageId ? { ...msg, text: currentText } : msg
+            )
+          );
+        }
         setTyping(false);
       }
     };
@@ -339,13 +367,74 @@ export default function AIAdvisor() {
         {item.loading ? (
           <ActivityIndicator color="#fff" />
         ) : item.sender === 'ai' ? (
-          <Markdown style={markdownStyles}>{item.text}</Markdown>
+          <View style={styles.markdownContainer}>
+            <Markdown style={markdownStyles}>{item.text}</Markdown>
+          </View>
         ) : (
           <Text style={styles.messageText}>{item.text}</Text>
         )}
       </View>
     </View>
   );
+
+  const loadTrainingPlans = async () => {
+    try {
+      const plans = await getTrainingPlans(user?.team_id ?? '');
+      const parsedPlans = JSON.parse(plans.plans);
+      setTrainingPlans(parsedPlans);
+    } catch (error) {
+      console.error('Error loading training plans:', error);
+      setTrainingPlans([]); 
+    }
+  };
+
+  const handleTrainingPlanSelect = async (planId: string) => {
+    setTrainingPlansVisible(false);
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: `Analyze training plan: ${planId}`,
+    };
+
+    const loadingMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      sender: 'ai',
+      text: '',
+      loading: true,
+    };
+
+    setMessages((prev) => [...prev, userMsg, loadingMsg]);
+
+    try {
+      const data = {
+        email: user?.email,
+        user_type: user?.user_type,
+        type: 'training_plan_id',
+        message: planId,
+      };
+      console.log(data)
+      const aiResponse = await sendAIAdvisorTextMessage(data);
+      console.log(aiResponse)
+      const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === loadingMsg.id ? { ...msg, loading: false } : msg
+        )
+      );
+
+      simulateTypingAIResponse(aiMessageText, loadingMsg.id);
+    } catch (error) {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === loadingMsg.id
+            ? { ...msg, text: 'Error getting response from AI advisor.', loading: false }
+            : msg
+        )
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -372,7 +461,7 @@ export default function AIAdvisor() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.inputContainer}>
-          <TouchableOpacity  onPress={() => setStatisticsVisible(true)} style={styles.attachButton}>
+          <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.attachButton}>
             <Text style={styles.sendIcon}>📎</Text>
           </TouchableOpacity>
 
@@ -393,23 +482,86 @@ export default function AIAdvisor() {
         </View>
       </KeyboardAvoidingView>
 
+      <Modal visible={menuVisible} transparent animationType="fade">
+        <TouchableOpacity 
+          style={styles.modalBackground} 
+          activeOpacity={1} 
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                loadGameStatistics();
+                setStatisticsVisible(true);
+              }}
+            >
+              <Text style={styles.menuItemText}>Game Statistics</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                loadTrainingPlans();
+                setTrainingPlansVisible(true);
+              }}
+            >
+              <Text style={styles.menuItemText}>Training Plans</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <Modal visible={statisticsVisible} transparent animationType="fade">
         <View style={styles.modalBackground}>
-            <View style={styles.modalContainer}>
+          <View style={styles.modalContainer}>
             <Text style={styles.modalHeader}>Select Game Statistics</Text>
             <ScrollView>
-                {gameStatistics.map(stat => (
-                    <TouchableOpacity key={stat._id} style={styles.statItem} onPress={() => handleSendStatistic(stat._id)}>
-                        <Text style={styles.statText}>
-                            {stat.team_id} vs {stat.opposite_team_name} ({stat.team_sets_won_count}-{stat.team_sets_lost_count}) - {stat.game_date}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+              {gameStatistics.length > 0 ? (
+                gameStatistics.map(stat => (
+                  <TouchableOpacity key={stat._id} style={styles.statItem} onPress={() => handleSendStatistic(stat._id)}>
+                    <Text style={styles.statText}>
+                      {stat.team_id} vs {stat.opposite_team_name} ({stat.team_sets_won_count}-{stat.team_sets_lost_count}) - {stat.game_date}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.emptyMessage}>No game statistics available yet. Start tracking your games to see them here!</Text>
+              )}
             </ScrollView>
             <TouchableOpacity onPress={() => setStatisticsVisible(false)} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
-            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={trainingPlansVisible} transparent animationType="fade">
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalHeader}>Select Training Plan</Text>
+            <ScrollView>
+              {trainingPlans.length > 0 ? (
+                trainingPlans.map(plan => (
+                  <TouchableOpacity 
+                    key={plan.id} 
+                    style={styles.statItem} 
+                    onPress={() => handleTrainingPlanSelect(plan.id)}
+                  >
+                    <Text style={styles.statText}>
+                      {plan.name || 'Unnamed Plan'}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.emptyMessage}>No training plans available yet. Create some plans to help your team improve!</Text>
+              )}
+            </ScrollView>
+            <TouchableOpacity onPress={() => setTrainingPlansVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -525,9 +677,64 @@ const styles = StyleSheet.create({
   attachButton: {
     paddingHorizontal: 10,
   },
+  menuContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 20,
+    backgroundColor: '#202123',
+    borderRadius: 10,
+    padding: 10,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  menuItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#555',
+  },
+  menuItemText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  emptyMessage: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
+    padding: 20,
+    fontStyle: 'italic',
+  },
+  markdownContainer: {
+    width: '100%',
+  },
 });
 
-const markdownStyles = {
+const markdownStyles: {
+  body: TextStyle;
+  heading1: TextStyle;
+  heading2: TextStyle;
+  heading3: TextStyle;
+  heading4: TextStyle;
+  heading5: TextStyle;
+  heading6: TextStyle;
+  strong: TextStyle;
+  em: TextStyle;
+  bullet_list: TextStyle;
+  ordered_list: TextStyle;
+  list_item: TextStyle;
+  code_inline: TextStyle;
+  code_block: TextStyle;
+  image: ImageStyle;
+  paragraph: TextStyle;
+  link: TextStyle;
+} = {
   body: {
     color: '#fff',
     fontSize: 16,
@@ -554,5 +761,18 @@ const markdownStyles = {
     padding: 8,
     borderRadius: 6,
     color: '#fff',
+  },
+  image: {
+    marginVertical: 10,
+    borderRadius: 8,
+    width: '100%',
+    height: 200,
+    resizeMode: 'contain',
+  },
+  paragraph: {
+    marginVertical: 8,
+  },
+  link: {
+    color: '#0fa37f',
   },
 };

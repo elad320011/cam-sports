@@ -1,7 +1,11 @@
 from flask import Blueprint, request
-from controllers.training_plans import create_training_plan, delete_training_plan, get_training_plan_by_team_id, edit_training_plan
+from controllers.training_plans import create_training_plan, delete_training_plan, get_training_plan_by_team_id, edit_training_plan, get_training_plan_by_id
 
 training_plans_bp = Blueprint('training_plans', __name__)
+
+@training_plans_bp.route('/<plan_id>', methods=['GET'])
+def get_training_plan_by_id_route(plan_id):
+    return get_training_plan_by_id(plan_id)
 
 @training_plans_bp.route('/create', methods=['POST'])
 def create():
