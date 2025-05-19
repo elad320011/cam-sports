@@ -11,6 +11,7 @@ import Training from "@/components/management/training";
 import GameStatistics from "@/components/management/statistics";
 import Formations from "@/components/management/formations";
 import Footage from "@/components/management/footage";
+import Payments from "@/components/management/payments";
 
 export default function Management() {
   const { user, isLoading } = useAuth();
@@ -35,8 +36,9 @@ export default function Management() {
         {/* <GameStatistics /> */}
         <Training />
         <Messages />
-        <Formations /> {/* Add Formations component */}
+        <Formations />
         <Footage teamId={user?.team_id}/>
+        <Payments isManager={user?.user_type === 'management'} />
       </ScrollView>
     </View>
   );

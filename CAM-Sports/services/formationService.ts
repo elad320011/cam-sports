@@ -139,4 +139,13 @@ export const updatePlayerRole = async (
         console.error('Error updating player role:', error);
         throw error;
     }
+};
+
+export const deleteFormation = async (formationId: string): Promise<void> => {
+    try {
+        await axiosInstance.delete(`/formations/${formationId}/delete`);
+    } catch (error) {
+        console.error('Error deleting formation:', error);
+        throw error;
+    }
 }; 
