@@ -39,7 +39,6 @@ def create_training_plan(request):
 
     return jsonify({"message": "Training plan created successfully", "plan_id": plan_id}), 201
 
-
 def get_training_plan_by_team_id(team_id):
     training_plans = TrainingPlan.objects(team_id=team_id)
     result = []
@@ -103,3 +102,31 @@ def edit_training_plan(request, plan_id):
     training_plan.save()
 
     return jsonify({"message": "Training plan updated successfully"}), 200
+
+def get_training_plan_by_id(plan_id):
+    try:
+        training_plan = TrainingPlan.objects.get(id=plan_id)
+        return jsonify({
+            "id": str(training_plan.id),
+            "name": training_plan.name,
+            "description": training_plan.description,
+            "team_id": training_plan.team_id,
+            "plan_sections": [
+                {
+                    "name": section.name,
+                    "description": section.description,
+                    "sources": [
+                        {
+                            "source_type": source.source_type,
+                            "source_url": source.source_url
+                        }
+                        for source in section.sources
+                    ]
+                }
+                for section in training_plan.plan_sections
+            ]
+        }), 200
+    except me.DoesNotExist:
+        return jsonify({"message": "Training plan not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500

@@ -34,3 +34,37 @@ Content-Type: application/json
 ### Get all training plans of a team
 GET http://localhost:5000/training_plans/team_id/your_team_id
 Content-Type: application/json
+
+
+### Get a specific training plan by ID
+GET http://localhost:5000/training_plans/682b454a72b7c64902cb3cb1
+Content-Type: application/json
+
+### Delete a training plan
+DELETE http://localhost:5000/training_plans/delete
+Content-Type: application/json
+
+{
+  "team_id": "your_team_id",
+  "plan_id": "your_plan_id"
+}
+
+### Update a training plan
+PUT http://localhost:5000/training_plans/update
+Content-Type: application/json
+
+{
+  "plan_id": "your_plan_id",
+  "name": "Updated Workout",
+  "description": "Updated description",
+  "plan_sections": [{
+    "name": "Updated Section",
+    "description": "Updated section description",
+    "sources": [
+      {
+        "source_type": "Image",
+        "source_url": "https://example.com/image.jpg"
+      }
+    ]
+  }]
+}
