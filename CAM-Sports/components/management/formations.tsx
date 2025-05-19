@@ -4,8 +4,8 @@ import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native"; // Import useIsFocused
 import { MaterialIcons } from '@expo/vector-icons'; // Import MaterialIcons for the "+" icon
-import axiosInstance from "@/utils/axios";
 import { useAuth } from "@/contexts/AuthContext";
+import { getTeamFormations, deleteFormation } from "@/services/formationService";
 
 export default function Formations() {
   const { user } = useAuth();
@@ -17,10 +17,8 @@ export default function Formations() {
   const fetchFormations = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/formations/list", {
-        params: { team_id: user?.team_id },
-      });
-      setFormations(response.data.formations || []);
+      const response = await getTeamFormations(user?.team_id || '');
+      setFormations(response.formations || []);
     } catch (error) {
       console.error("Error fetching formations:", error);
     } finally {
@@ -30,7 +28,7 @@ export default function Formations() {
 
   const handleDeleteFormation = async (formationId: string) => {
     try {
-      await axiosInstance.delete(`/formations/${formationId}/delete`);
+      await deleteFormation(formationId);
       Alert.alert("Success", "Formation deleted successfully.");
       fetchFormations(); // Refresh the list after deletion
     } catch (error) {
