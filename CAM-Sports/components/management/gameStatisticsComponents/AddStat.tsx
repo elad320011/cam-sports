@@ -2,7 +2,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/utils/axios';
 import { useState } from 'react';
 import { TextInput, StyleSheet, NativeSyntheticEvent, TextInputChangeEventData, Button, View } from 'react-native';
-import DatePicker from 'react-native-date-picker'
+import DatePicker from 'react-native-date-picker';
+import { Card, ButtonGroup } from '@rneui/themed';
+import React from 'react';
 
 export default function AddStat(props: any) {
     const { logout, user } = useAuth();
@@ -48,7 +50,7 @@ export default function AddStat(props: any) {
     }
 
     return (
-        <div style={styles.container}>
+        <Card containerStyle={styles.container}>
             <TextInput
                 style={styles.input}
                 onChange={handleRivalChange}
@@ -68,7 +70,7 @@ export default function AddStat(props: any) {
                     onPress={handleSubmit}
                 />
             </View>
-        </div>
+        </Card>
     );
 }
 
@@ -85,6 +87,8 @@ const styles = StyleSheet.create({
         marginTop: 10
     },
     container:{
-        width: '100%'
+        width: '100%',
+        backgroundColor: '#fff',
+        margin: 'auto',
     }
 });
