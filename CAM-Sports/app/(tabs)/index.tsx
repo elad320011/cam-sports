@@ -33,7 +33,7 @@ export default function Management() {
 
       <ScrollView style={styles.scrollContainer}>
         <GameCalendar />
-        {/* <GameStatistics /> */}
+        <GameStatistics />
         <Training />
         <Messages />
         <Formations />

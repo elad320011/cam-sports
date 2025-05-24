@@ -62,12 +62,7 @@
     "react-native-data-grid": "^1.1.2",
     "react-native-data-table": "^0.2.3",
     "react-native-date-picker": "^5.0.12",
-<<<<<<< HEAD
     "react-native-elements": "^3.4.3",
-=======
-    "react-native-dropdown-select-list": "^2.0.5",
-    "react-native-editable-table": "^1.0.0",
->>>>>>> f47004f (game stats good for phone)
     "react-native-gesture-handler": "~2.20.2",
     "react-native-input-select": "^2.1.3",
     "react-native-markdown-display": "^7.0.2",
