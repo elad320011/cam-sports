@@ -15,7 +15,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const router = useRouter();
-  
+
   // Google Auth configuration
   const [request, response, promptAsync] = Google.useAuthRequest({
     expoClientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Expo client ID
@@ -23,7 +23,7 @@ export default function LoginScreen() {
     androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Replace with your Android client ID
     webClientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Web client ID
   });
-  
+
   React.useEffect(() => {
     if (response?.type === 'success') {
       const { authentication } = response;
@@ -78,28 +78,28 @@ export default function LoginScreen() {
         refresh_token: response.data.refresh_token,
         user: response.data.user
       });
-      
+
       router.replace('/');
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Login failed');
+      setError(error.response?.data?.message || `Login failed: ${BACKEND_URL}`);
     }
   };
 
   return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           headerShown: false,
-        }} 
+        }}
       />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           <Text style={styles.title}>Welcome Back</Text>
-          
+
           <View style={styles.formContainer}>
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -133,23 +133,23 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.buttonGroup}>
-              <TouchableOpacity 
-                style={styles.primaryButton} 
+              <TouchableOpacity
+                style={styles.primaryButton}
                 onPress={handleLogin}
               >
                 <Text style={styles.primaryButtonText}>Login</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.googleButton} 
+
+              <TouchableOpacity
+                style={styles.googleButton}
                 onPress={() => promptAsync()}
                 disabled={!request}
               >
                 <Text style={styles.googleButtonText}>Sign in with Google</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.linkButton} 
+
+              <TouchableOpacity
+                style={styles.linkButton}
                 onPress={() => router.push('/register')}
               >
                 <Text style={styles.linkButtonText}>Don't have an account? Register</Text>

@@ -78,7 +78,7 @@ export default function Training() {
   };
 
   return (
-  <div>
+  <>
     <Collapsible title="Training Programs">
       <Button style={{marginBottom: 20}} variant="outlined" onClick={(e) => setAddMode(!addMode)}>
         {addMode ? "View" : "Add"} Programs
@@ -109,7 +109,7 @@ export default function Training() {
       )}
       {program && !addMode && <Plan {...program} onDelete={handleCollapse} />}
     </Collapsible>
-    </div>
+    </>
   );
 }
 
