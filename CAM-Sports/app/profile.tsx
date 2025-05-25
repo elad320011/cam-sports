@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { Redirect } from 'expo-router';
-import { Collapsible } from '@/components/Collapsible';
-import axiosInstance from '@/utils/axios';
 import { useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import * as Clipboard from 'expo-clipboard';
 
+// Components
+import { Collapsible } from '@/components/Collapsible';
+import axiosInstance from '@/utils/axios';
+
+// Context
+import { useAuth } from '@/contexts/AuthContext';
+
+// Icons & Colors
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '@/constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// Services
 import { getTeamByCode } from '@/services/usersService'
 import { shareCalendar } from '@/services/calendarService';
 
@@ -442,12 +452,6 @@ export default function ProfileScreen() {
       setIsUpdating(false);
     }
   };
-  
-  // Direct logout function - simple approach like in index.tsx
-  const handleLogout = () => {
-    // Just call logout directly, without any confirmation or navigation
-    logout();
-  };
 
   // Add a function to copy team code to clipboard
   const copyTeamCode = async () => {
@@ -465,25 +469,39 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
         <Text style={styles.title}>Profile</Text>
+        <View style={styles.backButton} />
       </View>
       
       <ScrollView style={styles.scrollContainer}>
         <View style={styles.userInfoContainer}>
-          <Text style={styles.userNameText}>{user?.full_name}</Text>
-          <Text style={styles.userEmailText}>{user?.email}</Text>
-          <Text style={styles.userTypeText}>
-            {user?.user_type === 'player' ? 'Player' : 'Team Manager'}
-          </Text>
-          <Text style={styles.teamText}>Team: {user?.team_id}</Text>
-          
-          {user?.user_type === 'player' && (
-            <View style={styles.playerDetailsContainer}>
-              {playerRole && <Text style={styles.playerDetailText}>Role: {playerRole}</Text>}
-              {playerHeight && <Text style={styles.playerDetailText}>Height: {playerHeight} cm</Text>}
-              {playerWeight && <Text style={styles.playerDetailText}>Weight: {playerWeight} kg</Text>}
-            </View>
-          )}
+          <LinearGradient
+            colors={[colors.cardBackground, colors.cardBackgroundLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.gradient}
+          >
+            <Text style={styles.userNameText}>{user?.full_name}</Text>
+            <Text style={styles.userEmailText}>{user?.email}</Text>
+            <Text style={styles.userTypeText}>
+              {user?.user_type === 'player' ? 'Player' : 'Team Manager'}
+            </Text>
+            <Text style={styles.teamText}>Team: {user?.team_id}</Text>
+            
+            {user?.user_type === 'player' && (
+              <View style={styles.playerDetailsContainer}>
+                {playerRole && <Text style={styles.playerDetailText}>Role: {playerRole}</Text>}
+                {playerHeight && <Text style={styles.playerDetailText}>Height: {playerHeight} cm</Text>}
+                {playerWeight && <Text style={styles.playerDetailText}>Weight: {playerWeight} kg</Text>}
+              </View>
+            )}
+          </LinearGradient>
         </View>
         
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -492,42 +510,56 @@ export default function ProfileScreen() {
         {user?.user_type === 'management' && (
           <Collapsible title="Team Code">
             <View style={styles.section}>
-              <Text style={styles.sectionText}>
-                Share this code with players or other managers to join your team:
-              </Text>
-              <View style={styles.codeContainer}>
-                <Text style={styles.codeText}>{teamCode}</Text>
-                <TouchableOpacity 
-                  style={styles.copyButton}
-                  onPress={copyTeamCode}
-                >
-                  <Text style={styles.copyButtonText}>Copy</Text>
-                </TouchableOpacity>
-              </View>
+              <LinearGradient
+                colors={[colors.cardBackground, colors.cardBackgroundLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradient}
+              >
+                <Text style={styles.sectionText}>
+                  Share this code with players or other managers to join your team:
+                </Text>
+                <View style={styles.codeContainer}>
+                  <Text style={styles.codeText}>{teamCode}</Text>
+                  <TouchableOpacity 
+                    style={styles.copyButton}
+                    onPress={copyTeamCode}
+                  >
+                    <Text style={styles.copyButtonText}>Copy</Text>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
             </View>
           </Collapsible>
         )}
         
         <Collapsible title="Team Members">
           <View style={styles.section}>
-            {teammates.length > 0 ? (
-              teammates.map((member, index) => (
-                <View key={index} style={styles.teammateContainer}>
-                  <View>
-                    <Text style={styles.teammateText}>{member.full_name}</Text>
-                    <Text style={styles.teammateRoleText}>{member.email}</Text>
-                    {member.role && member.user_type === 'player' && (
-                      <Text style={styles.teammatePositionText}>Position: {member.role}</Text>
-                    )}
+            <LinearGradient
+              colors={[colors.cardBackground, colors.cardBackgroundLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.gradient}
+            >
+              {teammates.length > 0 ? (
+                teammates.map((member, index) => (
+                  <View key={index} style={styles.teammateContainer}>
+                    <View>
+                      <Text style={styles.teammateText}>{member.full_name}</Text>
+                      <Text style={styles.teammateRoleText}>{member.email}</Text>
+                      {member.role && member.user_type === 'player' && (
+                        <Text style={styles.teammatePositionText}>Position: {member.role}</Text>
+                      )}
+                    </View>
+                    <Text style={styles.teammateTypeText}>
+                      {member.user_type === 'player' ? 'Player' : 'Manager'}
+                    </Text>
                   </View>
-                  <Text style={styles.teammateTypeText}>
-                    {member.user_type === 'player' ? 'Player' : 'Manager'}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noDataText}>No team members yet</Text>
-            )}
+                ))
+              ) : (
+                <Text style={styles.noDataText}>No team members yet</Text>
+              )}
+            </LinearGradient>
           </View>
         </Collapsible>
         
@@ -611,7 +643,7 @@ export default function ProfileScreen() {
               disabled={isVerifying}
             >
               {isVerifying ? (
-                <ActivityIndicator size="small" color="#4a90e2" />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Text style={styles.secondaryButtonText}>Verify Team Code</Text>
               )}
@@ -679,7 +711,7 @@ export default function ProfileScreen() {
               disabled={isUpdating}
             >
               {isUpdating ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={colors.textOnPrimary} />
               ) : (
                 <Text style={styles.buttonText}>Change Password</Text>
               )}
@@ -687,7 +719,7 @@ export default function ProfileScreen() {
           </View>
         </Collapsible>
         
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -698,10 +730,9 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 16,
-    marginTop: 32,
-    marginBottom: 60,
+    backgroundColor: colors.background,
+    paddingInline: 16,
+    paddingBlock: 25,
   },
   loadingContainer: {
     flex: 1,
@@ -717,78 +748,95 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: colors.textPrimary,
   },
   scrollContainer: {
     flex: 1,
   },
   userInfoContainer: {
-    backgroundColor: '#f5f5f5',
     borderRadius: 10,
-    padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    overflow: 'hidden',
+  },
+  gradient: {
+    padding: 16,
   },
   userNameText: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: colors.textPrimary,
   },
   userEmailText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   userTypeText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   teamText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
   },
   errorText: {
-    color: '#ff6b6b',
+    color: colors.error,
     marginBottom: 16,
     padding: 10,
-    backgroundColor: '#ffe5e5',
+    backgroundColor: colors.cardBackground,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.error,
   },
   successText: {
-    color: '#28a745',
+    color: colors.success,
     marginBottom: 16,
     padding: 10,
-    backgroundColor: '#e5ffe5',
+    backgroundColor: colors.cardBackground,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.success,
   },
   section: {
-    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    overflow: 'hidden',
   },
   sectionText: {
     fontSize: 16,
     marginBottom: 16,
+    color: colors.textPrimary,
   },
   codeContainer: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 16,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
   },
   codeText: {
     fontSize: 24,
     fontWeight: 'bold',
     letterSpacing: 2,
+    color: colors.textPrimary,
   },
   copyButton: {
-    backgroundColor: '#4a90e2',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   copyButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -797,31 +845,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.borderColor,
   },
   teammateText: {
     fontSize: 16,
     fontWeight: '500',
+    color: colors.textPrimary,
   },
   teammateRoleText: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   teammatePositionText: {
     fontSize: 14,
-    color: '#4a90e2',
+    color: colors.primary,
     fontStyle: 'italic',
     marginTop: 2,
   },
   teammateTypeText: {
     fontSize: 14,
-    color: '#4a90e2',
+    color: colors.primary,
     fontStyle: 'italic',
   },
   noDataText: {
     fontSize: 16,
-    color: '#888',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginVertical: 16,
   },
@@ -832,54 +881,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
     fontWeight: '500',
+    color: colors.textPrimary,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: colors.textPrimary,
   },
   button: {
-    backgroundColor: '#4a90e2',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#4a90e2',
+    borderColor: colors.primary,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   secondaryButtonText: {
-    color: '#4a90e2',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   verifiedTeamContainer: {
     marginTop: 16,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.cardBackground,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
   },
   verifiedTeamText: {
     fontSize: 16,
     marginBottom: 16,
     fontWeight: '500',
+    color: colors.textPrimary,
   },
   logoutButton: {
-    backgroundColor: '#ff6b6b',
+    backgroundColor: colors.error,
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -887,30 +941,36 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoutButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
     marginBottom: 16,
   },
   picker: {
     height: 50,
     backgroundColor: 'transparent',
+    color: colors.textPrimary,
   },
   playerDetailsContainer: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: colors.borderColor,
   },
   playerDetailText: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     marginBottom: 4,
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
+    color: colors.textPrimary,
   },
 });

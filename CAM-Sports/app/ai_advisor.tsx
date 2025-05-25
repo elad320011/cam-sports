@@ -18,6 +18,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
+import { useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { getTeamMembers } from '@/services/usersService';
 import { getTeamGameStatistics } from '@/services/gameStatsService';
@@ -25,6 +27,7 @@ import { getTrainingPlans } from '@/services/trainingPlansService';
 import { sendAIAdvisorTextMessage, cleanTempMessages } from '@/services/aiAdvisorService';
 import { getTeamFormations } from '@/services/formationService';
 import { useAuth } from '@/contexts/AuthContext';
+import { colors } from '@/constants/Colors';
 
 interface Message {
   id: string;
@@ -76,6 +79,8 @@ export default function AIAdvisor() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [trainingPlansVisible, setTrainingPlansVisible] = useState(false);
   const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
+
+  const router = useRouter();
 
   // Initialize conversation with formations
   useEffect(() => {
@@ -439,7 +444,14 @@ export default function AIAdvisor() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <Text style={styles.headerText}>AI Advisor</Text>
+        <View style={styles.backButton} />
       </View>
 
       <FlatList
@@ -462,13 +474,13 @@ export default function AIAdvisor() {
       >
         <View style={styles.inputContainer}>
           <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.attachButton}>
-            <Text style={styles.sendIcon}>📎</Text>
+            <Ionicons name="add-circle-outline" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TextInput
             style={styles.input}
             placeholder="Message AI Advisor…"
-            placeholderTextColor="#888"
+            placeholderTextColor="#d3cdcd"
             value={input}
             onChangeText={setInput}
             onSubmitEditing={handleSend}
@@ -572,17 +584,20 @@ export default function AIAdvisor() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#343541',
+    backgroundColor: colors.background,
   },
   header: {
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderColor: '#555',
-    backgroundColor: '#202123',
+    borderColor: colors.borderColor,
+    backgroundColor: colors.cardBackgroundMidLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   headerText: {
-    color: '#fff',
-    fontSize: 18,
+    color: colors.textPrimary,
+    fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -605,55 +620,57 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 16,
+    fontSize: 20,
   },
   userBubble: {
-    backgroundColor: '#0fa37f',
+    backgroundColor: colors.primary,
   },
   aiBubble: {
-    backgroundColor: '#444654',
+    backgroundColor: colors.cardBackgroundMidLight,
   },
   messageText: {
-    color: '#fff',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 20,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#40414f',
+    padding: 12,
+    backgroundColor: colors.cardBackgroundMidLight,
     borderTopWidth: 1,
-    borderColor: '#555',
+    borderColor: colors.borderColor,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   input: {
     flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    color: '#fff',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 18
   },
   sendButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   sendIcon: {
-    color: '#888',
+    color: colors.textSecondary,
     fontSize: 20,
   },
   modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.shadowColor,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
     width: '85%',
-    backgroundColor: '#202123',
+    backgroundColor: colors.cardBackgroundMidLight,
     borderRadius: 10,
     padding: 20,
   },
   modalHeader: {
-    color: '#fff',
+    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
@@ -661,17 +678,17 @@ const styles = StyleSheet.create({
   statItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#555',
+    borderBottomColor: colors.borderColor,
   },
   statText: {
-    color: '#fff',
+    color: colors.textPrimary,
   },
   closeButton: {
     marginTop: 15,
     alignSelf: 'flex-end',
   },
   closeButtonText: {
-    color: '#0fa37f',
+    color: colors.primary,
     fontSize: 16,
   },
   attachButton: {
@@ -681,11 +698,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 80,
     left: 20,
-    backgroundColor: '#202123',
+    backgroundColor: colors.cardBackgroundMidLight,
     borderRadius: 10,
     padding: 10,
     minWidth: 200,
-    shadowColor: '#000',
+    shadowColor: colors.shadowColor,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -698,14 +715,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#555',
+    borderBottomColor: colors.borderColor,
   },
   menuItemText: {
-    color: '#fff',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 20,
+    fontWeight: 600,
   },
   emptyMessage: {
-    color: '#888',
+    color: colors.textSecondary,
     fontSize: 16,
     textAlign: 'center',
     padding: 20,
@@ -713,6 +731,10 @@ const styles = StyleSheet.create({
   },
   markdownContainer: {
     width: '100%',
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
   },
 });
 
@@ -736,31 +758,31 @@ const markdownStyles: {
   link: TextStyle;
 } = {
   body: {
-    color: '#fff',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 20,
   },
-  heading1: { color: '#fff' },
-  heading2: { color: '#fff' },
-  heading3: { color: '#fff' },
-  heading4: { color: '#fff' },
-  heading5: { color: '#fff' },
-  heading6: { color: '#fff' },
-  strong: { color: '#fff' },
-  em: { color: '#fff' },
-  bullet_list: { color: '#fff' },
-  ordered_list: { color: '#fff' },
-  list_item: { color: '#fff' },
+  heading1: { color: colors.textPrimary },
+  heading2: { color: colors.textPrimary },
+  heading3: { color: colors.textPrimary },
+  heading4: { color: colors.textPrimary },
+  heading5: { color: colors.textPrimary },
+  heading6: { color: colors.textPrimary },
+  strong: { color: colors.textPrimary },
+  em: { color: colors.textPrimary },
+  bullet_list: { color: colors.textPrimary },
+  ordered_list: { color: colors.textPrimary },
+  list_item: { color: colors.textPrimary },
   code_inline: {
-    backgroundColor: '#555',
+    backgroundColor: colors.cardBackgroundMidLight,
     padding: 4,
     borderRadius: 4,
-    color: '#fff',
+    color: colors.textPrimary,
   },
   code_block: {
-    backgroundColor: '#555',
+    backgroundColor: colors.cardBackgroundMidLight,
     padding: 8,
     borderRadius: 6,
-    color: '#fff',
+    color: colors.textPrimary,
   },
   image: {
     marginVertical: 10,
@@ -773,6 +795,6 @@ const markdownStyles: {
     marginVertical: 8,
   },
   link: {
-    color: '#0fa37f',
+    color: colors.primary,
   },
 };

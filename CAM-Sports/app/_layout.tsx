@@ -14,10 +14,10 @@ SplashScreen.preventAutoHideAsync();
 
 const theme = createTheme({
   lightColors: {
-    primary: '#e7e7e8',
+    primary: '#012440',
   },
   darkColors: {
-    primary: '#000',
+    primary: '#012440',
   },
   mode: 'dark',
 });
@@ -36,7 +36,9 @@ function RootLayoutNav() {
   return (
     <Stack>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ headerShown: false }} />
+      <Stack.Screen name="ai_advisor" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
