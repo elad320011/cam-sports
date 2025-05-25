@@ -25,6 +25,7 @@ import {
 } from '@/services/calendarService';
 import { Collapsible } from "../Collapsible";
 import { useAuth } from '@/contexts/AuthContext';
+import { colors } from '@/constants/Colors';
 
 const { height: windowHeight } = Dimensions.get('window');
 
@@ -272,7 +273,12 @@ const GameCalendar = () => {
 
   
   return (
-    <Collapsible title="Calendar">
+    <Collapsible 
+      title="Calendar"
+      image={require('@/assets/images/calendar-icon.png')}
+      imageStyle={styles.image}
+      titleContainerStyle={styles.imageWrapper}
+    >
       <View style={styles.container}>
         <Calendar
           onDayPress={handleDayPress}
@@ -757,6 +763,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  imageWrapper: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between'
+  },
+  image: { 
+    tintColor: colors.textPrimary, 
+    width: 52,
+    height: 52 
+  }
 });
 
 export default GameCalendar;
