@@ -7,7 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { useRouter, Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-        
+
 // Services
 import { createCalendar, shareCalendar } from '@/services/calendarService';
 import { customizeAIAdvisor } from '@/services/aiAdvisorService';
@@ -60,7 +60,7 @@ export default function RegisterScreen() {
         setWeight(parsedData.weight || '');
         setHeight(parsedData.height || '');
         setEmail(parsedData.email || '');
-        
+
         // If there's a birthDate, also set the date state for the date picker
         if (parsedData.birthDate) {
           setDate(new Date(parsedData.birthDate));
@@ -105,7 +105,7 @@ export default function RegisterScreen() {
           user_type: 'team',
           team_id: teamId  // This will be used as the team name now
         });
-        
+
         if (response.data.team_code) {
           setRegisteredTeamCode(response.data.team_code);
           setUpProfile();
@@ -138,11 +138,11 @@ export default function RegisterScreen() {
           weight: parseFloat(weight),
           height: parseFloat(height)
         });
-        
+
         if (response.data.redirect || response.data.team_code) {
           // Clear saved form data after successful registration
           await AsyncStorage.removeItem('registerFormData');
-          
+
           if (response.data.team_code) {
             setRegisteredTeamCode(response.data.team_code);
           }
@@ -175,7 +175,7 @@ export default function RegisterScreen() {
           user_type: userType,
           team_code: teamCode
         });
-        
+
         if (response.data.redirect) {
           setUpProfile();
           router.push('/login');
@@ -220,7 +220,7 @@ export default function RegisterScreen() {
           user_type: userType,
           team_code: teamCode
         });
-        
+
         if (response.data.redirect) {
           router.push('/login');
         }
@@ -255,14 +255,14 @@ export default function RegisterScreen() {
           user_type: userType,
           custom_info: custom_message
         };
-        
+
         await customizeAIAdvisor(data);
-      
+
       }
       catch (error) {
         console.error('Error setting up profile:', error);
       }
-      
+
     }
 
     const createCalendarForTeam = async () => {
@@ -270,7 +270,7 @@ export default function RegisterScreen() {
         const calendarData = {
           "summary": `A Calendar for team ${teamId}`,
         }
-        
+
         // Create the calendar
         const result = await createCalendar(calendarData);
 
@@ -286,7 +286,7 @@ export default function RegisterScreen() {
       catch (error) {
         console.error('Error sharing calendar with user:', error);
       }
-      
+
     }
 
     const shareCalendarWithUser = async () => {
@@ -298,9 +298,9 @@ export default function RegisterScreen() {
       catch (error) {
         console.error('Error sharing calendar with user:', error);
       }
-      
+
     }
-    
+
     if (userType === 'player') {
       const custom_message = `My name is ${fullName}, I'm a player in team ${teamId}. My position is ${role}, I'm ${height}cm tall, and I weigh ${weight}kg.`
       customizeAIAdvisorProfile(custom_message);
@@ -353,22 +353,22 @@ export default function RegisterScreen() {
 
   return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           headerShown: false,
-        }} 
+        }}
       />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
           <Text style={styles.title}>Create Account</Text>
-          
+
           {errorMessage && (
             <Text style={errorMessage.type === 'success' ? styles.success : styles.error}>
               {errorMessage.text}
             </Text>
           )}
-          
+
           <View style={styles.formContainer}>
             <View style={styles.pickerContainer}>
               <Text style={styles.label}>Register as:</Text>
@@ -481,8 +481,8 @@ export default function RegisterScreen() {
                   />
                 ) : (
                   <>
-                    <Pressable 
-                      style={[styles.input, styles.dateInput]} 
+                    <Pressable
+                      style={[styles.input, styles.dateInput]}
                       onPress={() => setShowDatePicker(true)}
                     >
                       <Text style={birthDate ? styles.dateText : styles.placeholderText}>
@@ -605,22 +605,22 @@ export default function RegisterScreen() {
 
             {!registeredTeamCode && (
               <View style={styles.buttonGroup}>
-                <TouchableOpacity 
-                  style={styles.primaryButton} 
+                <TouchableOpacity
+                  style={styles.primaryButton}
                   onPress={handleRegister}
                 >
                   <Text style={styles.primaryButtonText}>Register</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.secondaryButton} 
+
+                <TouchableOpacity
+                  style={styles.secondaryButton}
                   onPress={resetForm}
                 >
                   <Text style={styles.secondaryButtonText}>Reset Form</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.linkButton} 
+
+                <TouchableOpacity
+                  style={styles.linkButton}
                   onPress={() => router.push('/login')}
                 >
                   <Text style={styles.linkButtonText}>Already have an account? Login</Text>
@@ -633,7 +633,7 @@ export default function RegisterScreen() {
                 <Text style={styles.teamCodeLabel}>Your Team Code:</Text>
                 <View style={styles.teamCodeWrapper}>
                   <Text style={styles.teamCode}>{registeredTeamCode}</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.copyButton}
                     onPress={copyTeamCode}
                   >
@@ -644,7 +644,7 @@ export default function RegisterScreen() {
                   Share this code with your team members for registration.{'\n'}
                   They will use this code to join your team.
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.primaryButton}
                   onPress={() => {
                     setUserType('management');
