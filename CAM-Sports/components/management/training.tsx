@@ -1,6 +1,6 @@
 // app/(tabs)/dashboard/@widgets/WidgetB.tsx
 import React, { useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Collapsible } from "../Collapsible";
 import axiosInstance from '@/utils/axios';
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { PlanProps } from "./trainingComponents/assets";
 import { ButtonGroup } from "@rneui/themed";
 import { AddPlan } from "./trainingComponents/AddPlan";
 import { DisplayPlans } from "./trainingComponents/DisplayPlans";
+import { Ionicons } from "@expo/vector-icons";
 
 const temp: PlanProps[] = [
   {
@@ -67,14 +68,30 @@ export default function Training() {
 
   return (
   <>
-    <Collapsible title="Training Programs">
-      <ButtonGroup
-        buttons={["Add", "View"]}
-        selectedIndex={currentMode === "Add" ? 0 : 1}
-        onPress={(index) => {
-          setCurrentMode(index === 0 ? "Add" : "View");
-          setCurrentPlan(undefined);
-        }} />
+    <Collapsible title="Training Programs" keepShut={true} training={true} setCurrentMode={setCurrentMode} setCurrentPlan={setCurrentPlan}>
+
+      <View style={styles.buttonsView}>
+        <Ionicons
+          name="add-outline"
+          size={24}
+          color="white"
+          onPress={() => {
+            setCurrentMode("Add");
+            setCurrentPlan(undefined);
+          }}
+          style={{ marginRight: 20 }}
+        />
+        <Ionicons
+          name="eye-outline"
+          size={24}
+          color="white"
+          onPress={() => {
+            setCurrentMode("View");
+            setCurrentPlan(undefined);
+          }}
+          style={{ marginLeft: 20 }}
+        />
+      </View>
 
       <DisplayPlans plans={plans} currentPlan={currentPlan} setCurrentPlan={setCurrentPlan} currentMode={currentMode} setCurrentMode={setCurrentMode} />
       <AddPlan team_id={user?.team_id} currentMode={currentMode} setCurrentMode={setCurrentMode} />
@@ -90,5 +107,11 @@ const styles = StyleSheet.create({
   },
   select: {
     marginBottom: 160,
-  }
+  },
+  buttonsView: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
+},
 });

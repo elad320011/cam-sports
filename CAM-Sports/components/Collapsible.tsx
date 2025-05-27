@@ -4,22 +4,31 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
 import { colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 interface CollapsibleProps {
   title: string;
+  keepShut?: boolean;
   image?: any; // Image source
   imageStyle?: any; // Optional custom image style
   titleContainerStyle?: any; // Optional custom style for the title container
   titleTextStyle?: any; // Optional custom style for the title text
+  training?: boolean; // Optional prop to show training icon
+  setCurrentMode?: any;
+  setCurrentPlan?: any;
 }
 
-export function Collapsible({ 
-  children, 
-  title, 
-  image, 
+export function Collapsible({
+  children,
+  title,
+  image,
   imageStyle,
   titleContainerStyle,
-  titleTextStyle 
+  titleTextStyle,
+  keepShut = false,
+  training = false,
+  setCurrentMode = () => {},
+  setCurrentPlan = () => {}
 }: PropsWithChildren & CollapsibleProps) {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useColorScheme() ?? 'light';
@@ -47,10 +56,18 @@ export function Collapsible({
   };
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <TouchableOpacity
         style={styles.heading}
-        onPress={() => setIsOpen((value) => !value)}
+        onPress={() => {
+          if (keepShut === false) {
+            setIsOpen((value) => !value)
+          }
+          else {
+            setCurrentMode("View");
+            setCurrentPlan(undefined);
+          }
+        }}
         activeOpacity={0.8}>
         <LinearGradient
           colors={[colors.cardBackground, colors.cardBackgroundLight]}
@@ -60,17 +77,32 @@ export function Collapsible({
         >
           <View style={[styles.titleContainer, titleContainerStyle]}>
             {image && (
-              <Image 
-                source={image} 
-                style={[styles.titleImage, imageStyle]} 
+              <Image
+                source={image}
+                style={[styles.titleImage, imageStyle]}
                 resizeMode="contain"
               />
             )}
             <Text style={[styles.text, titleTextStyle]}>{title}</Text>
+            {training && (
+              <View style={{ flex: 1 }}>
+                <View style={{ justifyContent: 'flex-end', alignItems: 'flex-end' }}>
+                  <Ionicons
+                    name = "add-outline"
+                    size = {24}
+                    color = "white"
+                    onPress = {() => {
+                      setCurrentMode("Add");
+                      setCurrentPlan(undefined);
+                    }}
+                  />
+                </View>
+              </View>
+            )}
           </View>
         </LinearGradient>
       </TouchableOpacity>
-      
+
       <Animated.View style={[styles.content, { height: animatedHeight }]}>
         <View style={styles.contentInner} onLayout={onContentLayout}>
           <LinearGradient
