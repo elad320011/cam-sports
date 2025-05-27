@@ -8,7 +8,7 @@ import YoutubePlayer from "react-native-youtube-iframe";
 export function VideoGallery(props: any) {
     const { videos, videoVisible, setVideoVisible } = props;
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [playing, setPlaying] = useState(false);
+    const [playing, setPlaying] = useState(true);
 
     const onStateChange = useCallback((state: string) => {
         if (state === "ended") {
@@ -38,8 +38,6 @@ export function VideoGallery(props: any) {
         }
       }
 
-      console.log(currentIndex)
-
     return (
         <>
             <Modal
@@ -49,28 +47,33 @@ export function VideoGallery(props: any) {
                 onBackdropPress={() => setVideoVisible(false)}
             >
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
-                    <Card style={{ backgroundColor: '#f5f5f5', width: '80%' }}>
+                    <Card style={{ backgroundColor: '#0c1c2c', width: '80%' }}>
                         <Card.Content>
                             <YoutubePlayer
                                 height={180}
                                 play={playing}
                                 videoId={videos[currentIndex].uri.split('v=')[1].split("&")[0]}
                                 onChangeState={onStateChange}
+
                             />
 
                             <Divider style={{ margin: 20 }} />
 
                             <ButtonGroup
-                                buttons={["<", ">"]}
+                                buttons={["<", playing ? "pause" : "play", ">"]}
                                 onPress={(index) => {
                                     if (index == 0) {
                                         backButton()
                                     }
-                                    else {
+                                    else if (index == 2) {
                                         forwardButton()
                                     }
+                                    else {
+                                        togglePlaying();
+                                    }
                                 }}
-                                containerStyle={{ marginBottom: 20 }}
+                                containerStyle={{ marginBottom: 20, backgroundColor: 'transparent', borderColor: 'transparent' }}
+                                textStyle={{ color: '#cdd1ce', fontWeight: 'bold' }}
                             />
                         </Card.Content>
                     </Card>

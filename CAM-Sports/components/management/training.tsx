@@ -1,14 +1,13 @@
 // app/(tabs)/dashboard/@widgets/WidgetB.tsx
 import React, { useEffect, useState } from "react";
-import { Text, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
 import axiosInstance from '@/utils/axios';
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanProps } from "./trainingComponents/assets";
-import RNPickerSelect from 'react-native-picker-select';
-import { DisplayPlan } from "./trainingComponents/DisplayPlan";
 import { ButtonGroup } from "@rneui/themed";
 import { AddPlan } from "./trainingComponents/AddPlan";
+import { DisplayPlans } from "./trainingComponents/DisplayPlans";
 
 const temp: PlanProps[] = [
   {
@@ -44,7 +43,7 @@ const temp: PlanProps[] = [
 export default function Training() {
   const { logout, user } = useAuth();
   const [plans, setPlans] = useState<PlanProps[]>([]);
-  const [currentMode, setCurrentMode] = useState<"View" | "Add">("View")
+  const [currentMode, setCurrentMode] = useState<"View" | "Add" | undefined>(undefined)
   const [currentPlan, setCurrentPlan] = useState<PlanProps | undefined>(undefined);
 
   useEffect(() => {
@@ -76,32 +75,9 @@ export default function Training() {
           setCurrentMode(index === 0 ? "Add" : "View");
           setCurrentPlan(undefined);
         }} />
-      {currentMode === "Add" ?
-        (
-          <AddPlan team_id={user?.team_id} />
-        )
-        :
-        (
-          <RNPickerSelect
-            onValueChange={(plan) => updateCurrentPlan(plan)}
-            items={plans.map(plan => ({ label: plan.name.charAt(0).toUpperCase() + plan.name.slice(1), value: plan.name }))}
-            style={{
-              inputIOS: {
-                marginBottom: 20,
-              },
-              inputAndroid: {
-                marginBottom: 20,
-              },
-            }}
-          />
-        )
-      }
 
-      {currentPlan &&
-        (
-          <DisplayPlan plan={currentPlan} setCurrentPlan={setCurrentPlan} />
-        )
-      }
+      <DisplayPlans plans={plans} currentPlan={currentPlan} setCurrentPlan={setCurrentPlan} currentMode={currentMode} setCurrentMode={setCurrentMode} />
+      <AddPlan team_id={user?.team_id} currentMode={currentMode} setCurrentMode={setCurrentMode} />
     </Collapsible>
     </>
   );
