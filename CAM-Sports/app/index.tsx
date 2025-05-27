@@ -35,7 +35,7 @@ export default function Management() {
         end={{ x: 0, y: 0.5 }}
         style={styles.sunRays}
       />
-      <Image 
+      <Image
         source={require('@/assets/images/volleyball.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
@@ -44,15 +44,21 @@ export default function Management() {
 
       <ScrollView style={styles.scrollContainer}>
         <GameCalendar />
+        <View style={{ margin: 10 }} />
         <GameStatistics />
+        <View style={{ margin: 10 }} />
         <Training />
+        <View style={{ margin: 10 }} />
         <Messages />
+        <View style={{ margin: 10 }} />
         <Formations />
+        <View style={{ margin: 10 }} />
         <Footage teamId={user?.team_id}/>
+        <View style={{ margin: 10 }} />
         <Payments isManager={user?.user_type === 'management'} />
       </ScrollView>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/ai_advisor')}
       >
@@ -123,4 +129,4 @@ const styles = StyleSheet.create({
     height: '100%',
     zIndex: -1,
   },
-}); 
+});

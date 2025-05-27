@@ -1,15 +1,13 @@
 // app/(tabs)/dashboard/@widgets/WidgetB.tsx
 import React, { useEffect, useState } from "react";
-import { Text, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
-import Plan, { PlanProps } from "./trainingComponents/plan";
 import axiosInstance from '@/utils/axios';
-import Button from '@mui/material/Button';
-import Dropdown from 'react-native-input-select';
-import PlanForm from "./trainingComponents/planForm";
 import { useAuth } from "@/contexts/AuthContext";
-import { BACKEND_URL } from "@/globalVariables";
-
+import { PlanProps } from "./trainingComponents/assets";
+import { ButtonGroup } from "@rneui/themed";
+import { AddPlan } from "./trainingComponents/AddPlan";
+import { DisplayPlans } from "./trainingComponents/DisplayPlans";
 
 const temp: PlanProps[] = [
   {
@@ -45,11 +43,8 @@ const temp: PlanProps[] = [
 export default function Training() {
   const { logout, user } = useAuth();
   const [plans, setPlans] = useState<PlanProps[]>([]);
-  const [program, setProgram] = useState<PlanProps>();
-  const [displayProgram, setDisplayProgram] = useState<any>({ value: null, label: "Select a program" });
-  const [addMode, setAddMode] = useState(false);
-
-  const tempOptions = temp.map(object => ({ value: object.id, label: object.name }));
+  const [currentMode, setCurrentMode] = useState<"View" | "Add" | undefined>(undefined)
+  const [currentPlan, setCurrentPlan] = useState<PlanProps | undefined>(undefined);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -63,51 +58,26 @@ export default function Training() {
     };
 
     fetchPlans();
-  }, [displayProgram, addMode]); // Empty dependency array means this runs once on mount
+  }, [currentPlan, currentMode]); // Empty dependency array means this runs once on mount
 
-  const handleChange = (selectedOption: any) => {
-    const selectedPlan = plans.find(plan => plan.id == selectedOption);
-    setProgram(selectedPlan);
-    console.log(selectedPlan?.name);
-    setDisplayProgram(selectedOption);
-  };
-
-  const handleCollapse = () => {
-    setProgram(undefined); // Collapse the training plans
-    setDisplayProgram({ value: null, label: "Select a program" });
-  };
+  const updateCurrentPlan = (planName: string) => {
+    const tempPlan = plans.find(plan => plan.name === planName);
+    setCurrentPlan(tempPlan);
+  }
 
   return (
   <>
     <Collapsible title="Training Programs">
-      <Button style={{marginBottom: 20}} variant="outlined" onClick={(e) => setAddMode(!addMode)}>
-        {addMode ? "View" : "Add"} Programs
-      </Button>
-      {!addMode ? (
-        plans.length > 0 ? (
-          <Dropdown
-            label="Program"
-            selectedValue={displayProgram}
-            onValueChange={handleChange}
-            options={plans.map(plan => ({ value: plan.id, label: plan.name }))}
-            styles={styles.select}
-            primaryColor={'green'}
-            isMultiple={false}
-            />
-        ) : (
-          <Dropdown
-            label="Program"
-            selectedValue={displayProgram}
-            onValueChange={handleChange}
-            options={tempOptions}
-            styles={styles.select}
-            primaryColor={'green'}
-          />
-        ))
-      : (
-        <PlanForm setAddMode={setAddMode} />
-      )}
-      {program && !addMode && <Plan {...program} onDelete={handleCollapse} />}
+      <ButtonGroup
+        buttons={["Add", "View"]}
+        selectedIndex={currentMode === "Add" ? 0 : 1}
+        onPress={(index) => {
+          setCurrentMode(index === 0 ? "Add" : "View");
+          setCurrentPlan(undefined);
+        }} />
+
+      <DisplayPlans plans={plans} currentPlan={currentPlan} setCurrentPlan={setCurrentPlan} currentMode={currentMode} setCurrentMode={setCurrentMode} />
+      <AddPlan team_id={user?.team_id} currentMode={currentMode} setCurrentMode={setCurrentMode} />
     </Collapsible>
     </>
   );
