@@ -2,14 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { Text, StyleSheet } from "react-native";
 import { Collapsible } from "../Collapsible";
-import Plan, { PlanProps } from "./trainingComponents/plan";
 import axiosInstance from '@/utils/axios';
-import Button from '@mui/material/Button';
-import Dropdown from 'react-native-input-select';
-import PlanForm from "./trainingComponents/planForm";
 import { useAuth } from "@/contexts/AuthContext";
-import { BACKEND_URL } from "@/globalVariables";
-
+import { PlanProps } from "./trainingComponents/assets";
+import RNPickerSelect from 'react-native-picker-select';
+import { DisplayPlan } from "./trainingComponents/DisplayPlan";
+import { ButtonGroup } from "@rneui/themed";
+import { AddPlan } from "./trainingComponents/AddPlan";
 
 const temp: PlanProps[] = [
   {
@@ -45,11 +44,8 @@ const temp: PlanProps[] = [
 export default function Training() {
   const { logout, user } = useAuth();
   const [plans, setPlans] = useState<PlanProps[]>([]);
-  const [program, setProgram] = useState<PlanProps>();
-  const [displayProgram, setDisplayProgram] = useState<any>({ value: null, label: "Select a program" });
-  const [addMode, setAddMode] = useState(false);
-
-  const tempOptions = temp.map(object => ({ value: object.id, label: object.name }));
+  const [currentMode, setCurrentMode] = useState<"View" | "Add">("View")
+  const [currentPlan, setCurrentPlan] = useState<PlanProps | undefined>(undefined);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -63,51 +59,49 @@ export default function Training() {
     };
 
     fetchPlans();
-  }, [displayProgram, addMode]); // Empty dependency array means this runs once on mount
+  }, [currentPlan, currentMode]); // Empty dependency array means this runs once on mount
 
-  const handleChange = (selectedOption: any) => {
-    const selectedPlan = plans.find(plan => plan.id == selectedOption);
-    setProgram(selectedPlan);
-    console.log(selectedPlan?.name);
-    setDisplayProgram(selectedOption);
-  };
-
-  const handleCollapse = () => {
-    setProgram(undefined); // Collapse the training plans
-    setDisplayProgram({ value: null, label: "Select a program" });
-  };
+  const updateCurrentPlan = (planName: string) => {
+    const tempPlan = plans.find(plan => plan.name === planName);
+    setCurrentPlan(tempPlan);
+  }
 
   return (
   <>
     <Collapsible title="Training Programs">
-      <Button style={{marginBottom: 20}} variant="outlined" onClick={(e) => setAddMode(!addMode)}>
-        {addMode ? "View" : "Add"} Programs
-      </Button>
-      {!addMode ? (
-        plans.length > 0 ? (
-          <Dropdown
-            label="Program"
-            selectedValue={displayProgram}
-            onValueChange={handleChange}
-            options={plans.map(plan => ({ value: plan.id, label: plan.name }))}
-            styles={styles.select}
-            primaryColor={'green'}
-            isMultiple={false}
-            />
-        ) : (
-          <Dropdown
-            label="Program"
-            selectedValue={displayProgram}
-            onValueChange={handleChange}
-            options={tempOptions}
-            styles={styles.select}
-            primaryColor={'green'}
+      <ButtonGroup
+        buttons={["Add", "View"]}
+        selectedIndex={currentMode === "Add" ? 0 : 1}
+        onPress={(index) => {
+          setCurrentMode(index === 0 ? "Add" : "View");
+          setCurrentPlan(undefined);
+        }} />
+      {currentMode === "Add" ?
+        (
+          <AddPlan team_id={user?.team_id} />
+        )
+        :
+        (
+          <RNPickerSelect
+            onValueChange={(plan) => updateCurrentPlan(plan)}
+            items={plans.map(plan => ({ label: plan.name.charAt(0).toUpperCase() + plan.name.slice(1), value: plan.name }))}
+            style={{
+              inputIOS: {
+                marginBottom: 20,
+              },
+              inputAndroid: {
+                marginBottom: 20,
+              },
+            }}
           />
-        ))
-      : (
-        <PlanForm setAddMode={setAddMode} />
-      )}
-      {program && !addMode && <Plan {...program} onDelete={handleCollapse} />}
+        )
+      }
+
+      {currentPlan &&
+        (
+          <DisplayPlan plan={currentPlan} setCurrentPlan={setCurrentPlan} />
+        )
+      }
     </Collapsible>
     </>
   );
