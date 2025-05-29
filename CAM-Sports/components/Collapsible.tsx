@@ -61,9 +61,8 @@ export function Collapsible({
         style={styles.heading}
         onPress={() => {
           if (keepShut === false) {
-            setIsOpen((value) => !value)
-          }
-          else {
+            setIsOpen((value) => !value);
+          } else {
             setCurrentMode("View");
             setCurrentPlan(undefined);
           }
@@ -88,10 +87,10 @@ export function Collapsible({
               <View style={{ flex: 1 }}>
                 <View style={{ justifyContent: 'flex-end', alignItems: 'flex-end' }}>
                   <Ionicons
-                    name = "add-outline"
-                    size = {24}
-                    color = "white"
-                    onPress = {() => {
+                    name="add-outline"
+                    size={24}
+                    color="white"
+                    onPress={() => {
                       setCurrentMode("Add");
                       setCurrentPlan(undefined);
                     }}

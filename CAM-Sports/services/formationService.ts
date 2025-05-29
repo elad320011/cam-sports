@@ -121,16 +121,11 @@ export const updatePlayerRole = async (
     instructions: string
 ): Promise<void> => {
     try {
-        // If playerId is empty (Unassigned), don't make the API call
-        if (!playerId) {
-            return;
-        }
-
         const roleKey = `role_${roleNumber}`;
         await axiosInstance.put(`/formations/${formationId}/edit`, {
             roles: {
                 [roleKey]: {
-                    player_id: playerId,
+                    player_id: playerId || null,
                     instructions
                 }
             }
