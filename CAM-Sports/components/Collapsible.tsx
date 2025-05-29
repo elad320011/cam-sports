@@ -56,7 +56,7 @@ export function Collapsible({
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <TouchableOpacity
         style={styles.heading}
         onPress={() => {
@@ -122,13 +122,15 @@ export function Collapsible({
 }
 
 const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    marginBottom: 16,
+  },
   heading: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 6,
     borderRadius: 8,
-    margin: 'auto',
-    marginBottom: 16,
     width: '100%',
     borderWidth: 1,
     borderColor: colors.borderColor,
@@ -145,13 +147,10 @@ const styles = StyleSheet.create({
     height: 24,
   },
   content: {
-    margin: 'auto',
     width: '100%',
-    justifyContent: 'center',
     overflow: 'hidden',
   },
   contentInner: {
-    position: 'absolute',
     width: '100%',
   },
   gradient: {
