@@ -7,7 +7,7 @@ def create_footage_method(request):
     footage_url = data.get('url')
     team_id = data.get('team_id')
     user_id = data.get('user_id')
-
+    tags = data.get('tags', [])
 
     # Check if footage already exists
     existing_footage = Footage.objects(title=footage_title, team_id=team_id, url=footage_url).first()
@@ -19,7 +19,8 @@ def create_footage_method(request):
         title=footage_title,
         url=footage_url,
         team_id=team_id,
-        user_id=user_id
+        user_id=user_id,
+        tags=tags
     )
     footage.save()
 
@@ -39,6 +40,8 @@ def get_footage_by_team(request):
             "title": f.title,
             "url": f.url,
             "team_id": f.team_id,
+            "tags": f.tags,
+            "user_id": str(f.user_id),
         })
 
     return jsonify({"footage": footage_list}), 200
