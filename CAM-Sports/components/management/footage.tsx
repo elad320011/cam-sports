@@ -1,175 +1,329 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert, Dimensions } from 'react-native';
-import { Card, Button } from 'react-native-elements';
-import { PlusCircle, Trash2 } from 'lucide-react-native'; // Import Trash2
+import { PlusCircle, Trash2 } from 'lucide-react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { Collapsible } from "../Collapsible";
+import { Ionicons } from '@expo/vector-icons';
+import { Card, Divider } from 'react-native-paper';
+import { ButtonGroup } from 'react-native-elements';
+import { AddFootage } from './footageComponents/addFootage';
 
 const Footage = ({ teamId }: { teamId: string }) => {
-  const [mode, setMode] = useState<'add' | 'view'>('view');
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
-  const [footageList, setFootageList] = useState<{ id: string; title: string; url: string }[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [videos, setVideos] = useState<{ id: string; title: string; url: string, tags: string[], user_id: string }[]>([]);
   const { logout, user } = useAuth();
-  const [playingStates, setPlayingStates] = useState<{ [key: string]: boolean }>({});
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTagInput, setCurrentTagInput] = useState<string>('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [showPlayer, setShowPlayer] = useState(true);
+  const [filteredVideos, setFilteredVideos] = useState<{ id: string; title: string; url: string, tags: string[], user_id: string }[]>([]);
+  const [refreshVideos, setRefreshVideos] = useState(false);
+  const [reveresed, setReveresed] = useState(false);
+  const [showAddVideoModal, setShowAddVideoModal] = useState(false);
 
-  const onStateChange = useCallback((state: string, videoId: string) => {
+  const onStateChange = useCallback((state: string) => {
     if (state === "ended") {
-      setPlayingStates(prevStates => ({ ...prevStates, [videoId]: false }));
+      setPlaying(false);
     }
   }, []);
 
-  const togglePlaying = useCallback((videoId: string) => {
-    setPlayingStates(prevStates => ({
-      ...prevStates,
-      [videoId]: !prevStates[videoId],
-    }));
+  const togglePlaying = useCallback(() => {
+    setPlaying((prev) => !prev);
   }, []);
 
-  const fetchFootage = async () => {
-    setLoading(true);
-    try {
-      const response = await axiosInstance.get(`/footage/get_footage_by_team?team_id=${teamId}`);
-      setFootageList(response.data.footage);
-      const initialPlayingStates: { [key: string]: boolean } = {};
-      response.data.footage.forEach((item: { id: string }) => {
-        initialPlayingStates[item.id] = false;
-      });
-      setPlayingStates(initialPlayingStates);
-    } catch (error: any) {
-      console.error('Error fetching footage:', error);
-      Alert.alert('Error', 'Failed to fetch footage.');
-    } finally {
-      setLoading(false);
+  const backButton = () => {
+    if (filteredVideos.length === 0) return;
+    if (currentIndex === 0) {
+        setCurrentIndex(filteredVideos.length - 1);
+    }
+    else {
+        setCurrentIndex(currentIndex - 1)
+    }
+  }
+
+  const forwardButton = () => {
+    if (filteredVideos.length === 0) return;
+    if (currentIndex === filteredVideos.length - 1) {
+        setCurrentIndex(0);
+    }
+    else {
+        setCurrentIndex(currentIndex + 1)
+    }
+  }
+
+  const handleAddTag = () => {
+    const trimmedTag = currentTagInput.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      setTags([...tags, trimmedTag]);
+      setCurrentTagInput('');
+    } else if (trimmedTag && tags.includes(trimmedTag)) {
+        setCurrentTagInput('');
+    } else {
+        setCurrentTagInput('');
     }
   };
 
-  // Fetch footage from the backend
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
   useEffect(() => {
-    if (mode === 'view') {
-      fetchFootage();
-    }
-  }, [mode, teamId]);
+    const fetchVideos = async () => {
+      try {
+        const response = await axiosInstance.get(`/footage/get_footage_by_team?team_id=${user?.team_id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-  // Handle adding new footage
-  const handleAddFootage = async () => {
-    if (!title || !url) {
-      Alert.alert('Error', 'Please fill in all fields.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await axiosInstance.post('/footage/create', { title, url, team_id: teamId, user_id: user?.email });
-      Alert.alert('Success', 'Footage added successfully.');
-      setMode('view');
-      setTitle('');
-      setUrl('');
-      fetchFootage();
-    } catch (error: any) {
-      console.error('Error adding footage:', error);
-      Alert.alert('Error', 'Failed to add footage.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (response.data.footage) {
+          setVideos(response.data.footage);
+        }
+        else {
+          throw new Error("Could not fetch footage.")
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to fetch videos. Please try again later.");
+      }
+    };
+    fetchVideos()
+  }, [refreshVideos, user?.team_id]);
 
-  // Handle deleting footage
-  const handleDeleteFootage = async (id: string) => {
-    try {
-      await axiosInstance.delete(`/footage/delete?footage_id=${id}`);
-      Alert.alert('Success', 'Footage deleted successfully.');
-      fetchFootage();
-    } catch (error: any) {
-      console.error('Error deleting footage:', error);
-      Alert.alert('Error', 'Failed to delete footage.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    const filterFootage = () => {
+      const tempFilteredVideos = videos.filter(video => {
+        if (tags.length === 0) {
+          return true;
+        }
+        return tags.every(tag => video.tags.includes(tag));
+      });
+
+      reveresed ? setFilteredVideos(tempFilteredVideos.reverse()) : setFilteredVideos(tempFilteredVideos);
+      if (currentIndex >= tempFilteredVideos.length) {
+        setCurrentIndex(0);
+      } else if (tempFilteredVideos.length > 0 && currentIndex === 0 && filteredVideos.length === 0) {
+        setCurrentIndex(0);
+      }
     }
+    filterFootage();
+  }, [tags, videos, refreshVideos, filteredVideos.length, reveresed]);
+
+  const currentVideo = filteredVideos[currentIndex];
+
+  const deleteFootage = async (videoId: string) => {
+    Alert.alert(
+      "Delete Video",
+      "Are you sure you want to delete this video?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await axiosInstance.delete(`/footage/delete?footage_id=${videoId}`, {
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+              setRefreshVideos(!refreshVideos);
+            } catch (error) {
+                console.error("Error deleting video:", error);
+                Alert.alert("Error", "Failed to delete video. Please try again later.");
+            }
+          },
+        },
+      ]
+    );
   }
 
   return (
     <Collapsible title="Footage">
       <View style={styles.container}>
-        {mode === 'add' ? (
-          <View>
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Enter title"
-              placeholderTextColor="#9ca3af"
+        <AddFootage visible={showAddVideoModal} setVisible={setShowAddVideoModal} teamId={user?.team_id} userId={user?.email} />
+        <View style={styles.filterControlsContainer}>
+          <TouchableOpacity
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Ionicons
+              name="filter-sharp"
+              size={24}
+              color="#cdd1ce"
+              style={styles.iconButton}
             />
-            <Text style={styles.label}>YouTube URL</Text>
-            <TextInput
-              style={styles.input}
-              value={url}
-              onChangeText={setUrl}
-              placeholder="Enter YouTube URL"
-              placeholderTextColor="#9ca3af"
-            />
-            <View style={styles.buttonContainer}>
-              <Button
-                title="Add"
-                onPress={handleAddFootage}
-                buttonStyle={styles.addButton}
-                titleStyle={styles.buttonText}
-                loading={loading}
+          </TouchableOpacity>
+          {showFilters == false && (
+            <TouchableOpacity
+              onPress={() => setShowAddVideoModal(true)}
+            >
+              <Ionicons
+                name='add-circle-sharp'
+                size={24}
+                color='#cdd1ce'
+                style={styles.iconButton}
               />
-              <Button
-                title="Cancel"
-                onPress={() => setMode('view')}
-                buttonStyle={styles.cancelButton}
-                titleStyle={styles.buttonText}
-              />
-            </View>
-          </View>
-        ) : (
-          <View>
-            <Button
-              title="Add New Footage"
-              onPress={() => setMode('add')}
-              buttonStyle={styles.addNewButton}
-              titleStyle={styles.buttonText}
-              icon={<PlusCircle size={20} color="white" style={{ marginRight: 8 }} />}
-            />
-            {loading ? (
-              <Text style={styles.loadingText}>Loading footage...</Text>
-            ) : (
-              <FlatList
-                data={footageList}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => {
-                  const videoId = item.url.split('v=')[1].split("&t")[0];
-                  return (
-                    <Card containerStyle={styles.card}>
-                      <TouchableOpacity
-                        style={styles.deleteIconContainer}
-                        onPress={() => handleDeleteFootage(item.id)}
-                      >
-                        <Trash2 size={24} color="#ef4444" />
-                      </TouchableOpacity>
-                      <View style={styles.footageItem}>
-                        <View style={styles.infoContainer}>
-                          <Text style={styles.title}>{item.title}</Text>
-                          <YoutubePlayer
-                            height={100}
-                            play={playingStates[item.id] || false}
-                            videoId={videoId}
-                            onChangeState={(state) => onStateChange(state, item.id)}
-                          />
-                        </View>
-                      </View>
-                    </Card>
-                  );
+            </TouchableOpacity>
+          )}
+          {showFilters && (
+            <View style={styles.filterOptionsRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  setReveresed(false);
+                  setCurrentIndex(0);
                 }}
-              />
-            )}
-          </View>
-        )}
+              >
+                <Ionicons
+                  name='arrow-up'
+                  size={24}
+                  color='#cdd1ce'
+                  style={styles.iconButton}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setReveresed(true);
+                  setCurrentIndex(0);
+                }}
+              >
+                <Ionicons
+                  name='arrow-down'
+                  size={24}
+                  color='#cdd1ce'
+                  style={styles.iconButton}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setRefreshVideos(!refreshVideos)
+                }}
+              >
+                <Ionicons
+                  name='refresh-outline'
+                  size={24}
+                  color='#cdd1ce'
+                  style={styles.iconButton}
+                />
+              </TouchableOpacity>
+
+              {!showSearch ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowSearch(true);
+                  }}
+                >
+                  <Ionicons
+                    name="search-sharp"
+                    size={24}
+                    color='#cdd1ce'
+                    style={styles.iconButton}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.tagInputContainer}>
+                  {tags.map((tag, index) => (
+                    <View key={index} style={styles.tagChip}>
+                      <Text style={styles.tagText}>{tag}</Text>
+                      <TouchableOpacity onPress={() => handleRemoveTag(tag)} style={styles.removeTagButton}>
+                        <Trash2 size={16} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <TextInput
+                    style={styles.tagTextInput}
+                    placeholderTextColor="#a0a0a0"
+                    placeholder='Filter tags...'
+                    value={currentTagInput}
+                    onChangeText={setCurrentTagInput}
+                    onSubmitEditing={handleAddTag}
+                    returnKeyType="done"
+                  />
+                </View>
+              )}
+              {showSearch && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowSearch(false);
+                    setTags([]);
+                    setCurrentTagInput('');
+                  }}
+                >
+                  <Ionicons
+                    name="close-sharp"
+                    size={24}
+                    color='#cdd1ce'
+                    style={styles.iconButton}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.videoPlayerWrapper}>
+          <Card style={styles.videoCard}>
+            <Card.Content>
+                {currentVideo && (
+                  <View style={styles.videoDetailsContainer}>
+                    <Text style={styles.videoTitle}>{currentVideo.title}</Text>
+                    <Text style={styles.videoTags}>{currentVideo.tags.join(', ')}</Text>
+                  </View>
+                )}
+                {currentVideo && filteredVideos.length > 0 && (user?.email === currentVideo.user_id || user?.user_type == 'management')&& (
+                  <TouchableOpacity
+                      style={{ position: 'absolute', top: 15, right: 15 }}
+                      onPress={() => {
+                          deleteFootage(currentVideo.id);
+                      }}
+                  >
+                      <Ionicons name="trash-outline" size={24} color="#e88e61" />
+                  </TouchableOpacity>
+                )}
+                {filteredVideos.length > 0 && currentVideo ? (
+                    <YoutubePlayer
+                        height={180}
+                        play={playing}
+                        videoId={currentVideo.url.split('v=')[1]?.split("&")[0]}
+                        onChangeState={onStateChange}
+                        onError={(error) => {setShowPlayer(false); console.error("Youtube Player Error:", error)}}
+                        onReady={() => setShowPlayer(true)}
+                    />
+                ) : (
+                  <Text style={styles.noVideosText}>No videos found with the selected filters.</Text>
+                )}
+
+                <Divider style={styles.divider} />
+
+                <ButtonGroup
+                    buttons={["<", playing ? "pause" : "play", ">"]}
+                    onPress={(index) => {
+                        if (index === 0) {
+                            backButton()
+                        }
+                        else if (index === 2) {
+                            forwardButton()
+                        }
+                        else {
+                            togglePlaying();
+                        }
+                    }}
+                    containerStyle={styles.buttonGroupContainer}
+                    buttonStyle={styles.buttonGroupButton}
+                    selectedButtonStyle={styles.buttonGroupSelectedButton}
+                    textStyle={styles.buttonGroupText}
+                    selectedTextStyle={styles.buttonGroupSelectedText}
+                />
+            </Card.Content>
+        </Card>
+        </View>
       </View>
     </Collapsible>
   );
@@ -178,124 +332,130 @@ const Footage = ({ teamId }: { teamId: string }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f3f4f6',
+    marginBottom: 10,
+    backgroundColor: 'transparent',
+    padding: 10,
+    borderRadius: 10,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: 'medium',
-    marginBottom: 8,
-    color: '#4b5563',
+  filterControlsContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    alignItems: 'center',
+    marginTop: 5,
   },
-  input: {
+  iconButton: {
+    padding: 5,
+  },
+  filterOptionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    flex: 1,
+  },
+  tagInputContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    backgroundColor: 'white',
-    fontSize: 16,
-    color: '#1f2937',
+    borderColor: '#4a5a6a',
+    borderRadius: 2,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    flex: 1,
+    marginTop: 10,
+    marginRight: 10,
+    backgroundColor: '#1a2a3a',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  addButton: {
-    backgroundColor: '#6366f1',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    elevation: 2,
-  },
-  cancelButton: {
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    elevation: 2,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'medium',
-  },
-  addNewButton: {
-    backgroundColor: '#10b981',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    elevation: 2,
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  card: {
-    borderRadius: 12,
-    elevation: 3,
-    marginBottom: 16,
-    borderWidth: 0,
-    position: 'relative', // Make card position relative for absolute positioning of the icon
-  },
-  footageItem: {
+  tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: 'white',
-    elevation: 1,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'semibold',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  url: {
-    fontSize: 14,
-    color: '#6b7280',
-    textDecorationLine: 'underline',
-    textDecorationColor: '#9ca3af',
-    flex: 1,
+    backgroundColor: '#2a3a4a',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     marginRight: 8,
+    marginBottom: 5,
   },
-  thumbnailContainer: {
-    position: 'relative',
-    marginRight: 16,
+  tagText: {
+    color: 'white',
+    marginRight: 5,
+    fontSize: 13,
   },
-  thumbnail: {
-    width: 120,
-    height: 90,
-    borderRadius: 8,
-    backgroundColor: '#d1d5db',
+  removeTagButton: {
+    marginLeft: 5,
   },
-  playIcon: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    shadowColor: 'black',
-    shadowOffset: { width: 1, height: 1 },
-    shadowRadius: 2,
-    shadowOpacity: 0.3
-  },
-  infoContainer: {
+  tagTextInput: {
+    color: 'white',
     flex: 1,
+    minWidth: 80,
+    paddingVertical: 0,
+    maxHeight: 50,
+    fontSize: 15,
   },
-  loadingText: {
-    fontSize: 16,
-    color: '#4b5563',
+  videoPlayerWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  videoCard: {
+    backgroundColor: 'transparent',
+    width: '90%',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    padding: 10,
+  },
+  videoDetailsContainer: {
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  videoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
     textAlign: 'center',
-    marginTop: 16,
+    marginBottom: 8,
   },
-  deleteIconContainer: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    padding: 8,
-    borderRadius: 12, // Optional: make the touch area rounder
-    zIndex: 1, // Ensure the icon is above the card content
+  videoTags: {
+    fontSize: 15,
+    color: '#a0a0a0',
+    textAlign: 'center',
+  },
+  divider: {
+    marginVertical: 25,
+    backgroundColor: '#4a5a6a',
+  },
+  buttonGroupContainer: {
+    marginBottom: 10,
+    backgroundColor: 'transparent',
+    borderColor: '#4a5a6a',
+    borderRadius: 2,
+    height: 45,
+  },
+  buttonGroupButton: {
+    borderRadius: 2,
+  },
+  buttonGroupSelectedButton: {
+    backgroundColor: '#007bff',
+  },
+  buttonGroupText: {
+    color: '#cdd1ce',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  buttonGroupSelectedText: {
+    color: 'white',
+  },
+  noVideosText: {
+    color: '#cdd1ce',
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    paddingVertical: 50,
   },
 });
 

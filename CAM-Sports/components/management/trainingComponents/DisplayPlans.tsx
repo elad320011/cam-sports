@@ -22,13 +22,13 @@ export function DisplayPlans({ plans, currentPlan, setCurrentPlan, currentMode, 
             onBackdropPress={() => setCurrentMode(undefined)}
         >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height: '80%' }}>
-                <Card style={{ backgroundColor: '#122637', width: '90%', height: '70%', margin: 'auto', justifyContent: 'center' }}>
+                <Card style={{ backgroundColor: '#122637', width: '90%', padding: 20, margin: 'auto', justifyContent: 'center' }}>
                     <Card.Title
                         title="Training Plans"
                         titleStyle={{ color: 'white', fontSize: 24, textAlign: 'center', paddingVertical: 20 }}
                     />
                     <Divider style={{ margin: 10, backgroundColor: '#cdd1ce' }} />
-                    <ScrollView>
+                    <ScrollView style ={{ maxHeight: 300}}>
                         {plans.map((plan, index) => (
                             <TouchableOpacity onPress={() => setCurrentPlan(plan)} key={plan.id || index.toString()}
                                 style={styles.card}

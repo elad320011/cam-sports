@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { PlanProps, plan_sections } from "./assets";
 import { Text, View, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import Modal from 'react-native-modal';
 import { Card, Divider } from 'react-native-paper';

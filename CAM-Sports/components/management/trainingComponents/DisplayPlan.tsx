@@ -83,10 +83,16 @@ export function DisplayPlan(props: any) {
                     <Divider style={{ margin: 20 }}/>
                     <Card.Content>
                         <View>
-                            <Text style={{ marginBottom: 10, color: '#cdd1ce', textAlign: 'center' }}>
-                                {`${plan.plan_sections[currentSectionIndex].name}: ${plan.plan_sections[currentSectionIndex].description}`}
-                            </Text>
-                            {plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Image").length > 0 && (
+                            {plan.plan_sections.length > 0 ? (
+                                <Text style={{ marginBottom: 10, color: '#cdd1ce', textAlign: 'center' }}>
+                                    {`${plan.plan_sections[currentSectionIndex].name}: ${plan.plan_sections[currentSectionIndex].description}`}
+                                </Text>
+                            ) : (
+                                <Text style={{ marginBottom: 10, color: '#cdd1ce', textAlign: 'center' }}>
+                                    No sections or drills available for {plan.name}.
+                                </Text>
+                            )}
+                            {plan.plan_sections ? (plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Image").length > 0 && (
                                 <Button
                                     textColor="#cdd1ce"
                                     onPress={() => {
@@ -94,8 +100,10 @@ export function DisplayPlan(props: any) {
                                         setIsVisible(true)
                                     }}
                                 >Images</Button>
+                            )) : (
+                                <></>
                             )}
-                            {plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Video").length > 0 && (
+                            {plan.plan_sections ? (plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Video").length > 0 && (
                                 <Button
                                     textColor="#cdd1ce"
                                     onPress={() => {
@@ -103,6 +111,8 @@ export function DisplayPlan(props: any) {
                                         setVideoVisible(true)
                                     }}
                                 >Videos</Button>
+                            )) : (
+                                <></>
                             )}
                         </View>
 

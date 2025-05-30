@@ -5,3 +5,4 @@ class Footage(me.Document):
     user_id = me.StringField(required=True)
     title = me.StringField(required=True)
     url = me.StringField(required=True)
+    tags = me.ListField(me.StringField(), default=[])
