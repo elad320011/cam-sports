@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable, ScrollView, TouchableOpacity } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Text, Platform, Pressable, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axiosInstance from '@/utils/axios';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '@/constants/Colors';
 
 import { useRouter, Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -359,306 +362,353 @@ export default function RegisterScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Create Account</Text>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0)']}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0, y: 0.5 }}
+          style={styles.sunRays}
+        />
+        <Image
+          source={require('@/assets/images/volleyball.png')}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        />
+
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join CAM Sports</Text>
+          </View>
 
           {errorMessage && (
-            <Text style={errorMessage.type === 'success' ? styles.success : styles.error}>
-              {errorMessage.text}
-            </Text>
+            <View style={[styles.messageContainer, errorMessage.type === 'success' ? styles.successContainer : styles.errorContainer]}>
+              <Ionicons 
+                name={errorMessage.type === 'success' ? "checkmark-circle" : "alert-circle"} 
+                size={20} 
+                color={errorMessage.type === 'success' ? colors.success : colors.error} 
+              />
+              <Text style={errorMessage.type === 'success' ? styles.success : styles.error}>
+                {errorMessage.text}
+              </Text>
+            </View>
           )}
 
-          <View style={styles.formContainer}>
-            <View style={styles.pickerContainer}>
-              <Text style={styles.label}>Register as:</Text>
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={userType}
-                  style={styles.picker}
-                  onValueChange={(itemValue: string) => setUserType(itemValue)}
-                >
-                  <Picker.Item label="Player" value="player" />
-                  <Picker.Item label="Management" value="management" />
-                  <Picker.Item label="Team" value="team" />
-                </Picker>
-              </View>
-            </View>
-
-            {userType === 'team' ? (
-              <>
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Enter Team Name"
-                  value={teamId}
-                  onChangeText={(text) => {
-                    setTeamId(text.toUpperCase());
-                    setErrorMessage(null);
-                  }}
-                  autoCapitalize="characters"
-                  maxLength={10}
-                  placeholderTextColor="#666"
-                />
-                <Text style={styles.helperText}>
-                  This name will be used as your team's unique identifier and cannot be changed later.
-                </Text>
-              </>
-            ) : userType === 'player' ? (
-              <>
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    setErrorMessage(null);
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  placeholderTextColor="#666"
-                />
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Full Name"
-                  value={fullName}
-                  onChangeText={(text) => {
-                    setFullName(text);
-                    setErrorMessage(null);
-                  }}
-                  autoComplete="name"
-                />
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Password (min 6 characters)"
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    setErrorMessage(null);
-                  }}
-                  secureTextEntry
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Team Code"
-                  value={teamCode}
-                  onChangeText={(text) => {
-                    setTeamCode(text.toUpperCase());
-                    setErrorMessage(null);
-                  }}
-                  autoCapitalize="characters"
-                  maxLength={6}
-                />
-                <Picker
-                  selectedValue={role}
-                  style={styles.picker}
-                  onValueChange={(itemValue: string) => setRole(itemValue)}
-                >
-                  <Picker.Item label="Select Position" value="" />
-                  <Picker.Item label="Outside Hitter" value="Outside Hitter" />
-                  <Picker.Item label="Middle Blocker" value="Middle Blocker" />
-                  <Picker.Item label="Opposite Hitter" value="Opposite Hitter" />
-                  <Picker.Item label="Setter" value="Setter" />
-                  <Picker.Item label="Libero" value="Libero" />
-                  <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
-                </Picker>
-
-                <Text style={styles.inputLabel}>Birth Date:</Text>
-                {Platform.OS === 'web' ? (
-                  <input
-                    type="date"
-                    style={{
-                      height: 40,
-                      borderColor: 'gray',
-                      borderWidth: 1,
-                      marginBottom: 12,
-                      width: '100%'
-                    }}
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                    min="1900-01-01"
-                  />
-                ) : (
-                  <>
-                    <Pressable
-                      style={[styles.input, styles.dateInput]}
-                      onPress={() => setShowDatePicker(true)}
-                    >
-                      <Text style={birthDate ? styles.dateText : styles.placeholderText}>
-                        {birthDate || 'Select Birth Date'}
-                      </Text>
-                    </Pressable>
-
-                    {showDatePicker && (
-                      <DateTimePicker
-                        testID="dateTimePicker"
-                        value={date}
-                        mode="date"
-                        is24Hour={true}
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={onDateChange}
-                        maximumDate={new Date()}
-                        minimumDate={new Date(1900, 0, 1)}
-                      />
-                    )}
-                  </>
-                )}
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="Weight (kg)"
-                  value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="numeric"
-                />
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="Height (cm)"
-                  value={height}
-                  onChangeText={setHeight}
-                  keyboardType="numeric"
-                />
-              </>
-            ) : userType === 'management' ? (
-              <>
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    setErrorMessage(null);
-                  }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                />
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Full Name"
-                  value={fullName}
-                  onChangeText={(text) => {
-                    setFullName(text);
-                    setErrorMessage(null);
-                  }}
-                  autoComplete="name"
-                />
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Password (min 6 characters)"
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    setErrorMessage(null);
-                  }}
-                  secureTextEntry
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Team Code"
-                  value={teamCode}
-                  onChangeText={(text) => {
-                    setTeamCode(text.toUpperCase());
-                    setErrorMessage(null);
-                  }}
-                  autoCapitalize="characters"
-                  maxLength={6}
-                />
-              </>
-            ) : (
-              <>
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Full Name"
-                  value={fullName}
-                  onChangeText={(text) => {
-                    setFullName(text);
-                    setErrorMessage(null);
-                  }}
-                  autoComplete="name"
-                />
-                <TextInput
-                  style={[styles.input, errorMessage ? styles.inputError : null]}
-                  placeholder="Password (min 6 characters)"
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    setErrorMessage(null);
-                  }}
-                  secureTextEntry
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Team Code"
-                  value={teamCode}
-                  onChangeText={(text) => {
-                    setTeamCode(text.toUpperCase());
-                    setErrorMessage(null);
-                  }}
-                  autoCapitalize="characters"
-                  maxLength={6}
-                />
-              </>
-            )}
-
-            {!registeredTeamCode && (
-              <View style={styles.buttonGroup}>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={handleRegister}
-                >
-                  <Text style={styles.primaryButtonText}>Register</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={resetForm}
-                >
-                  <Text style={styles.secondaryButtonText}>Reset Form</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.linkButton}
-                  onPress={() => router.push('/login')}
-                >
-                  <Text style={styles.linkButtonText}>Already have an account? Login</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {registeredTeamCode && (
-              <View style={styles.teamCodeContainer}>
-                <Text style={styles.teamCodeLabel}>Your Team Code:</Text>
-                <View style={styles.teamCodeWrapper}>
-                  <Text style={styles.teamCode}>{registeredTeamCode}</Text>
-                  <TouchableOpacity
-                    style={styles.copyButton}
-                    onPress={copyTeamCode}
+          <View style={styles.formWrapper}>
+            <LinearGradient
+              colors={[colors.cardBackground, colors.cardBackgroundLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.formContainer}
+            >
+              <View style={styles.pickerContainer}>
+                <Text style={styles.label}>Register as:</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={userType}
+                    style={styles.picker}
+                    onValueChange={(itemValue: string) => setUserType(itemValue)}
                   >
-                    <Text style={styles.copyButtonText}>Copy</Text>
+                    <Picker.Item label="Player" value="player" />
+                    <Picker.Item label="Management" value="management" />
+                    <Picker.Item label="Team" value="team" />
+                  </Picker>
+                </View>
+              </View>
+
+              {userType === 'team' ? (
+                <>
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Enter Team Name"
+                    value={teamId}
+                    onChangeText={(text) => {
+                      setTeamId(text.toUpperCase());
+                      setErrorMessage(null);
+                    }}
+                    autoCapitalize="characters"
+                    maxLength={10}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <Text style={styles.helperText}>
+                    This name will be used as your team's unique identifier and cannot be changed later.
+                  </Text>
+                </>
+              ) : userType === 'player' ? (
+                <>
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      setErrorMessage(null);
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChangeText={(text) => {
+                      setFullName(text);
+                      setErrorMessage(null);
+                    }}
+                    autoComplete="name"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Password (min 6 characters)"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setErrorMessage(null);
+                    }}
+                    secureTextEntry
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter Team Code"
+                    value={teamCode}
+                    onChangeText={(text) => {
+                      setTeamCode(text.toUpperCase());
+                      setErrorMessage(null);
+                    }}
+                    autoCapitalize="characters"
+                    maxLength={6}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <View style={styles.pickerWrapper}>
+                    <Picker
+                      selectedValue={role}
+                      style={styles.picker}
+                      onValueChange={(itemValue: string) => setRole(itemValue)}
+                    >
+                      <Picker.Item label="Select Position" value="" />
+                      <Picker.Item label="Outside Hitter" value="Outside Hitter" />
+                      <Picker.Item label="Middle Blocker" value="Middle Blocker" />
+                      <Picker.Item label="Opposite Hitter" value="Opposite Hitter" />
+                      <Picker.Item label="Setter" value="Setter" />
+                      <Picker.Item label="Libero" value="Libero" />
+                      <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
+                    </Picker>
+                  </View>
+
+                  <Text style={styles.inputLabel}>Birth Date:</Text>
+                  {Platform.OS === 'web' ? (
+                    <input
+                      type="date"
+                      style={{
+                        height: 50,
+                        borderColor: colors.borderColor,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        marginBottom: 16,
+                        width: '100%',
+                        backgroundColor: colors.background,
+                        color: colors.textPrimary,
+                        padding: '0 16px',
+                      }}
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      min="1900-01-01"
+                    />
+                  ) : (
+                    <>
+                      <Pressable
+                        style={[styles.input, styles.dateInput]}
+                        onPress={() => setShowDatePicker(true)}
+                      >
+                        <Text style={birthDate ? styles.dateText : styles.placeholderText}>
+                          {birthDate || 'Select Birth Date'}
+                        </Text>
+                      </Pressable>
+
+                      {showDatePicker && (
+                        <DateTimePicker
+                          testID="dateTimePicker"
+                          value={date}
+                          mode="date"
+                          is24Hour={true}
+                          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                          onChange={onDateChange}
+                          maximumDate={new Date()}
+                          minimumDate={new Date(1900, 0, 1)}
+                        />
+                      )}
+                    </>
+                  )}
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Weight (kg)"
+                    value={weight}
+                    onChangeText={setWeight}
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Height (cm)"
+                    value={height}
+                    onChangeText={setHeight}
+                    keyboardType="numeric"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </>
+              ) : userType === 'management' ? (
+                <>
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      setErrorMessage(null);
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChangeText={(text) => {
+                      setFullName(text);
+                      setErrorMessage(null);
+                    }}
+                    autoComplete="name"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Password (min 6 characters)"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setErrorMessage(null);
+                    }}
+                    secureTextEntry
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter Team Code"
+                    value={teamCode}
+                    onChangeText={(text) => {
+                      setTeamCode(text.toUpperCase());
+                      setErrorMessage(null);
+                    }}
+                    autoCapitalize="characters"
+                    maxLength={6}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </>
+              ) : (
+                <>
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChangeText={(text) => {
+                      setFullName(text);
+                      setErrorMessage(null);
+                    }}
+                    autoComplete="name"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    placeholder="Password (min 6 characters)"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setErrorMessage(null);
+                    }}
+                    secureTextEntry
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter Team Code"
+                    value={teamCode}
+                    onChangeText={(text) => {
+                      setTeamCode(text.toUpperCase());
+                      setErrorMessage(null);
+                    }}
+                    autoCapitalize="characters"
+                    maxLength={6}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </>
+              )}
+
+              {!registeredTeamCode && (
+                <View style={styles.buttonGroup}>
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={handleRegister}
+                  >
+                    <Text style={styles.primaryButtonText}>Register</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={resetForm}
+                  >
+                    <Text style={styles.secondaryButtonText}>Reset Form</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.linkButton}
+                    onPress={() => router.push('/login')}
+                  >
+                    <Text style={styles.linkButtonText}>Already have an account? Login</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.teamCodeInstructions}>
-                  Share this code with your team members for registration.{'\n'}
-                  They will use this code to join your team.
-                </Text>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => {
-                    setUserType('management');
-                    setRegisteredTeamCode('');
-                    setTeamCode(registeredTeamCode);
-                  }}
-                >
-                  <Text style={styles.primaryButtonText}>Register as Management</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              )}
+
+              {registeredTeamCode && (
+                <View style={styles.teamCodeContainer}>
+                  <Text style={styles.teamCodeLabel}>Your Team Code:</Text>
+                  <View style={styles.teamCodeWrapper}>
+                    <Text style={styles.teamCode}>{registeredTeamCode}</Text>
+                    <TouchableOpacity
+                      style={styles.copyButton}
+                      onPress={copyTeamCode}
+                    >
+                      <Text style={styles.copyButtonText}>Copy</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.teamCodeInstructions}>
+                    Share this code with your team members for registration.{'\n'}
+                    They will use this code to join your team.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={() => {
+                      setUserType('management');
+                      setRegisteredTeamCode('');
+                      setTeamCode(registeredTeamCode);
+                    }}
+                  >
+                    <Text style={styles.primaryButtonText}>Register as Management</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </LinearGradient>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </>
   );
 }
@@ -666,46 +716,80 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
+    padding: 20,
   },
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-    minHeight: '100%',
+    backgroundColor: colors.background,
+  },
+  sunRays: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    bottom: '-16%',
+    left: '-90%',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24,
+    color: colors.textPrimary,
+    marginBottom: 8,
     textAlign: 'center',
   },
-  formContainer: {
-    backgroundColor: '#fff',
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  successContainer: {
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+    borderWidth: 1,
+    borderColor: colors.success,
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(248, 113, 113, 0.1)',
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
+  formWrapper: {
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    overflow: 'hidden',
+  },
+  formContainer: {
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   input: {
     height: 50,
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 16,
     paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: '#fff',
-    color: '#333',
+    backgroundColor: colors.background,
+    color: colors.textPrimary,
   },
   inputError: {
-    borderColor: '#ff6b6b',
+    borderColor: colors.error,
     borderWidth: 1.5,
   },
   pickerContainer: {
@@ -713,64 +797,65 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
     borderRadius: 8,
     marginTop: 8,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
+    marginBottom: 16,
   },
   picker: {
     height: 50,
     backgroundColor: 'transparent',
+    color: colors.textPrimary,
   },
   label: {
     fontSize: 16,
-    color: '#333',
+    color: colors.textPrimary,
     marginBottom: 4,
     fontWeight: '500',
   },
   error: {
-    color: '#ff6b6b',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: colors.error,
     fontSize: 14,
-    padding: 10,
-    backgroundColor: '#ffe5e5',
-    borderRadius: 8,
+    marginLeft: 8,
+    flex: 1,
   },
   success: {
-    color: '#2e7d32',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: colors.success,
     fontSize: 14,
-    padding: 10,
-    backgroundColor: '#e8f5e9',
-    borderRadius: 8,
+    marginLeft: 8,
+    flex: 1,
   },
   buttonGroup: {
     gap: 12,
     marginTop: 8,
   },
   primaryButton: {
-    backgroundColor: '#4a90e2',
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   primaryButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.cardBackgroundMidLight,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
   },
   secondaryButtonText: {
-    color: '#666',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -779,13 +864,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkButtonText: {
-    color: '#4a90e2',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
   },
   helperText: {
     fontSize: 13,
-    color: '#666',
+    color: colors.textSecondary,
     marginTop: -8,
     marginBottom: 16,
     paddingHorizontal: 4,
@@ -793,14 +878,16 @@ const styles = StyleSheet.create({
   teamCodeContainer: {
     marginTop: 20,
     padding: 20,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
     borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.success,
   },
   teamCodeLabel: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2e7d32',
+    color: colors.success,
     marginBottom: 12,
   },
   teamCodeWrapper: {
@@ -812,46 +899,46 @@ const styles = StyleSheet.create({
   teamCode: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1b5e20',
+    color: colors.success,
     marginBottom: 12,
     letterSpacing: 2,
   },
   teamCodeInstructions: {
     textAlign: 'center',
     marginBottom: 20,
-    color: '#555',
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   dateInput: {
     height: 50,
     justifyContent: 'center',
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   dateText: {
     fontSize: 16,
-    color: '#333',
+    color: colors.textPrimary,
   },
   placeholderText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
   },
   inputLabel: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   copyButton: {
-    backgroundColor: '#4a90e2',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   copyButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
