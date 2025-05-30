@@ -133,7 +133,7 @@ export default function LoginScreen() {
 
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.headerContainer}>
-            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.title}>Welcome!</Text>
             <Text style={styles.subtitle}>CAM Sports</Text>
           </View>
 
