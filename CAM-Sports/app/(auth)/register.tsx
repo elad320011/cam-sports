@@ -39,6 +39,8 @@ export default function RegisterScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState('');
   const router = useRouter();
+  const [showUserTypeDropdown, setShowUserTypeDropdown] = useState(false);
+  const [showPositionDropdown, setShowPositionDropdown] = useState(false);
 
   // Load saved data on component mount
   useEffect(() => {
@@ -404,17 +406,53 @@ export default function RegisterScreen() {
             >
               <View style={styles.pickerContainer}>
                 <Text style={styles.label}>Register as:</Text>
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={userType}
-                    style={styles.picker}
-                    onValueChange={(itemValue: string) => setUserType(itemValue)}
-                  >
-                    <Picker.Item label="Player" value="player" />
-                    <Picker.Item label="Management" value="management" />
-                    <Picker.Item label="Team" value="team" />
-                  </Picker>
-                </View>
+                <TouchableOpacity 
+                  style={styles.dropdownButton}
+                  onPress={() => setShowUserTypeDropdown(!showUserTypeDropdown)}
+                >
+                  <Text style={styles.dropdownButtonText}>
+                    {userType === 'player' ? 'Player' : 
+                     userType === 'management' ? 'Management' : 
+                     userType === 'team' ? 'Team' : 'Select Type'}
+                  </Text>
+                  <Ionicons 
+                    name={showUserTypeDropdown ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={colors.textPrimary} 
+                  />
+                </TouchableOpacity>
+                
+                {showUserTypeDropdown && (
+                  <View style={styles.dropdownList}>
+                    <TouchableOpacity 
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setUserType('player');
+                        setShowUserTypeDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>Player</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setUserType('management');
+                        setShowUserTypeDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>Management</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setUserType('team');
+                        setShowUserTypeDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>Team</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
               {userType === 'team' ? (
@@ -484,20 +522,38 @@ export default function RegisterScreen() {
                     maxLength={6}
                     placeholderTextColor={colors.textSecondary}
                   />
-                  <View style={styles.pickerWrapper}>
-                    <Picker
-                      selectedValue={role}
-                      style={styles.picker}
-                      onValueChange={(itemValue: string) => setRole(itemValue)}
+                  <View style={styles.pickerContainer}>
+                    <Text style={styles.label}>Position:</Text>
+                    <TouchableOpacity 
+                      style={styles.dropdownButton}
+                      onPress={() => setShowPositionDropdown(!showPositionDropdown)}
                     >
-                      <Picker.Item label="Select Position" value="" />
-                      <Picker.Item label="Outside Hitter" value="Outside Hitter" />
-                      <Picker.Item label="Middle Blocker" value="Middle Blocker" />
-                      <Picker.Item label="Opposite Hitter" value="Opposite Hitter" />
-                      <Picker.Item label="Setter" value="Setter" />
-                      <Picker.Item label="Libero" value="Libero" />
-                      <Picker.Item label="Defensive Specialist" value="Defensive Specialist" />
-                    </Picker>
+                      <Text style={styles.dropdownButtonText}>
+                        {role || 'Select Position'}
+                      </Text>
+                      <Ionicons 
+                        name={showPositionDropdown ? "chevron-up" : "chevron-down"} 
+                        size={20} 
+                        color={colors.textPrimary} 
+                      />
+                    </TouchableOpacity>
+                    
+                    {showPositionDropdown && (
+                      <View style={styles.dropdownList}>
+                        {['Outside Hitter', 'Middle Blocker', 'Opposite Hitter', 'Setter', 'Libero', 'Defensive Specialist'].map((position) => (
+                          <TouchableOpacity 
+                            key={position}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              setRole(position);
+                              setShowPositionDropdown(false);
+                            }}
+                          >
+                            <Text style={styles.dropdownItemText}>{position}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
                   </View>
 
                   <Text style={styles.inputLabel}>Birth Date:</Text>
@@ -803,13 +859,15 @@ const styles = StyleSheet.create({
     borderColor: colors.borderColor,
     borderRadius: 8,
     marginTop: 8,
-    backgroundColor: colors.background,
+    backgroundColor: colors.cardBackgroundMidLight,
     marginBottom: 16,
+    zIndex: 1,
   },
   picker: {
     height: 50,
     backgroundColor: 'transparent',
     color: colors.textPrimary,
+    fontSize: 16,
   },
   label: {
     fontSize: 16,
@@ -947,5 +1005,44 @@ const styles = StyleSheet.create({
     color: colors.textOnPrimary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  dropdownButton: {
+    height: 50,
+    borderColor: colors.borderColor,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.cardBackgroundMidLight,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  dropdownList: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    marginTop: -16,
+    marginBottom: 16,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderColor,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: colors.textPrimary,
   },
 });
