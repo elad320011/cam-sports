@@ -9,6 +9,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/Colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -16,6 +17,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
@@ -67,16 +69,28 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    console.log('🚀 Login button pressed!');
+    console.log('📧 Email:', email);
+    console.log('🔒 Password length:', password.length);
+    console.log('🌐 Backend URL:', BACKEND_URL);
+    
+    setIsLoading(true);
     try {
       if (!email || !password) {
+        console.log('❌ Validation failed: Missing email or password');
         setError('Email and password are required');
+        setIsLoading(false);
         return;
       }
 
+      console.log('📡 Making login request...');
       const response = await axiosInstance.post('/auth/login', {
         email: email.toLowerCase(),
         password
       });
+
+      console.log('✅ Login response received:', response.status);
+      console.log('📄 Response data:', response.data);
 
       await login({
         access_token: response.data.access_token,
@@ -84,9 +98,15 @@ export default function LoginScreen() {
         user: response.data.user
       });
 
+      console.log('🎉 Login successful, redirecting...');
       router.replace('/');
     } catch (error: any) {
+      console.log('❌ Login error:', error);
+      console.log('📊 Error response:', error.response?.data);
+      console.log('🔢 Error status:', error.response?.status);
       setError(error.response?.data?.message || `Login failed: ${BACKEND_URL}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,7 +118,7 @@ export default function LoginScreen() {
         }}
       />
 
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <LinearGradient
           colors={['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0)']}
           start={{ x: 1, y: 0 }}
@@ -165,10 +185,13 @@ export default function LoginScreen() {
 
               <View style={styles.buttonGroup}>
                 <TouchableOpacity
-                  style={styles.primaryButton}
+                  style={[styles.primaryButton, isLoading && styles.buttonDisabled]}
                   onPress={handleLogin}
+                  disabled={isLoading}
                 >
-                  <Text style={styles.primaryButtonText}>Login</Text>
+                  <Text style={styles.primaryButtonText}>
+                    {isLoading ? 'Logging in...' : 'Login'}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -190,7 +213,7 @@ export default function LoginScreen() {
             </LinearGradient>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -239,9 +262,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderColor,
     overflow: 'hidden',
+    zIndex: 10,
   },
   formContainer: {
     padding: 24,
+    zIndex: 10,
   },
   inputGroup: {
     marginBottom: 20,
@@ -296,6 +321,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    zIndex: 10,
   },
   primaryButtonText: {
     color: colors.textOnPrimary,
@@ -312,6 +338,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
+    zIndex: 10,
   },
   googleButtonText: {
     color: colors.textPrimary,
@@ -321,10 +348,15 @@ const styles = StyleSheet.create({
   linkButton: {
     padding: 12,
     alignItems: 'center',
+    zIndex: 10,
   },
   linkButtonText: {
     color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
+  },
+  buttonDisabled: {
+    backgroundColor: colors.textSecondary,
+    opacity: 0.6,
   },
 });

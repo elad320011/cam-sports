@@ -7,6 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/Colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useRouter, Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -362,7 +363,7 @@ export default function RegisterScreen() {
         }}
       />
 
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <LinearGradient
           colors={['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0)']}
           start={{ x: 1, y: 0 }}
@@ -708,7 +709,7 @@ export default function RegisterScreen() {
             </LinearGradient>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -773,9 +774,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderColor,
     overflow: 'hidden',
+    zIndex: 10,
   },
   formContainer: {
     padding: 20,
+    zIndex: 10,
   },
   input: {
     height: 50,
@@ -840,6 +843,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    zIndex: 10,
   },
   primaryButtonText: {
     color: colors.textOnPrimary,
@@ -853,6 +857,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.borderColor,
+    zIndex: 10,
   },
   secondaryButtonText: {
     color: colors.textPrimary,
@@ -862,6 +867,7 @@ const styles = StyleSheet.create({
   linkButton: {
     padding: 12,
     alignItems: 'center',
+    zIndex: 10,
   },
   linkButtonText: {
     color: colors.primary,
