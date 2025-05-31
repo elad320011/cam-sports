@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TextInput, Button, Alert, Modal } from 'react-native';
+import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { Picker } from '@react-native-picker/picker';
 import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo, getUsedPlayerIds } from '@/services/formationService';
+import { colors } from '@/constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId, formationData }: { 
     number: number; 
@@ -20,8 +23,8 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   const translateY = useSharedValue(initialY);
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(playerInfo.name);
-  const [editedInstructions, setEditedInstructions] = useState(playerInfo.instructions);
+  const [editedName, setEditedName] = useState('');
+  const [editedInstructions, setEditedInstructions] = useState('');
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [currentFormationData, setCurrentFormationData] = useState<Formation | null>(formationData);
   const { user } = useAuth();
@@ -67,6 +70,17 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     }
   }, [isEditing]);
 
+  const handleEdit = () => {
+    // Find the current player ID from the formation data
+    const currentRoleKey = `role_${number}` as keyof Formation['roles'];
+    const currentPlayerId = currentFormationData?.roles[currentRoleKey]?.player_id;
+    
+    // Set the initial values
+    setEditedName(currentPlayerId || '');
+    setEditedInstructions(playerInfo.instructions || '');
+    setIsEditing(true);
+  };
+
   const handleSave = async () => {
     try {
       await updatePlayerRole(formationId, number, editedName, editedInstructions);
@@ -78,23 +92,10 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
       await fetchCurrentFormation();
       Alert.alert('Success', 'Player information updated successfully.');
       setIsEditing(false);
-      setModalVisible(false); // Close the modal after successful save
+      setModalVisible(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to update player information.');
     }
-  };
-
-  const handleEdit = () => {
-    // Initialize editedName with the correct player ID if it exists
-    const matchingPlayer = players.find((player) => player.fullName === playerInfo.name);
-    if (matchingPlayer) {
-      setEditedName(matchingPlayer.id);
-    } else {
-      setEditedName(''); // Default to Unassigned
-    }
-
-    setEditedInstructions(playerInfo.instructions || '');
-    setIsEditing(true);
   };
 
   // Get the list of players that are already assigned to other roles
@@ -108,11 +109,18 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     <>
       <PanGestureHandler onGestureEvent={handleGesture}>
         <Animated.View style={[styles.player, animatedStyle]}>
-          <View style={styles.playerCircle} onTouchEnd={() => setModalVisible(true)}>
-            <Text style={styles.playerText}>
-              {`${number} (${positionName})`}
-            </Text>
-          </View>
+          <LinearGradient
+            colors={[colors.cardBackground, colors.cardBackgroundLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.playerCircle}
+            onTouchEnd={() => setModalVisible(true)}
+          >
+            <View style={styles.playerTextContainer}>
+              <Text style={styles.playerNumber}>{number}</Text>
+              <Text style={styles.playerPosition}>{positionName}</Text>
+            </View>
+          </LinearGradient>
           <Text style={styles.playerName} numberOfLines={1}>
             {playerInfo.name}
           </Text>
@@ -125,45 +133,92 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <LinearGradient
+            colors={[colors.cardBackground, colors.cardBackgroundLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.modalContent}
+          >
             {isEditing ? (
               <>
-                <Picker
-                  selectedValue={editedName}
-                  onValueChange={(itemValue) => setEditedName(itemValue)}
-                  style={styles.picker}
-                >
-                  {players.map((player) => {
-                    // Disable already used players (except for the current role)
-                    const isDisabled = otherUsedPlayerIds.includes(player.id);
-                    return (
-                      <Picker.Item 
-                        key={player.id} 
-                        label={isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName} 
-                        value={player.id}
-                        enabled={!isDisabled}
-                      />
-                    );
-                  })}
-                </Picker>
+                <Text style={styles.modalSubtitle}>Select Player</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={editedName}
+                    onValueChange={(itemValue) => setEditedName(itemValue)}
+                    style={styles.picker}
+                    dropdownIconColor={colors.textPrimary}
+                  >
+                    <Picker.Item 
+                      label="Unassigned" 
+                      value="" 
+                      color={colors.textPrimary}
+                    />
+                    {players
+                      .filter(player => player.fullName !== 'Unassigned') // Filter out any "Unassigned" players from the list
+                      .map((player) => {
+                        const isDisabled = otherUsedPlayerIds.includes(player.id);
+                        return (
+                          <Picker.Item 
+                            key={player.id} 
+                            label={isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName} 
+                            value={player.id}
+                            enabled={!isDisabled}
+                            color={isDisabled ? colors.textSecondary : colors.textPrimary}
+                          />
+                        );
+                    })}
+                  </Picker>
+                </View>
+                <Text style={styles.modalSubtitle}>Instructions</Text>
                 <TextInput
                   style={[styles.input, { height: 80 }]}
                   value={editedInstructions}
                   onChangeText={setEditedInstructions}
                   placeholder="Enter instructions"
+                  placeholderTextColor={colors.textSecondary}
                   multiline
                 />
-                <Button title="Save" onPress={handleSave} />
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.saveButton]}
+                    onPress={handleSave}
+                  >
+                    <MaterialIcons name="save" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => { setModalVisible(false); setIsEditing(false); }}
+                  >
+                    <MaterialIcons name="close" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             ) : (
               <>
                 <Text style={styles.modalTitle}>{playerInfo.name}</Text>
                 <Text style={styles.modalInstructions}>{playerInfo.instructions}</Text>
-                <Button title="Edit" onPress={handleEdit} />
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.editButton]}
+                    onPress={handleEdit}
+                  >
+                    <MaterialIcons name="edit" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => { setModalVisible(false); setIsEditing(false); }}
+                  >
+                    <MaterialIcons name="close" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
-            <Button title="Close" onPress={() => { setModalVisible(false); setIsEditing(false); }} />
-          </View>
+          </LinearGradient>
         </View>
       </Modal>
     </>
@@ -251,7 +306,7 @@ const FormationsPage = () => {
     ? [
         {
           number: 1,
-          positionName: 'RB',
+          positionName: 'Setter',
           x: 100,
           y: 150,
           playerInfo: {
@@ -262,7 +317,7 @@ const FormationsPage = () => {
         },
         {
           number: 2,
-          positionName: 'RF',
+          positionName: 'Outside Hitter',
           x: 100,
           y: -50,
           playerInfo: {
@@ -273,7 +328,7 @@ const FormationsPage = () => {
         },
         {
           number: 3,
-          positionName: 'CF',
+          positionName: 'Middle Blocker',
           x: 0,
           y: -150,
           playerInfo: {
@@ -284,7 +339,7 @@ const FormationsPage = () => {
         },
         {
           number: 4,
-          positionName: 'LF',
+          positionName: 'Opposite',
           x: -100,
           y: -50,
           playerInfo: {
@@ -295,7 +350,7 @@ const FormationsPage = () => {
         },
         {
           number: 5,
-          positionName: 'LB',
+          positionName: 'Outside Hitter',
           x: -100,
           y: 150,
           playerInfo: {
@@ -306,7 +361,7 @@ const FormationsPage = () => {
         },
         {
           number: 6,
-          positionName: 'CB',
+          positionName: 'Libero',
           x: 0,
           y: 100,
           playerInfo: {
@@ -326,24 +381,57 @@ const FormationsPage = () => {
         }}
       />
       <View style={styles.container}>
-        {isEditing ? (
-          <View style={styles.editContainer}>
-            <TextInput
-              style={styles.input}
-              value={formationName}
-              onChangeText={handleChange}
-              placeholder="Enter formation name"
-            />
-            <Button title="Save" onPress={handleSave} />
-            <Button title="Cancel" onPress={handleCancel} color="red" />
-          </View>
-        ) : (
-          <View style={styles.nameContainer}>
-            <Text style={styles.title}>{formationName}</Text>
-            <Button title="Edit" onPress={() => setIsEditing(true)} />
-          </View>
-        )}
-        <View style={styles.court}>
+        <LinearGradient
+          colors={[colors.cardBackground, colors.cardBackgroundLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerContainer}
+        >
+          {isEditing ? (
+            <>
+              <TextInput
+                style={styles.input}
+                value={formationName}
+                onChangeText={handleChange}
+                placeholder="Enter formation name"
+                placeholderTextColor={colors.textSecondary}
+              />
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.button, styles.saveButton]}
+                  onPress={handleSave}
+                >
+                  <MaterialIcons name="save" size={20} color="#fff" />
+                  <Text style={styles.buttonText}>Save</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={handleCancel}
+                >
+                  <MaterialIcons name="cancel" size={20} color="#fff" />
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>{formationName}</Text>
+              <TouchableOpacity
+                style={[styles.button, styles.editButton]}
+                onPress={() => setIsEditing(true)}
+              >
+                <MaterialIcons name="edit" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Edit</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </LinearGradient>
+        <LinearGradient
+          colors={[colors.cardBackground, colors.cardBackgroundLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.court}
+        >
           {positions.map((pos) => (
             <Player
               key={pos.number}
@@ -356,7 +444,7 @@ const FormationsPage = () => {
               formationData={formationData}
             />
           ))}
-        </View>
+        </LinearGradient>
       </View>
     </GestureHandlerRootView>
   );
@@ -365,44 +453,77 @@ const FormationsPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 16,
   },
-  nameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerContainer: {
+    width: '100%',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
     marginBottom: 16,
-  },
-  editContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   input: {
+    width: '100%',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 8,
-    marginRight: 8,
-    width: 200,
+    borderColor: colors.borderColor,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: colors.cardBackgroundLight,
+    color: colors.textPrimary,
+    fontSize: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+    minWidth: 100,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+  },
+  cancelButton: {
+    backgroundColor: colors.error,
+  },
+  editButton: {
+    backgroundColor: colors.primary,
+    marginTop: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginRight: 8,
-    color: '#333',
+    color: colors.textPrimary,
+    marginBottom: 8,
   },
   court: {
-    width: '90%',
+    width: '100%',
     height: '70%',
-    backgroundColor: '#e0e0e0',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#333',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   player: {
     width: 70,
@@ -414,19 +535,33 @@ const styles = StyleSheet.create({
   playerCircle: {
     width: 70,
     height: 70,
-    backgroundColor: '#4caf50',
     borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    padding: 4,
   },
-  playerText: {
-    color: '#fff',
+  playerTextContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  playerNumber: {
+    color: colors.textPrimary,
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 14,
+    marginBottom: 1,
+  },
+  playerPosition: {
+    color: colors.textPrimary,
+    fontWeight: '500',
+    fontSize: 11,
     textAlign: 'center',
+    width: '100%',
   },
   playerName: {
-    color: '#333',
+    color: colors.textPrimary,
     fontSize: 10,
     textAlign: 'center',
     marginTop: 4,
@@ -437,28 +572,59 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
     width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    maxWidth: 400,
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderColor,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 6,
+    alignSelf: 'flex-start',
   },
   modalInstructions: {
     fontSize: 14,
     marginBottom: 16,
     textAlign: 'center',
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  pickerContainer: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: colors.cardBackgroundLight,
+    overflow: 'hidden',
   },
   picker: {
     width: '100%',
-    marginBottom: 16,
+    height: 40,
+    color: colors.textPrimary,
+    backgroundColor: 'transparent',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 4,
+    gap: 8,
   },
 });
 
