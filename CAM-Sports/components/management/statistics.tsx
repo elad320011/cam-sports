@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, StyleSheet, Button } from "react-native";
+import { Text, StyleSheet, Button, TouchableOpacity } from "react-native";
 import { Collapsible } from "../Collapsible";
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,7 @@ import AddStat from "./gameStatisticsComponents/AddStat";
 import { ButtonGroup } from '@rneui/themed';
 import ViewStat from "./gameStatisticsComponents/ViewStat";
 import { GameStats, DataRow, allCols, formatDateToDDMMYYYY, offenseCols } from "./gameStatisticsComponents/assets";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function GameStatistics() {
 
@@ -21,7 +22,7 @@ export default function GameStatistics() {
     const [cols, setCols] = useState<string[]>(allCols);
     const [page, setPage] = React.useState<number>(0);
     const [editSet, setEditSet] = useState<string>("");
-    const [numberOfItemsPerPageList] = React.useState([4, 8, 10]);
+    const [numberOfItemsPerPageList] = React.useState([5, 8, 10]);
     const [itemsPerPage, onItemsPerPageChange] = React.useState(
         numberOfItemsPerPageList[0]
     );
@@ -135,30 +136,10 @@ export default function GameStatistics() {
         );
     }
 
-    const turnAddMode = () => {
-        setCurrentMode("Add");
-    }
-
-    const turnViewMode = () => {
-        setCurrentMode("View");
-    }
-
     return (
         <Collapsible title="Game Statistics">
             {allStats && allStats.length > 0 ? (
                 <>
-                    <ButtonGroup
-                        buttons={["Add", "View"]}
-                        selectedIndex={currentMode === "Add" ? 0 : currentMode === "Edit" ? 1 : 2}
-                        onPress={(index) => {
-                            if (index === 0) {
-                                turnAddMode();
-                            } else {
-                                turnViewMode();
-                            }
-                        }}
-                        containerStyle={{ marginBottom: 20 }}
-                    />
 
                     {currentMode != "Add" && (
                         <Dropdown
@@ -174,7 +155,6 @@ export default function GameStatistics() {
             ) : (
                 <>
                     <Text style={styles.text}>No game statistics available for your team.</Text>
-                    <Button title="" onPress={turnAddMode} />
                 </>
             )}
             {currentStat && (
@@ -202,9 +182,16 @@ export default function GameStatistics() {
                 </>
             )}
 
-            {currentMode == "Add" && (
-                <AddStat setCurrentMode={setCurrentMode} />
-            )}
+            <TouchableOpacity onPress={() => setCurrentMode("Add")}>
+                <Ionicons
+                    name="add-circle-outline"
+                    size={24}
+                    color="white"
+                    style={{ alignSelf: 'center', margin: 0 }}
+                />
+            </TouchableOpacity>
+
+            {currentMode == "Add" && (<AddStat team_id={user?.team_id} currentMode={currentMode} setCurrentMode={setCurrentMode} />)}
         </Collapsible>
     );
 }

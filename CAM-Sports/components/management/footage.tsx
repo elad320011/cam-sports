@@ -87,7 +87,6 @@ const Footage = ({ teamId }: { teamId: string }) => {
           throw new Error("Could not fetch footage.")
         }
       } catch (error) {
-        Alert.alert("Error", "Failed to fetch videos. Please try again later.");
       }
     };
     fetchVideos()
