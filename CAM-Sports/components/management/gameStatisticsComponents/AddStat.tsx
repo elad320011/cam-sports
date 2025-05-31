@@ -135,6 +135,3 @@ export default function AddStat(props: any) {
         </Modal>
     );
 }
-
-const styles = StyleSheet.create({
-});
