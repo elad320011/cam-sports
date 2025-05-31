@@ -122,8 +122,7 @@ export function Collapsible({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    marginBottom: 16,
+    flex: 1,
   },
   heading: {
     flexDirection: 'row',
@@ -148,9 +147,12 @@ const styles = StyleSheet.create({
   content: {
     width: '100%',
     overflow: 'hidden',
+    margin: 'auto',
+  justifyContent: 'center',
   },
   contentInner: {
     width: '100%',
+    position: 'absolute',
   },
   gradient: {
     width: '100%',
