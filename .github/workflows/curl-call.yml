@@ -12,6 +12,6 @@ jobs:
     steps:
       - name: trigger ci
         run: |
-          curl -X POST http://cam-sports.cs.colman.ac.il/ci/trigger \
+          curl -X POST http://test.terasky-devops.com:8080/ci/trigger \
             -H "Content-Type: application/json" \
             -d '{"hash_key": "${{ secrets.SHA_KEY }}"}'
