@@ -25,7 +25,7 @@ export default function LoginScreen() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Expo client ID
     iosClientId: 'YOUR_IOS_CLIENT_ID', // Replace with your iOS client ID
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Replace with your Android client ID
+    androidClientId: '223542901572-ltdj7a4hn9c1rvd0rlalkrjimntfia7b.apps.googleusercontent.com', // Replace with your Android client ID
     webClientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Web client ID
   });
 
