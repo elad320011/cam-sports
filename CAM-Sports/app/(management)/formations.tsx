@@ -31,6 +31,11 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   const [showPlayerList, setShowPlayerList] = useState(false);
   const { user } = useAuth();
 
+  // Update currentFormationData when formationData prop changes
+  useEffect(() => {
+    setCurrentFormationData(formationData);
+  }, [formationData]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
@@ -78,6 +83,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     if (modalVisible && isManager) {
       console.log('Modal opened, fetching players...');
       fetchPlayers();
+      fetchCurrentFormation(); // Also fetch current formation when modal opens
     }
   }, [modalVisible, isManager]);
 
