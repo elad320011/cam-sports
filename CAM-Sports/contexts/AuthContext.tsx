@@ -24,7 +24,33 @@ type AuthContextType = {
   isLoading: boolean;
 };
 
+const STORAGE_KEYS = {
+  USER: 'user',
+  ACCESS_TOKEN: 'access_token',
+  REFRESH_TOKEN: 'refresh_token',
+} as const;
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const validateUser = (user: any): user is User => {
+  return (
+    user &&
+    typeof user === 'object' &&
+    typeof user.email === 'string' &&
+    typeof user.full_name === 'string' &&
+    typeof user.user_type === 'string' &&
+    typeof user.calendar_id === 'string' &&
+    typeof user.team_id === 'string'
+  );
+};
+
+const clearAuthData = async () => {
+  try {
+    await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+  } catch (error) {
+    console.error('Error clearing auth data:', error);
+  }
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -37,20 +63,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadStoredAuth = async () => {
     try {
       const [storedUser, accessToken, refreshToken] = await Promise.all([
-        AsyncStorage.getItem('user'),
-        AsyncStorage.getItem('access_token'),
-        AsyncStorage.getItem('refresh_token')
+        AsyncStorage.getItem(STORAGE_KEYS.USER),
+        AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
+        AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
       ]);
       
-      if (storedUser && accessToken) {
+      if (!storedUser || !accessToken) {
+        await clearAuthData();
+        setUser(null);
+        setAuthToken(null);
+        return;
+      }
+
+      try {
         const userData = JSON.parse(storedUser);
+        if (!validateUser(userData)) {
+          throw new Error('Invalid user data format');
+        }
         setUser(userData);
         setAuthToken(accessToken);
+      } catch (parseError) {
+        console.error('Error parsing stored user data:', parseError);
+        await clearAuthData();
+        setUser(null);
+        setAuthToken(null);
       }
     } catch (error) {
       console.error('Error loading stored auth:', error);
-      // Clear any partially stored data on error
-      await AsyncStorage.multiRemove(['user', 'access_token', 'refresh_token']);
+      await clearAuthData();
       setUser(null);
       setAuthToken(null);
     } finally {
@@ -60,24 +100,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (data: AuthData) => {
     try {
-      await AsyncStorage.setItem('access_token', data.access_token);
-      await AsyncStorage.setItem('refresh_token', data.refresh_token);
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      if (!validateUser(data.user)) {
+        throw new Error('Invalid user data format');
+      }
+
+      // Store data in parallel
+      await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access_token),
+        AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refresh_token),
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user))
+      ]);
       
       setAuthToken(data.access_token);
       setUser(data.user);
     } catch (error) {
       console.error('Error storing auth data:', error);
+      await clearAuthData();
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('access_token');
-      await AsyncStorage.removeItem('refresh_token');
-      await AsyncStorage.removeItem('user');
-      
+      await clearAuthData();
       setAuthToken(null);
       setUser(null);
     } catch (error) {
