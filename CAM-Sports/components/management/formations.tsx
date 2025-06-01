@@ -9,7 +9,11 @@ import { getTeamFormations, deleteFormation } from "@/services/formationService"
 import { colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 
-export default function Formations() {
+interface FormationsProps {
+  isManager?: boolean;
+}
+
+export default function Formations({ isManager = true }: FormationsProps) {
   const { user } = useAuth();
   const router = useRouter();
   const isFocused = useIsFocused();
@@ -77,20 +81,22 @@ export default function Formations() {
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
           <>
-            <TouchableOpacity
-              style={styles.createItem}
-              onPress={handleCreateFormation}
-            >
-              <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.createContainer}
+            {isManager && (
+              <TouchableOpacity
+                style={styles.createItem}
+                onPress={handleCreateFormation}
               >
-                <MaterialIcons name="add" size={24} color="#fff" />
-                <Text style={styles.createText}>Create Formation</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.createContainer}
+                >
+                  <MaterialIcons name="add" size={24} color="#fff" />
+                  <Text style={styles.createText}>Create Formation</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
 
             <ScrollView 
               style={[
@@ -105,7 +111,7 @@ export default function Formations() {
                 renderItem={({ item }) => (
                   <View style={styles.itemContainer}>
                     <TouchableOpacity
-                      style={styles.item}
+                      style={[styles.item, !isManager && styles.itemFullWidth]}
                       onPress={() => handleNavigate(item.id)}
                     >
                       <LinearGradient
@@ -117,12 +123,14 @@ export default function Formations() {
                         <Text style={styles.text}>{item.name}</Text>
                       </LinearGradient>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteFormation(item.id)}
-                    >
-                      <MaterialIcons name="delete" size={20} color="#fff" />
-                    </TouchableOpacity>
+                    {isManager && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteFormation(item.id)}
+                      >
+                        <MaterialIcons name="delete" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               />
@@ -203,5 +211,8 @@ const styles = StyleSheet.create({
     tintColor: colors.textPrimary, 
     width: 52,
     height: 52 
-  }
+  },
+  itemFullWidth: {
+    width: '100%',
+  },
 });

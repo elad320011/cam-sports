@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -10,7 +10,7 @@ import { colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId, formationData }: { 
+const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId, formationData, isManager }: { 
     number: number; 
     positionName: string; 
     initialX: number; 
@@ -18,6 +18,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     playerInfo: { name: string; instructions: string }; 
     formationId: string;
     formationData: Formation | null;
+    isManager: boolean;
 }) => {
   const translateX = useSharedValue(initialX);
   const translateY = useSharedValue(initialY);
@@ -51,9 +52,15 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
       console.log('Fetching players for team:', user.team_id);
       const teamPlayers = await getTeamPlayers(user.team_id);
       console.log('Received players:', teamPlayers);
-      setPlayers(teamPlayers);
+      if (Array.isArray(teamPlayers)) {
+        setPlayers(teamPlayers);
+      } else {
+        console.error('Invalid players data received:', teamPlayers);
+        setPlayers([]);
+      }
     } catch (error) {
       console.error('Error fetching players:', error);
+      setPlayers([]);
     }
   };
 
@@ -68,12 +75,11 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   };
 
   useEffect(() => {
-    if (modalVisible) {
+    if (modalVisible && isManager) {
       console.log('Modal opened, fetching players...');
       fetchPlayers();
-      fetchCurrentFormation();
     }
-  }, [modalVisible]);
+  }, [modalVisible, isManager]);
 
   const handleEdit = () => {
     // Find the current player ID from the formation data
@@ -110,6 +116,11 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   const currentPlayerId = currentFormationData?.roles[currentRoleKey]?.player_id;
   const otherUsedPlayerIds = usedPlayerIds.filter(id => id !== currentPlayerId);
 
+  const handlePlayerSelect = (playerId: string, playerName: string) => {
+    setEditedName(playerId);
+    setShowPlayerList(false);
+  };
+
   return (
     <>
       <PanGestureHandler onGestureEvent={handleGesture}>
@@ -119,7 +130,12 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.playerCircle}
-            onTouchEnd={() => setModalVisible(true)}
+            onTouchEnd={() => {
+              setModalVisible(true);
+              if (isManager) {
+                fetchPlayers(); // Fetch players when modal opens for managers
+              }
+            }}
           >
             <View style={styles.playerTextContainer}>
               <Text style={styles.playerNumber}>{number}</Text>
@@ -146,91 +162,68 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
           >
             {isEditing ? (
               <>
-                <Text style={styles.modalSubtitle}>Select Player</Text>
-                <TouchableOpacity
-                  style={styles.playerSelector}
-                  onPress={() => setShowPlayerList(true)}
-                >
-                  <Text style={styles.playerSelectorText}>
-                    {players.find(p => p.id === editedName)?.fullName || 'Select a player'}
-                  </Text>
-                  <MaterialIcons name="arrow-drop-down" size={24} color={colors.textPrimary} />
-                </TouchableOpacity>
-
-                <Modal
-                  visible={showPlayerList}
-                  transparent={true}
-                  animationType="slide"
-                  onRequestClose={() => setShowPlayerList(false)}
-                >
-                  <View style={styles.modalContainer}>
-                    <LinearGradient
-                      colors={[colors.cardBackground, colors.cardBackgroundLight]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.playerListModal}
-                    >
-                      <Text style={styles.modalTitle}>Select Player</Text>
-                      <ScrollView style={styles.playerList}>
+                <Text style={styles.modalTitle}>Edit Player</Text>
+                <View style={styles.pickerWrapper}>
+                  <Text style={styles.pickerLabel}>Select Player</Text>
+                  <TouchableOpacity 
+                    style={styles.dropdownButton}
+                    onPress={() => setShowPlayerList(!showPlayerList)}
+                  >
+                    <Text style={styles.dropdownButtonText}>
+                      {players.find(p => p.id === editedName)?.fullName || 'Unassigned'}
+                    </Text>
+                    <MaterialIcons 
+                      name={showPlayerList ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+                      size={24} 
+                      color={colors.textPrimary} 
+                    />
+                  </TouchableOpacity>
+                  {showPlayerList && (
+                    <View style={styles.dropdownList}>
+                      <ScrollView style={styles.dropdownScroll}>
                         <TouchableOpacity
-                          style={styles.playerItem}
-                          onPress={() => {
-                            setEditedName('');
-                            setShowPlayerList(false);
-                          }}
+                          style={styles.dropdownItem}
+                          onPress={() => handlePlayerSelect('', 'Unassigned')}
                         >
-                          <Text style={styles.playerItemText}>Unassigned</Text>
+                          <Text style={styles.dropdownItemText}>Unassigned</Text>
                         </TouchableOpacity>
                         {players
-                          .filter(player => player.fullName !== 'Unassigned')
-                          .map((player) => {
-                            const isDisabled = otherUsedPlayerIds.includes(player.id);
+                          .filter(player => player.id !== '')
+                          .map(player => {
+                            const isAssigned = otherUsedPlayerIds.includes(player.id);
                             return (
                               <TouchableOpacity
                                 key={player.id}
                                 style={[
-                                  styles.playerItem,
-                                  isDisabled && styles.playerItemDisabled
+                                  styles.dropdownItem,
+                                  isAssigned && styles.dropdownItemDisabled
                                 ]}
-                                onPress={() => {
-                                  if (!isDisabled) {
-                                    setEditedName(player.id);
-                                    setShowPlayerList(false);
-                                  }
-                                }}
-                                disabled={isDisabled}
+                                onPress={() => !isAssigned && handlePlayerSelect(player.id, player.fullName)}
+                                disabled={isAssigned}
                               >
                                 <Text style={[
-                                  styles.playerItemText,
-                                  isDisabled && styles.playerItemTextDisabled
+                                  styles.dropdownItemText,
+                                  isAssigned && styles.dropdownItemTextDisabled
                                 ]}>
-                                  {isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName}
+                                  {player.fullName}
+                                  {isAssigned && ' (Assigned)'}
                                 </Text>
                               </TouchableOpacity>
                             );
                           })}
                       </ScrollView>
-                      <TouchableOpacity
-                        style={[styles.button, styles.cancelButton]}
-                        onPress={() => setShowPlayerList(false)}
-                      >
-                        <MaterialIcons name="close" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Close</Text>
-                      </TouchableOpacity>
-                    </LinearGradient>
-                  </View>
-                </Modal>
-
-                <Text style={styles.modalSubtitle}>Instructions</Text>
+                    </View>
+                  )}
+                </View>
                 <TextInput
-                  style={[styles.input, { height: 80 }]}
+                  style={styles.instructionsInput}
                   value={editedInstructions}
                   onChangeText={setEditedInstructions}
                   placeholder="Enter instructions"
                   placeholderTextColor={colors.textSecondary}
                   multiline
                 />
-                <View style={styles.buttonContainer}>
+                <View style={styles.buttonRow}>
                   <TouchableOpacity
                     style={[styles.button, styles.saveButton]}
                     onPress={handleSave}
@@ -240,10 +233,13 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.button, styles.cancelButton]}
-                    onPress={() => { setModalVisible(false); setIsEditing(false); }}
+                    onPress={() => {
+                      setIsEditing(false);
+                      setModalVisible(false);
+                    }}
                   >
                     <MaterialIcons name="close" size={20} color="#fff" />
-                    <Text style={styles.buttonText}>Close</Text>
+                    <Text style={styles.buttonText}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -251,17 +247,19 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
               <>
                 <Text style={styles.modalTitle}>{playerInfo.name}</Text>
                 <Text style={styles.modalInstructions}>{playerInfo.instructions}</Text>
-                <View style={styles.buttonContainer}>
+                <View style={styles.buttonRow}>
+                  {isManager && (
+                    <TouchableOpacity
+                      style={[styles.button, styles.editButton]}
+                      onPress={handleEdit}
+                    >
+                      <MaterialIcons name="edit" size={20} color="#fff" />
+                      <Text style={styles.buttonText}>Edit</Text>
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity
-                    style={[styles.button, styles.editButton]}
-                    onPress={handleEdit}
-                  >
-                    <MaterialIcons name="edit" size={20} color="#fff" />
-                    <Text style={styles.buttonText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
-                    onPress={() => { setModalVisible(false); setIsEditing(false); }}
+                    style={[styles.button, styles.closeButton]}
+                    onPress={() => setModalVisible(false)}
                   >
                     <MaterialIcons name="close" size={20} color="#fff" />
                     <Text style={styles.buttonText}>Close</Text>
@@ -286,6 +284,19 @@ const FormationsPage = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [formationData, setFormationData] = useState<Formation | null>(null);
   const [currentFormationId, setCurrentFormationId] = useState<string>(formationId as string);
+  const isManager = user?.user_type === 'management';
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isSmallScreen = screenWidth < 375;
+  const isLargeScreen = screenWidth > 768;
+
+  // Calculate position multipliers based on screen size
+  const getPositionMultiplier = () => {
+    if (isSmallScreen) return 0.7;
+    if (isLargeScreen) return 1.3;
+    return 1;
+  };
+
+  const positionMultiplier = getPositionMultiplier();
 
   useEffect(() => {
     if (formationId && !isNewFormation) {
@@ -352,8 +363,8 @@ const FormationsPage = () => {
         {
           number: 1,
           positionName: 'Setter',
-          x: 100,
-          y: 150,
+          x: 0 * positionMultiplier,
+          y: 80 * positionMultiplier,
           playerInfo: {
             name: formationData.roles.role_1?.name || 'Unassigned',
             instructions: formationData.roles.role_1?.instructions || '',
@@ -363,8 +374,8 @@ const FormationsPage = () => {
         {
           number: 2,
           positionName: 'Outside Hitter',
-          x: 100,
-          y: -50,
+          x: -100 * positionMultiplier,
+          y: 120 * positionMultiplier,
           playerInfo: {
             name: formationData.roles.role_2?.name || 'Unassigned',
             instructions: formationData.roles.role_2?.instructions || '',
@@ -374,8 +385,8 @@ const FormationsPage = () => {
         {
           number: 3,
           positionName: 'Middle Blocker',
-          x: 0,
-          y: -150,
+          x: 0 * positionMultiplier,
+          y: -150 * positionMultiplier,
           playerInfo: {
             name: formationData.roles.role_3?.name || 'Unassigned',
             instructions: formationData.roles.role_3?.instructions || '',
@@ -385,8 +396,8 @@ const FormationsPage = () => {
         {
           number: 4,
           positionName: 'Opposite',
-          x: -100,
-          y: -50,
+          x: 100 * positionMultiplier,
+          y: 120 * positionMultiplier,
           playerInfo: {
             name: formationData.roles.role_4?.name || 'Unassigned',
             instructions: formationData.roles.role_4?.instructions || '',
@@ -396,8 +407,8 @@ const FormationsPage = () => {
         {
           number: 5,
           positionName: 'Outside Hitter',
-          x: -100,
-          y: 150,
+          x: -100 * positionMultiplier,
+          y: -40 * positionMultiplier,
           playerInfo: {
             name: formationData.roles.role_5?.name || 'Unassigned',
             instructions: formationData.roles.role_5?.instructions || '',
@@ -407,8 +418,8 @@ const FormationsPage = () => {
         {
           number: 6,
           positionName: 'Libero',
-          x: 0,
-          y: 100,
+          x: 100 * positionMultiplier,
+          y: -40 * positionMultiplier,
           playerInfo: {
             name: formationData.roles.role_6?.name || 'Unassigned',
             instructions: formationData.roles.role_6?.instructions || '',
@@ -432,7 +443,7 @@ const FormationsPage = () => {
           end={{ x: 1, y: 1 }}
           style={styles.headerContainer}
         >
-          {isEditing ? (
+          {isManager && isEditing ? (
             <>
               <TextInput
                 style={styles.input}
@@ -461,35 +472,52 @@ const FormationsPage = () => {
           ) : (
             <>
               <Text style={styles.title}>{formationName}</Text>
-              <TouchableOpacity
-                style={[styles.button, styles.editButton]}
-                onPress={() => setIsEditing(true)}
-              >
-                <MaterialIcons name="edit" size={20} color="#fff" />
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
+              {isManager && (
+                <TouchableOpacity
+                  style={[styles.button, styles.editButton]}
+                  onPress={() => setIsEditing(true)}
+                >
+                  <MaterialIcons name="edit" size={20} color="#fff" />
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+              )}
             </>
           )}
         </LinearGradient>
-        <LinearGradient
-          colors={[colors.cardBackground, colors.cardBackgroundLight]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.court}
-        >
-          {positions.map((pos) => (
-            <Player
-              key={pos.number}
-              number={pos.number}
-              positionName={pos.positionName}
-              initialX={pos.x}
-              initialY={pos.y}
-              playerInfo={pos.playerInfo}
-              formationId={currentFormationId}
-              formationData={formationData}
-            />
-          ))}
-        </LinearGradient>
+        <View style={styles.courtContainer}>
+          <LinearGradient
+            colors={['#1a3c4d', '#234b5e']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.court}
+          >
+            {/* Court Lines */}
+            <View style={styles.courtLines}>
+              {/* Attack Line */}
+              <View style={[styles.line, styles.attackLine]} />
+              {/* Center Line */}
+              <View style={[styles.line, styles.centerLine]} />
+              {/* Side Lines */}
+              <View style={[styles.line, styles.sideLineLeft]} />
+              <View style={[styles.line, styles.sideLineRight]} />
+              {/* End Line */}
+              <View style={[styles.line, styles.endLine]} />
+            </View>
+            {positions.map((pos) => (
+              <Player
+                key={pos.number}
+                number={pos.number}
+                positionName={pos.positionName}
+                initialX={pos.x}
+                initialY={pos.y}
+                playerInfo={pos.playerInfo}
+                formationId={currentFormationId}
+                formationData={formationData}
+                isManager={isManager}
+              />
+            ))}
+          </LinearGradient>
+        </View>
       </View>
     </GestureHandlerRootView>
   );
@@ -527,20 +555,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
     width: '100%',
+    marginTop: 20,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
     gap: 8,
-    minWidth: 100,
+    minWidth: 120,
+    elevation: 2,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
   },
   saveButton: {
@@ -551,7 +585,6 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: colors.primary,
-    marginTop: 8,
   },
   title: {
     fontSize: 24,
@@ -559,16 +592,54 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 8,
   },
-  court: {
+  courtContainer: {
     width: '100%',
     height: '70%',
     borderRadius: 12,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.borderColor,
+  },
+  court: {
+    width: '100%',
+    height: '100%',
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
+  },
+  courtLines: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  line: {
+    position: 'absolute',
+    backgroundColor: '#ffffff',
+  },
+  attackLine: {
+    width: '100%',
+    height: 3,
+    top: '33%',
+  },
+  centerLine: {
+    width: '100%',
+    height: 3,
+    top: 0,
+  },
+  sideLineLeft: {
+    width: 3,
+    height: '100%',
+    left: 0,
+  },
+  sideLineRight: {
+    width: 3,
+    height: '100%',
+    right: 0,
+  },
+  endLine: {
+    width: '100%',
+    height: 3,
+    bottom: 0,
   },
   player: {
     width: 70,
@@ -635,13 +706,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
   },
-  modalSubtitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 6,
-    alignSelf: 'flex-start',
-  },
   modalInstructions: {
     fontSize: 14,
     marginBottom: 16,
@@ -649,71 +713,81 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 20,
   },
-  pickerContainer: {
+  pickerWrapper: {
     width: '100%',
+    marginBottom: 20,
+    zIndex: 1,
+  },
+  pickerLabel: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  dropdownButton: {
+    width: '100%',
+    height: 50,
     borderWidth: 1,
     borderColor: colors.borderColor,
     borderRadius: 8,
-    marginBottom: 12,
     backgroundColor: colors.cardBackgroundLight,
-    overflow: 'hidden',
-  },
-  picker: {
-    width: '100%',
-    height: 50,
-    color: colors.textPrimary,
-    backgroundColor: 'transparent',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 4,
-    gap: 8,
-  },
-  playerSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
+    paddingHorizontal: 12,
+  },
+  dropdownButtonText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: colors.cardBackgroundLight,
     borderWidth: 1,
     borderColor: colors.borderColor,
     borderRadius: 8,
-    backgroundColor: colors.cardBackgroundLight,
-    marginBottom: 12,
+    marginTop: 4,
+    maxHeight: 200,
+    zIndex: 2,
   },
-  playerSelectorText: {
-    color: colors.textPrimary,
-    fontSize: 16,
+  dropdownScroll: {
+    maxHeight: 200,
   },
-  playerListModal: {
-    width: '80%',
-    maxWidth: 400,
-    maxHeight: '80%',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-  },
-  playerList: {
-    width: '100%',
-    maxHeight: 300,
-  },
-  playerItem: {
-    padding: 12,
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderColor,
   },
-  playerItemDisabled: {
-    opacity: 0.5,
-  },
-  playerItemText: {
+  dropdownItemText: {
     color: colors.textPrimary,
     fontSize: 16,
   },
-  playerItemTextDisabled: {
+  instructionsInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: colors.cardBackgroundLight,
+    color: colors.textPrimary,
+    fontSize: 14,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  dropdownItemDisabled: {
+    opacity: 0.6,
+    backgroundColor: colors.cardBackground,
+  },
+  dropdownItemTextDisabled: {
     color: colors.textSecondary,
+  },
+  closeButton: {
+    backgroundColor: colors.error,
   },
 });
 

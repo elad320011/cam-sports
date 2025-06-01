@@ -32,7 +32,7 @@ export default function Management() {
     { id: 'statistics', component: <GameStatistics /> },
     { id: 'training', component: <Training /> },
     { id: 'messages', component: <Messages /> },
-    { id: 'formations', component: <Formations /> },
+    { id: 'formations', component: <Formations isManager={user?.user_type === 'management'} /> },
     { id: 'footage', component: <Footage teamId={user?.team_id}/> },
     { id: 'payments', component: <Payments isManager={user?.user_type === 'management'} /> },
   ];
