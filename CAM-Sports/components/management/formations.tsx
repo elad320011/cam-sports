@@ -16,7 +16,6 @@ export default function Formations() {
   const [formations, setFormations] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [key, setKey] = useState(0);
 
   const fetchFormations = useCallback(async () => {
     setLoading(true);
@@ -49,7 +48,6 @@ export default function Formations() {
   useEffect(() => {
     if (isFocused) {
       fetchFormations();
-      setKey(prev => prev + 1);
     }
   }, [isFocused, fetchFormations]);
 
@@ -69,7 +67,6 @@ export default function Formations() {
 
   return (
     <Collapsible 
-      key={key}
       title="Formations"
       image={require('@/assets/images/formations-icon.png')}
       imageStyle={styles.image}

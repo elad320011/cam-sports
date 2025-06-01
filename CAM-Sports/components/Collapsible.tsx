@@ -110,9 +110,7 @@ export function Collapsible({
             end={{ x: 1, y: 1 }}
             style={styles.gradient}
           >
-            <ScrollView>
-              {children}
-            </ScrollView>
+            {children}
           </LinearGradient>
         </View>
       </Animated.View>

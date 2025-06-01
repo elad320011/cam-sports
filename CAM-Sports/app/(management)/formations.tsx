@@ -264,12 +264,6 @@ const FormationsPage = () => {
         const createdFormation = await createFormation(formationName, user?.team_id || '');
         setFormationData(createdFormation);
         setCurrentFormationId(createdFormation.id);
-        // Update the URL with the new formation ID
-        window.history.replaceState(
-          {},
-          '',
-          `/formations?id=${createdFormation.id}&isNew=false`
-        );
         setIsEditing(false);
         setHasUnsavedChanges(false);
         Alert.alert('Success', 'Formation created successfully.');
