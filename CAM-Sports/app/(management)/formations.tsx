@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -27,6 +27,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   const [editedInstructions, setEditedInstructions] = useState('');
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [currentFormationData, setCurrentFormationData] = useState<Formation | null>(formationData);
+  const [showPlayerList, setShowPlayerList] = useState(false);
   const { user } = useAuth();
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -44,9 +45,12 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   const fetchPlayers = async () => {
     try {
       if (!user?.team_id) {
+        console.log('No team_id available');
         return;
       }
+      console.log('Fetching players for team:', user.team_id);
       const teamPlayers = await getTeamPlayers(user.team_id);
+      console.log('Received players:', teamPlayers);
       setPlayers(teamPlayers);
     } catch (error) {
       console.error('Error fetching players:', error);
@@ -64,11 +68,12 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
   };
 
   useEffect(() => {
-    if (isEditing) {
+    if (modalVisible) {
+      console.log('Modal opened, fetching players...');
       fetchPlayers();
       fetchCurrentFormation();
     }
-  }, [isEditing]);
+  }, [modalVisible]);
 
   const handleEdit = () => {
     // Find the current player ID from the formation data
@@ -142,34 +147,80 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
             {isEditing ? (
               <>
                 <Text style={styles.modalSubtitle}>Select Player</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={editedName}
-                    onValueChange={(itemValue) => setEditedName(itemValue)}
-                    style={styles.picker}
-                    dropdownIconColor={colors.textPrimary}
-                  >
-                    <Picker.Item 
-                      label="Unassigned" 
-                      value="" 
-                      color={colors.textPrimary}
-                    />
-                    {players
-                      .filter(player => player.fullName !== 'Unassigned') // Filter out any "Unassigned" players from the list
-                      .map((player) => {
-                        const isDisabled = otherUsedPlayerIds.includes(player.id);
-                        return (
-                          <Picker.Item 
-                            key={player.id} 
-                            label={isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName} 
-                            value={player.id}
-                            enabled={!isDisabled}
-                            color={isDisabled ? colors.textSecondary : colors.textPrimary}
-                          />
-                        );
-                    })}
-                  </Picker>
-                </View>
+                <TouchableOpacity
+                  style={styles.playerSelector}
+                  onPress={() => setShowPlayerList(true)}
+                >
+                  <Text style={styles.playerSelectorText}>
+                    {players.find(p => p.id === editedName)?.fullName || 'Select a player'}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={24} color={colors.textPrimary} />
+                </TouchableOpacity>
+
+                <Modal
+                  visible={showPlayerList}
+                  transparent={true}
+                  animationType="slide"
+                  onRequestClose={() => setShowPlayerList(false)}
+                >
+                  <View style={styles.modalContainer}>
+                    <LinearGradient
+                      colors={[colors.cardBackground, colors.cardBackgroundLight]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.playerListModal}
+                    >
+                      <Text style={styles.modalTitle}>Select Player</Text>
+                      <ScrollView style={styles.playerList}>
+                        <TouchableOpacity
+                          style={styles.playerItem}
+                          onPress={() => {
+                            setEditedName('');
+                            setShowPlayerList(false);
+                          }}
+                        >
+                          <Text style={styles.playerItemText}>Unassigned</Text>
+                        </TouchableOpacity>
+                        {players
+                          .filter(player => player.fullName !== 'Unassigned')
+                          .map((player) => {
+                            const isDisabled = otherUsedPlayerIds.includes(player.id);
+                            return (
+                              <TouchableOpacity
+                                key={player.id}
+                                style={[
+                                  styles.playerItem,
+                                  isDisabled && styles.playerItemDisabled
+                                ]}
+                                onPress={() => {
+                                  if (!isDisabled) {
+                                    setEditedName(player.id);
+                                    setShowPlayerList(false);
+                                  }
+                                }}
+                                disabled={isDisabled}
+                              >
+                                <Text style={[
+                                  styles.playerItemText,
+                                  isDisabled && styles.playerItemTextDisabled
+                                ]}>
+                                  {isDisabled ? `${player.fullName} (Already Assigned)` : player.fullName}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                      </ScrollView>
+                      <TouchableOpacity
+                        style={[styles.button, styles.cancelButton]}
+                        onPress={() => setShowPlayerList(false)}
+                      >
+                        <MaterialIcons name="close" size={20} color="#fff" />
+                        <Text style={styles.buttonText}>Close</Text>
+                      </TouchableOpacity>
+                    </LinearGradient>
+                  </View>
+                </Modal>
+
                 <Text style={styles.modalSubtitle}>Instructions</Text>
                 <TextInput
                   style={[styles.input, { height: 80 }]}
@@ -609,7 +660,7 @@ const styles = StyleSheet.create({
   },
   picker: {
     width: '100%',
-    height: 40,
+    height: 50,
     color: colors.textPrimary,
     backgroundColor: 'transparent',
   },
@@ -619,6 +670,50 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 4,
     gap: 8,
+  },
+  playerSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    borderRadius: 8,
+    backgroundColor: colors.cardBackgroundLight,
+    marginBottom: 12,
+  },
+  playerSelectorText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+  },
+  playerListModal: {
+    width: '80%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+  },
+  playerList: {
+    width: '100%',
+    maxHeight: 300,
+  },
+  playerItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderColor,
+  },
+  playerItemDisabled: {
+    opacity: 0.5,
+  },
+  playerItemText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+  },
+  playerItemTextDisabled: {
+    color: colors.textSecondary,
   },
 });
 

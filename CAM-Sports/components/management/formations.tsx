@@ -46,7 +46,7 @@ export default function Formations() {
   };
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused && !refreshing) {
       fetchFormations();
     }
   }, [isFocused, fetchFormations]);
