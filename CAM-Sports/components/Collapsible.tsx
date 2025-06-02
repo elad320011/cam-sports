@@ -28,7 +28,7 @@ export function Collapsible({
   keepShut = false,
   training = false,
   setCurrentMode = () => {},
-  setCurrentPlan = () => {}
+  setCurrentPlan = () => {},
 }: PropsWithChildren & CollapsibleProps) {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useColorScheme() ?? 'light';
@@ -123,6 +123,7 @@ export function Collapsible({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    margin: 10,
   },
   heading: {
     flexDirection: 'row',

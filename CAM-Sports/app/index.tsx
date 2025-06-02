@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
 import { Redirect, router } from 'expo-router';
 import WelcomeHeader from '@/components/WelcomeHeader';
@@ -27,6 +27,20 @@ export default function Management() {
     return <Redirect href="/login" />;
   }
 
+  const components = [
+    { id: 'calendar', component: <GameCalendar key="calendar" /> },
+    { id: 'statistics', component: <GameStatistics key="statistics" /> },
+    { id: 'training', component: <Training /> },
+    { id: 'messages', component: <Messages key="messages" /> },
+    { id: 'formations', component: <Formations key="formations" isManager={user?.user_type === 'management'} /> },
+    { id: 'footage', component: <Footage key="footage" teamId={user?.team_id}/> },
+    { id: 'payments', component: <Payments key="payments" isManager={user?.user_type === 'management'} /> }
+  ];
+
+  const renderItem = ({ item }: { item: { id: string; component: React.ReactElement } }) => {
+    return item.component;
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -42,21 +56,13 @@ export default function Management() {
       />
       <WelcomeHeader />
 
-      <ScrollView style={styles.scrollContainer}>
-        <GameCalendar />
-        <View style={{ margin: 10 }} />
-        <GameStatistics />
-        <View style={{ margin: 10 }} />
-        <Training />
-        <View style={{ margin: 10 }} />
-        <Messages />
-        <View style={{ margin: 10 }} />
-        <Formations />
-        <View style={{ margin: 10 }} />
-        <Footage teamId={user?.team_id}/>
-        <View style={{ margin: 10 }} />
-        <Payments isManager={user?.user_type === 'management'} />
-      </ScrollView>
+      <FlatList
+        data={components}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      />
 
       <TouchableOpacity
         style={styles.fab}

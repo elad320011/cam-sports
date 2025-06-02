@@ -72,7 +72,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
   const renderPaymentItem = ({ item }: { item: Payment | { id: string; amount: number; description: string; due_date: string } }) => {
     if (item.id === "create" && isManager) {
       return (
-        <View style={styles.itemContainer}>
+        <View key={item.id} style={styles.itemContainer}>
           <TouchableOpacity
             style={[styles.item, styles.createItem]}
             onPress={handleCreatePayment}
@@ -87,17 +87,17 @@ export default function Payments({ isManager = true }: PaymentsProps) {
     }
 
     return (
-      <View style={styles.itemContainer}>
+      <View key={item.id} style={styles.itemContainer}>
         <View style={[styles.item, !isManager && styles.playerItem]}>
           <View style={styles.paymentInfo}>
             <Text style={styles.amount}>₪{item.amount}</Text>
             <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
             <Text style={styles.description}>{item.description}</Text>
             {'reminders' in item && item.reminders && item.reminders.length > 0 && (
-              <View style={styles.remindersList}>
+              <View key={`reminders-${item.id}`} style={styles.remindersList}>
                 <Text style={styles.remindersTitle}>Reminders:</Text>
                 {item.reminders.map((reminder) => (
-                  <View key={reminder.id} style={styles.reminderItem}>
+                  <View key={`${item.id}-${reminder.id}`} style={styles.reminderItem}>
                     <MaterialIcons name="notifications" size={16} color="#87ceeb" />
                     <Text style={styles.reminderDate}>
                       {formatDate(reminder.date)}
@@ -109,7 +109,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
           </View>
         </View>
         {isManager && item.id !== "create" && (
-          <View style={styles.buttonContainer}>
+          <View key={`actions-${item.id}`} style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.actionButton, styles.editButton]}
               onPress={() => handleNavigate(item.id)}
@@ -129,7 +129,9 @@ export default function Payments({ isManager = true }: PaymentsProps) {
   };
 
   return (
-    <Collapsible title="Payments">
+    <Collapsible 
+      title="Payments"
+    >
       <View>
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" />

@@ -144,7 +144,10 @@ const Footage = ({ teamId }: { teamId: string }) => {
   }
 
   return (
-    <Collapsible title="Footage">
+    <Collapsible 
+      key="footage-collapsible"
+      title="Footage"
+    >
       <View style={styles.container}>
         <AddFootage visible={showAddVideoModal} setVisible={setShowAddVideoModal} teamId={user?.team_id} userId={user?.email} />
         <View style={styles.filterControlsContainer}>

@@ -274,7 +274,8 @@ const GameCalendar = () => {
   
   return (
     <Collapsible 
-      title="Calendar"
+      key="calendar-collapsible"
+      title="Game Calendar"
       image={require('@/assets/images/calendar-icon.png')}
       imageStyle={styles.image}
       titleContainerStyle={styles.imageWrapper}

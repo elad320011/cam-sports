@@ -122,7 +122,10 @@ export default function GameStatistics() {
 
     if (loading) {
         return (
-            <Collapsible title="Game Statistics">
+            <Collapsible 
+                key="statistics-collapsible"
+                title="Game Statistics"
+            >
                 <Text style={styles.text}>Loading game statistics...</Text>
             </Collapsible>
         );
@@ -130,14 +133,20 @@ export default function GameStatistics() {
 
     if (error) {
         return (
-            <Collapsible title="Game Statistics">
+            <Collapsible 
+                key="statistics-collapsible"
+                title="Game Statistics"
+            >
                 <Text style={styles.error}>{error}</Text>
             </Collapsible>
         );
     }
 
     return (
-        <Collapsible title="Game Statistics">
+        <Collapsible 
+            key="statistics-collapsible"
+            title="Game Statistics"
+        >
             {allStats && allStats.length > 0 ? (
                 <>
 
