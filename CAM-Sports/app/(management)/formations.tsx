@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { Picker } from '@react-native-picker/picker';
 import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo, getUsedPlayerIds } from '@/services/formationService';
@@ -10,19 +10,30 @@ import { colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const Player = ({ number, positionName, initialX, initialY, playerInfo, formationId, formationData, isManager }: { 
-    number: number; 
-    positionName: string; 
-    initialX: number; 
-    initialY: number; 
-    playerInfo: { name: string; instructions: string }; 
-    formationId: string;
-    formationData: Formation | null;
-    isManager: boolean;
+const Player = ({ 
+  number, 
+  positionName, 
+  initialX, 
+  initialY, 
+  playerInfo, 
+  formationId, 
+  formationData, 
+  isManager = true 
+}: { 
+  number: number; 
+  positionName: string; 
+  initialX: number; 
+  initialY: number; 
+  playerInfo: { name: string; instructions: string }; 
+  formationId: string;
+  formationData: Formation | null;
+  isManager?: boolean;
 }) => {
   const translateX = useSharedValue(initialX);
   const translateY = useSharedValue(initialY);
   const [modalVisible, setModalVisible] = useState(false);
+  const modalOpacity = useSharedValue(0);
+  const modalScale = useSharedValue(0.8);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedInstructions, setEditedInstructions] = useState('');
@@ -109,7 +120,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
       await fetchCurrentFormation();
       Alert.alert('Success', 'Player information updated successfully.');
       setIsEditing(false);
-      setModalVisible(false);
+      hideModal();
     } catch (error) {
       Alert.alert('Error', 'Failed to update player information.');
     }
@@ -127,6 +138,26 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
     setShowPlayerList(false);
   };
 
+  const showModal = () => {
+    setModalVisible(true);
+    modalOpacity.value = withTiming(1, { duration: 200 });
+    modalScale.value = withSpring(1);
+  };
+
+  const hideModal = () => {
+    modalOpacity.value = withTiming(0, { duration: 200 });
+    modalScale.value = withSpring(0.8);
+    // Use setTimeout to ensure the animation completes before hiding
+    setTimeout(() => {
+      setModalVisible(false);
+    }, 200);
+  };
+
+  const modalAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: modalOpacity.value,
+    transform: [{ scale: modalScale.value }],
+  }));
+
   return (
     <>
       <PanGestureHandler onGestureEvent={handleGesture}>
@@ -137,9 +168,9 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
             end={{ x: 1, y: 1 }}
             style={styles.playerCircle}
             onTouchEnd={() => {
-              setModalVisible(true);
+              showModal();
               if (isManager) {
-                fetchPlayers(); // Fetch players when modal opens for managers
+                fetchPlayers();
               }
             }}
           >
@@ -153,13 +184,9 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
           </Text>
         </Animated.View>
       </PanGestureHandler>
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
+
+      {modalVisible && (
+        <Animated.View style={[styles.modalContainer, modalAnimatedStyle]}>
           <LinearGradient
             colors={[colors.cardBackground, colors.cardBackgroundLight]}
             start={{ x: 0, y: 0 }}
@@ -241,7 +268,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
                     style={[styles.button, styles.cancelButton]}
                     onPress={() => {
                       setIsEditing(false);
-                      setModalVisible(false);
+                      hideModal();
                     }}
                   >
                     <MaterialIcons name="close" size={20} color="#fff" />
@@ -265,7 +292,7 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
                   )}
                   <TouchableOpacity
                     style={[styles.button, styles.closeButton]}
-                    onPress={() => setModalVisible(false)}
+                    onPress={hideModal}
                   >
                     <MaterialIcons name="close" size={20} color="#fff" />
                     <Text style={styles.buttonText}>Close</Text>
@@ -274,8 +301,8 @@ const Player = ({ number, positionName, initialX, initialY, playerInfo, formatio
               </>
             )}
           </LinearGradient>
-        </View>
-      </Modal>
+        </Animated.View>
+      )}
     </>
   );
 };
@@ -691,19 +718,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   modalContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    zIndex: 1000,
   },
   modalContent: {
-    width: '80%',
+    width: '90%',
     maxWidth: 400,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.borderColor,
+    backgroundColor: colors.cardBackground,
+    elevation: 5,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   modalTitle: {
     fontSize: 20,
