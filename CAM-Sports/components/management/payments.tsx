@@ -124,8 +124,8 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                           {'reminders' in item && item.reminders && item.reminders.length > 0 && (
                             <View style={styles.remindersList}>
                               <Text style={styles.remindersTitle}>Reminders:</Text>
-                              {item.reminders.map((reminder) => (
-                                <View key={reminder.id} style={styles.reminderItem}>
+                              {item.reminders.map((reminder, index) => (
+                                <View key={`${reminder.id}-${index}`} style={styles.reminderItem}>
                                   <MaterialIcons name="notifications" size={16} color={colors.primary} />
                                   <Text style={styles.reminderDate}>
                                     {formatDate(reminder.date)}
