@@ -434,45 +434,55 @@ export default function Messages() {
               nestedScrollEnabled={true}
               scrollEnabled={true}
             >
-              {messages.map((message, index) => (
-                <View key={index} style={styles.messageContainer}>
-                  <View style={styles.messageHeader}>
-                    <View style={styles.messageTypeContainer}>
-                      <View style={[
-                        styles.messageTypeIndicator,
-                        { backgroundColor: message.type === 'announcement' ? colors.primary : colors.accentYellow }
-                      ]} />
-                      <Text style={styles.messageType}>{message.type}</Text>
-                    </View>
-                    <Text style={styles.messageDate}>
-                      {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
-                    </Text>
-                  </View>
-                  
-                  <Text style={styles.messageContent}>{message.content}</Text>
-                  
-                  <View style={styles.messageFooter}>
-                    <Text style={styles.creatorEmail}>By: {message.creator_email}</Text>
-                    
-                    {isManagement && (
-                      <View style={styles.messageActions}>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() => startEditing(message, index)}
-                        >
-                          <Ionicons name="create-outline" size={20} color={colors.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() => handleDeleteMessage(index)}
-                        >
-                          <Ionicons name="trash-outline" size={20} color={colors.error} />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
+              {messages.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="chatbubble-outline" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyText}>No messages yet</Text>
+                  {isManagement && (
+                    <Text style={styles.emptySubText}>Tap the button below to create your first message</Text>
+                  )}
                 </View>
-              ))}
+              ) : (
+                messages.map((message, index) => (
+                  <View key={index} style={styles.messageContainer}>
+                    <View style={styles.messageHeader}>
+                      <View style={styles.messageTypeContainer}>
+                        <View style={[
+                          styles.messageTypeIndicator,
+                          { backgroundColor: message.type === 'announcement' ? colors.primary : colors.accentYellow }
+                        ]} />
+                        <Text style={styles.messageType}>{message.type}</Text>
+                      </View>
+                      <Text style={styles.messageDate}>
+                        {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
+                      </Text>
+                    </View>
+                    
+                    <Text style={styles.messageContent}>{message.content}</Text>
+                    
+                    <View style={styles.messageFooter}>
+                      <Text style={styles.creatorEmail}>By: {message.creator_email}</Text>
+                      
+                      {isManagement && (
+                        <View style={styles.messageActions}>
+                          <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => startEditing(message, index)}
+                          >
+                            <Ionicons name="create-outline" size={20} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => handleDeleteMessage(index)}
+                          >
+                            <Ionicons name="trash-outline" size={20} color={colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ))
+              )}
             </ScrollView>
           </View>
 
@@ -666,5 +676,26 @@ const styles = StyleSheet.create({
     tintColor: colors.textPrimary, 
     width: 52,
     height: 52 
-  }
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    minHeight: 300,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
 });
