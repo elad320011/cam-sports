@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Redirect } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Components
 import { Collapsible } from '@/components/Collapsible';
@@ -15,7 +16,6 @@ import { useAuth } from '@/contexts/AuthContext';
 // Icons & Colors
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/Colors';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // Services
 import { getTeamByCode } from '@/services/usersService'
@@ -468,6 +468,17 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0)']}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0, y: 0.5 }}
+        style={styles.sunRays}
+      />
+      <Image
+        source={require('@/assets/images/volleyball.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -589,6 +600,7 @@ export default function ProfileScreen() {
                 <Text style={styles.label}>Weight (kg)</Text>
                 <TextInput
                   style={styles.input}
+                  placeholderTextColor={colors.textSecondary}
                   placeholder="Your weight in kg (0-250)"
                   value={inputWeight}
                   onChangeText={validateAndSetWeight}
@@ -601,6 +613,7 @@ export default function ProfileScreen() {
                 <Text style={styles.label}>Height (cm)</Text>
                 <TextInput
                   style={styles.input}
+                  placeholderTextColor={colors.textSecondary}
                   placeholder="Your height in cm (0-250)"
                   value={inputHeight}
                   onChangeText={validateAndSetHeight}
@@ -630,6 +643,7 @@ export default function ProfileScreen() {
               <Text style={styles.label}>New Team Code</Text>
               <TextInput
                 style={styles.input}
+                placeholderTextColor={colors.textSecondary}
                 placeholder="Enter team code"
                 value={teamCodeToJoin}
                 onChangeText={(text) => setTeamCodeToJoin(text.toUpperCase())}
@@ -676,6 +690,7 @@ export default function ProfileScreen() {
               <Text style={styles.label}>Current Password</Text>
               <TextInput
                 style={styles.input}
+                placeholderTextColor={colors.textSecondary}
                 placeholder="Enter current password"
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
@@ -687,6 +702,7 @@ export default function ProfileScreen() {
               <Text style={styles.label}>New Password</Text>
               <TextInput
                 style={styles.input}
+                placeholderTextColor={colors.textSecondary}
                 placeholder="Enter new password"
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -698,6 +714,7 @@ export default function ProfileScreen() {
               <Text style={styles.label}>Confirm New Password</Text>
               <TextInput
                 style={styles.input}
+                placeholderTextColor={colors.textSecondary}
                 placeholder="Confirm new password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -733,6 +750,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingInline: 16,
     paddingBlock: 25,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    bottom: '-16%',
+    left: '-90%',
+  },
+  sunRays: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
   },
   loadingContainer: {
     flex: 1,
@@ -890,7 +920,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: colors.textPrimary,
+    color: 'white',
   },
   button: {
     backgroundColor: colors.primary,
