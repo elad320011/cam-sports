@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView, Image } from "react-native";
 import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -72,7 +72,12 @@ export default function Payments({ isManager = true }: PaymentsProps) {
   };
 
   return (
-    <Collapsible title="Payments">
+    <Collapsible 
+      title="Payments"
+      image={require('@/assets/images/payments.png')}
+      imageStyle={styles.image}
+      titleContainerStyle={styles.imageWrapper}
+    >
       <View style={styles.container}>
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} />
@@ -276,5 +281,14 @@ const styles = StyleSheet.create({
   },
   itemFullWidth: {
     width: '100%',
+  },
+  imageWrapper: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between'
+  },
+  image: { 
+    tintColor: '#fff',
+    width: 52,
+    height: 52 
   },
 });

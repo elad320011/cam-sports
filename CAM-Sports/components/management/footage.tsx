@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, Image } from 'react-native';
 import { PlusCircle, Trash2 } from 'lucide-react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import axiosInstance from '@/utils/axios';
@@ -144,7 +144,12 @@ const Footage = ({ teamId }: { teamId: string }) => {
   }
 
   return (
-    <Collapsible title="Footage">
+    <Collapsible 
+      title="Footage"
+      image={require('@/assets/images/footage.png')}
+      imageStyle={styles.image}
+      titleContainerStyle={styles.imageWrapper}
+    >
       <View style={styles.container}>
         <AddFootage visible={showAddVideoModal} setVisible={setShowAddVideoModal} teamId={user?.team_id} userId={user?.email} />
         <View style={styles.filterControlsContainer}>
@@ -455,6 +460,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 16,
     paddingVertical: 50,
+  },
+  imageWrapper: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between'
+  },
+  image: { 
+    tintColor: '#fff',
+    width: 52,
+    height: 52 
   },
 });
 
