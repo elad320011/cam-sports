@@ -28,17 +28,17 @@ export default function Management() {
   }
 
   const components = [
+    { id: 'messages', component: <Messages /> },
     { id: 'calendar', component: <GameCalendar /> },
     { id: 'statistics', component: <GameStatistics /> },
     { id: 'training', component: <Training /> },
-    { id: 'messages', component: <Messages /> },
     { id: 'formations', component: <Formations isManager={user?.user_type === 'management'} /> },
     { id: 'footage', component: <Footage teamId={user?.team_id}/> },
     { id: 'payments', component: <Payments isManager={user?.user_type === 'management'} /> },
   ];
 
   const renderItem = ({ item }: { item: { id: string; component: React.ReactNode } }) => (
-    <View style={{ margin: 10 }}>
+    <View>
       {item.component}
     </View>
   );
