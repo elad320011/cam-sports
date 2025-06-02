@@ -106,7 +106,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                 data={payments}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <View style={styles.itemContainer}>
+                  <View key={item.id} style={styles.itemContainer}>
                     <TouchableOpacity
                       style={[styles.item, !isManager && styles.itemFullWidth]}
                       onPress={() => handleNavigate(item.id)}
@@ -122,7 +122,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                           <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
                           <Text style={styles.description}>{item.description}</Text>
                           {'reminders' in item && item.reminders && item.reminders.length > 0 && (
-                            <View style={styles.remindersList}>
+                            <View key={`reminders-${item.id}`} style={styles.remindersList}>
                               <Text style={styles.remindersTitle}>Reminders:</Text>
                               {item.reminders.map((reminder, index) => (
                                 <View key={`${reminder.id}-${index}`} style={styles.reminderItem}>
@@ -138,7 +138,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                       </LinearGradient>
                     </TouchableOpacity>
                     {isManager && (
-                      <View style={styles.buttonContainer}>
+                      <View key={`actions-${item.id}`} style={styles.buttonContainer}>
                         <TouchableOpacity
                           style={[styles.actionButton, styles.editButton]}
                           onPress={() => handleNavigate(item.id)}
