@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, StyleSheet, Button, TouchableOpacity } from "react-native";
+import { Text, StyleSheet, Button, TouchableOpacity, Image } from "react-native";
 import { Collapsible } from "../Collapsible";
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
@@ -122,7 +122,12 @@ export default function GameStatistics() {
 
     if (loading) {
         return (
-            <Collapsible title="Game Statistics">
+            <Collapsible 
+                title="Game Statistics"
+                image={require('@/assets/images/statistics.png')}
+                imageStyle={styles.image}
+                titleContainerStyle={styles.imageWrapper}
+            >
                 <Text style={styles.text}>Loading game statistics...</Text>
             </Collapsible>
         );
@@ -130,14 +135,24 @@ export default function GameStatistics() {
 
     if (error) {
         return (
-            <Collapsible title="Game Statistics">
+            <Collapsible 
+                title="Game Statistics"
+                image={require('@/assets/images/statistics.png')}
+                imageStyle={styles.image}
+                titleContainerStyle={styles.imageWrapper}
+            >
                 <Text style={styles.error}>{error}</Text>
             </Collapsible>
         );
     }
 
     return (
-        <Collapsible title="Game Statistics">
+        <Collapsible 
+            title="Game Statistics"
+            image={require('@/assets/images/statistics.png')}
+            imageStyle={styles.image}
+            titleContainerStyle={styles.imageWrapper}
+        >
             {allStats && allStats.length > 0 ? (
                 <>
 
@@ -207,5 +222,14 @@ const styles = StyleSheet.create({
         color: 'red',
         textAlign: 'center',
         marginVertical: 10,
+    },
+    imageWrapper: {
+        flexDirection: 'row-reverse',
+        justifyContent: 'space-between'
+    },
+    image: { 
+        tintColor: '#fff',
+        width: 52,
+        height: 52 
     },
 });

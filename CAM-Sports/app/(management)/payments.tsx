@@ -27,8 +27,10 @@ export default function PaymentPage() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [showReminderPickers, setShowReminderPickers] = useState<{ [key: string]: boolean }>({});
+  const [showReminderDatePickers, setShowReminderDatePickers] = useState<{ [key: string]: boolean }>({});
+  const [showReminderTimePickers, setShowReminderTimePickers] = useState<{ [key: string]: boolean }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentDate] = useState(new Date());
 
   useEffect(() => {
     if (isEditMode && params.paymentId) {
@@ -93,24 +95,85 @@ export default function PaymentPage() {
     setDueDate(currentDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
   };
 
-  const showDatepicker = () => {
-    setShowDatePicker(true);
+  const handleDueDatePress = () => {
+    setShowDatePicker(prev => !prev);
   };
 
   const onReminderDateChange = (reminderId: string, event: any, selectedDate?: Date) => {
-    setShowReminderPickers(prev => ({ ...prev, [reminderId]: false }));
-    if (selectedDate) {
-      setReminders(prev => prev.map(reminder => 
-        reminder.id === reminderId 
-          ? { ...reminder, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
-          : reminder
-      ));
+    if (Platform.OS === 'android') {
+      setShowReminderDatePickers(prev => ({ ...prev, [reminderId]: false }));
+      if (event.type === 'set' && selectedDate) {
+        setReminders(prev => prev.map(reminder => 
+          reminder.id === reminderId 
+            ? { 
+                ...reminder, 
+                date: new Date(
+                  selectedDate.getFullYear(),
+                  selectedDate.getMonth(),
+                  selectedDate.getDate(),
+                  reminder.date.getHours(),
+                  reminder.date.getMinutes()
+                ),
+                dateString: reminder.dateString
+              }
+            : reminder
+        ));
+        // Show time picker after date is selected
+        setShowReminderTimePickers(prev => ({ ...prev, [reminderId]: true }));
+      }
     } else {
-      setReminders(prev => prev.map(reminder => 
-        reminder.id === reminderId 
-          ? { ...reminder, date: new Date(), dateString: 'Select reminder date and time' }
-          : reminder
-      ));
+      // For iOS, handle both date and time in one picker
+      if (selectedDate) {
+        // Ensure the selected date is not after the due date
+        const maxDate = new Date(date);
+        const finalDate = selectedDate > maxDate ? maxDate : selectedDate;
+        
+        setReminders(prev => prev.map(reminder => 
+          reminder.id === reminderId 
+            ? { 
+                ...reminder, 
+                date: finalDate, 
+                dateString: finalDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) 
+              }
+            : reminder
+        ));
+      }
+      setShowReminderDatePickers(prev => ({ ...prev, [reminderId]: false }));
+    }
+  };
+
+  const onReminderTimeChange = (reminderId: string, event: any, selectedTime?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowReminderTimePickers(prev => ({ ...prev, [reminderId]: false }));
+      if (event.type === 'set' && selectedTime) {
+        setReminders(prev => prev.map(reminder => {
+          if (reminder.id === reminderId) {
+            const newDate = new Date(reminder.date);
+            newDate.setHours(selectedTime.getHours());
+            newDate.setMinutes(selectedTime.getMinutes());
+            return {
+              ...reminder,
+              date: newDate,
+              dateString: newDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
+            };
+          }
+          return reminder;
+        }));
+      }
+    }
+  };
+
+  const handlePickerPress = (reminderId: string) => {
+    if (Platform.OS === 'android') {
+      if (showReminderDatePickers[reminderId]) {
+        setShowReminderDatePickers(prev => ({ ...prev, [reminderId]: false }));
+      } else if (showReminderTimePickers[reminderId]) {
+        setShowReminderTimePickers(prev => ({ ...prev, [reminderId]: false }));
+      } else {
+        setShowReminderDatePickers(prev => ({ ...prev, [reminderId]: true }));
+      }
+    } else {
+      setShowReminderDatePickers(prev => ({ ...prev, [reminderId]: !prev[reminderId] }));
     }
   };
 
@@ -125,7 +188,12 @@ export default function PaymentPage() {
 
   const removeReminder = (id: string) => {
     setReminders(reminders.filter(reminder => reminder.id !== id));
-    setShowReminderPickers(prev => {
+    setShowReminderDatePickers(prev => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    });
+    setShowReminderTimePickers(prev => {
       const newState = { ...prev };
       delete newState[id];
       return newState;
@@ -267,7 +335,7 @@ export default function PaymentPage() {
                   <>
                     <Pressable
                       style={[styles.input, styles.dateInput]}
-                      onPress={() => setShowDatePicker(true)}
+                      onPress={handleDueDatePress}
                     >
                       <Text style={dueDate ? styles.dateText : styles.placeholderText}>
                         {dueDate || 'Select Due Date'}
@@ -329,41 +397,57 @@ export default function PaymentPage() {
                         max={formatDateTimeForInput(date)}
                       />
                     ) : (
-                      <View style={styles.reminderInputContainer}>
+                      <View key={`container-${reminder.id}`} style={styles.reminderInputContainer}>
                         <Pressable
+                          key={`pressable-${reminder.id}`}
                           style={[styles.input, styles.dateInput]}
-                          onPress={() => setShowReminderPickers(prev => ({ ...prev, [reminder.id]: true }))}
+                          onPress={() => handlePickerPress(reminder.id)}
                         >
-                          <Text style={reminder.dateString !== 'Select reminder date and time' ? styles.dateText : styles.placeholderText}>
+                          <Text key={`text-${reminder.id}`} style={styles.dateText}>
                             {reminder.dateString}
                           </Text>
                         </Pressable>
 
-                        {showReminderPickers[reminder.id] && (
-                          <View style={styles.reminderDatePickerContainer}>
+                        {Platform.OS === 'android' ? (
+                          <>
+                            {showReminderDatePickers[reminder.id] && (
+                              <DateTimePicker
+                                key={`date-picker-${reminder.id}`}
+                                value={reminder.date}
+                                mode="date"
+                                display="default"
+                                onChange={(event, selectedDate) => onReminderDateChange(reminder.id, event, selectedDate)}
+                                minimumDate={currentDate}
+                              />
+                            )}
+                            {showReminderTimePickers[reminder.id] && (
+                              <DateTimePicker
+                                key={`time-picker-${reminder.id}`}
+                                value={reminder.date}
+                                mode="time"
+                                display="default"
+                                onChange={(event, selectedTime) => onReminderTimeChange(reminder.id, event, selectedTime)}
+                                minimumDate={currentDate}
+                              />
+                            )}
+                          </>
+                        ) : (
+                          showReminderDatePickers[reminder.id] && (
                             <DateTimePicker
-                              testID={`reminderDateTimePicker-${reminder.id}`}
+                              key={`picker-${reminder.id}`}
                               value={reminder.date}
                               mode="datetime"
-                              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                              onChange={(event, selectedDate) => {
-                                setShowReminderPickers(prev => ({ ...prev, [reminder.id]: false }));
-                                if (selectedDate) {
-                                  setReminders(prev => prev.map(r => 
-                                    r.id === reminder.id 
-                                      ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
-                                      : r
-                                  ));
-                                }
-                              }}
-                              minimumDate={date}
+                              display="spinner"
+                              onChange={(event, selectedDate) => onReminderDateChange(reminder.id, event, selectedDate)}
+                              minimumDate={currentDate}
                               maximumDate={date}
                             />
-                          </View>
+                          )
                         )}
                       </View>
                     )}
                     <TouchableOpacity
+                      key={`remove-${reminder.id}`}
                       onPress={() => removeReminder(reminder.id)}
                       style={styles.removeButton}
                     >
@@ -487,12 +571,23 @@ const styles = StyleSheet.create({
   },
   reminderItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 16,
     gap: 8,
+    position: 'relative',
+  },
+  reminderInputContainer: {
+    flex: 1,
   },
   removeButton: {
-    padding: 4,
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 50,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 1,
   },
   submitButtonContainer: {
     position: 'absolute',
@@ -528,25 +623,38 @@ const styles = StyleSheet.create({
   submitButtonDisabled: {
     opacity: 0.7,
   },
-  reminderInputContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  reminderDatePickerContainer: {
+  iosPickerContainer: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderColor: colors.borderColor,
+    borderWidth: 1,
     position: 'absolute',
-    top: '100%',
+    bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.borderColor,
     zIndex: 1000,
-    marginTop: 4,
-    shadowColor: colors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+  },
+  iosPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderColor,
+    backgroundColor: colors.background,
+  },
+  iosPickerButton: {
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  iosPickerButtonDone: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  iosPicker: {
+    backgroundColor: colors.background,
+    height: 200,
   },
 });

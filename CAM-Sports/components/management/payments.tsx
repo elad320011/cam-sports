@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView, Image } from "react-native";
 import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -72,7 +72,12 @@ export default function Payments({ isManager = true }: PaymentsProps) {
   };
 
   return (
-    <Collapsible title="Payments">
+    <Collapsible 
+      title="Payments"
+      image={require('@/assets/images/payments.png')}
+      imageStyle={styles.image}
+      titleContainerStyle={styles.imageWrapper}
+    >
       <View style={styles.container}>
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} />
@@ -124,8 +129,8 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                           {'reminders' in item && item.reminders && item.reminders.length > 0 && (
                             <View key={`reminders-${item.id}`} style={styles.remindersList}>
                               <Text style={styles.remindersTitle}>Reminders:</Text>
-                              {item.reminders.map((reminder) => (
-                                <View key={`${item.id}-${reminder.id}`} style={styles.reminderItem}>
+                              {item.reminders.map((reminder, index) => (
+                                <View key={`${reminder.id}-${index}`} style={styles.reminderItem}>
                                   <MaterialIcons name="notifications" size={16} color={colors.primary} />
                                   <Text style={styles.reminderDate}>
                                     {formatDate(reminder.date)}
@@ -276,5 +281,14 @@ const styles = StyleSheet.create({
   },
   itemFullWidth: {
     width: '100%',
+  },
+  imageWrapper: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between'
+  },
+  image: { 
+    tintColor: '#fff',
+    width: 52,
+    height: 52 
   },
 });
