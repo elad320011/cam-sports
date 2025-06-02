@@ -5,10 +5,10 @@ import { BACKEND_URL } from '@/globalVariables';
 
 // Replace 192.168.1.X with your actual local IP address
 const BASE_URL = __DEV__
-  ? BACKEND_URL  // For iOS simulator
+  ? BACKEND_URL  // For development (Expo Go): https://test.terasky-devops.com
   // or 'http://10.0.2.2:5000' // For Android emulator
   // or 'http://YOUR_LOCAL_IP:5000' // For physical device (e.g., 192.168.1.100:5000)
-  : 'https://cam-sports.cs.colman.ac.il';
+  : 'https://test.terasky-devops.com';  // For production builds: use correct backend
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL
