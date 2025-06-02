@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, RefreshControl } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, RefreshControl, ScrollView } from "react-native";
 import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -9,14 +9,17 @@ import { getTeamFormations, deleteFormation } from "@/services/formationService"
 import { colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 
-export default function Formations() {
+interface FormationsProps {
+  isManager?: boolean;
+}
+
+export default function Formations({ isManager = true }: FormationsProps) {
   const { user } = useAuth();
   const router = useRouter();
   const isFocused = useIsFocused();
   const [formations, setFormations] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [key, setKey] = useState(0);
 
   const fetchFormations = useCallback(async () => {
     setLoading(true);
@@ -47,9 +50,8 @@ export default function Formations() {
   };
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused && !refreshing) {
       fetchFormations();
-      setKey(prev => prev + 1);
     }
   }, [isFocused, fetchFormations]);
 
@@ -69,7 +71,6 @@ export default function Formations() {
 
   return (
     <Collapsible 
-      key={key}
       title="Formations"
       image={require('@/assets/images/formations-icon.png')}
       imageStyle={styles.image}
@@ -79,60 +80,62 @@ export default function Formations() {
         {loading && !refreshing ? (
           <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          <FlatList
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-              />
-            }
-            data={[{ id: "create", name: "Create Formation" }, ...formations]}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.itemContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.item,
-                    item.id === "create" && styles.createItem,
-                  ]}
-                  onPress={() =>
-                    item.id === "create" ? handleCreateFormation() : handleNavigate(item.id)
-                  }
+          <>
+            {isManager && (
+              <TouchableOpacity
+                style={styles.createItem}
+                onPress={handleCreateFormation}
+              >
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.createContainer}
                 >
-                  {item.id === "create" ? (
-                    <LinearGradient
-                      colors={[colors.primary, colors.primaryDark]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.createContainer}
-                    >
-                      <MaterialIcons name="add" size={24} color="#fff" />
-                      <Text style={styles.createText}>{item.name}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <LinearGradient
-                      colors={[colors.cardBackground, colors.cardBackgroundLight]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.itemGradient}
-                    >
-                      <Text style={styles.text}>{item.name}</Text>
-                    </LinearGradient>
-                  )}
-                </TouchableOpacity>
-                {item.id !== "create" && (
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteFormation(item.id)}
-                  >
-                    <MaterialIcons name="delete" size={20} color="#fff" />
-                  </TouchableOpacity>
-                )}
-              </View>
+                  <MaterialIcons name="add" size={24} color="#fff" />
+                  <Text style={styles.createText}>Create Formation</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             )}
-          />
+
+            <ScrollView 
+              style={[
+                styles.scrollView,
+                formations.length > 5 && styles.scrollViewActive
+              ]}
+            >
+              <FlatList
+                scrollEnabled={false}
+                data={[...formations].sort((a, b) => b.id.localeCompare(a.id))}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <View style={styles.itemContainer}>
+                    <TouchableOpacity
+                      style={[styles.item, !isManager && styles.itemFullWidth]}
+                      onPress={() => handleNavigate(item.id)}
+                    >
+                      <LinearGradient
+                        colors={[colors.cardBackground, colors.cardBackgroundLight]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.itemGradient}
+                      >
+                        <Text style={styles.text}>{item.name}</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    {isManager && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteFormation(item.id)}
+                      >
+                        <MaterialIcons name="delete" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              />
+            </ScrollView>
+          </>
         )}
       </View>
     </Collapsible>
@@ -141,7 +144,14 @@ export default function Formations() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 8,
+    width: '100%',
+    paddingTop: 16,
+  },
+  scrollView: {
+    maxHeight: 250,
+  },
+  scrollViewActive: {
+    maxHeight: 250,
   },
   text: {
     fontSize: 16,
@@ -154,7 +164,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   createItem: {
-    marginBottom: 8,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   createText: {
     color: "#fff",
@@ -173,6 +184,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
+    width: '100%',
+    paddingHorizontal: 8,
+    height: 56,
   },
   itemGradient: {
     flex: 1,
@@ -197,5 +211,8 @@ const styles = StyleSheet.create({
     tintColor: colors.textPrimary, 
     width: 52,
     height: 52 
-  }
+  },
+  itemFullWidth: {
+    width: '100%',
+  },
 });

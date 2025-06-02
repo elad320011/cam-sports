@@ -14,6 +14,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Calendar, DateData } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createEvent,
   deleteEvent,
@@ -84,17 +85,41 @@ const GameCalendar = () => {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [teamCalendarId, setTeamCalendarId] = useState<string>('');
 
   const [RSVPLoader, setRSVPLoader] = useState<{ [key: string]: boolean }>({});
   const [attendanceLoader, setAttendanceLoader] = useState<boolean>(false);
   const [userRSVPStatus, setUserRSVPStatus] = useState<{ [key: string]: boolean }>({});
 
   const { user } = useAuth();
-  const teamCalendarId = user?.calendar_id || JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    const loadCalendarId = async () => {
+      try {
+        if (user?.calendar_id) {
+          setTeamCalendarId(user.calendar_id);
+        } else {
+          const storedUser = await AsyncStorage.getItem('user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            if (parsedUser.calendar_id) {
+              setTeamCalendarId(parsedUser.calendar_id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading calendar ID:', error);
+      }
+    };
+
+    loadCalendarId();
+  }, [user]);
+
+  useEffect(() => {
+    if (teamCalendarId) {
+      fetchEvents();
+    }
+  }, [teamCalendarId]);
 
   const fetchEvents = async () => {
     const fetchedEvents = await listEvents(teamCalendarId);
