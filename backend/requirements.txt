@@ -12,3 +12,5 @@ google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 PyJWT==2.8.0
 flask_apscheduler==1.12.4
+sqlalchemy==1.4.46
+flask-sqlalchemy==2.5.1

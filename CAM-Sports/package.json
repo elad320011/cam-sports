@@ -87,7 +87,9 @@
     "react-native-youtube": "^2.0.2",
     "react-native-youtube-iframe": "^2.3.0",
     "react-select": "^5.10.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "expo-notifications": "~0.29.14",
+    "expo-device": "~7.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

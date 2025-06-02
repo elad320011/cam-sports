@@ -14,6 +14,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Calendar, DateData } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createEvent,
   deleteEvent,
@@ -84,17 +85,41 @@ const GameCalendar = () => {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [teamCalendarId, setTeamCalendarId] = useState<string>('');
 
   const [RSVPLoader, setRSVPLoader] = useState<{ [key: string]: boolean }>({});
   const [attendanceLoader, setAttendanceLoader] = useState<boolean>(false);
   const [userRSVPStatus, setUserRSVPStatus] = useState<{ [key: string]: boolean }>({});
 
   const { user } = useAuth();
-  const teamCalendarId = user?.calendar_id || JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    const loadCalendarId = async () => {
+      try {
+        if (user?.calendar_id) {
+          setTeamCalendarId(user.calendar_id);
+        } else {
+          const storedUser = await AsyncStorage.getItem('user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            if (parsedUser.calendar_id) {
+              setTeamCalendarId(parsedUser.calendar_id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading calendar ID:', error);
+      }
+    };
+
+    loadCalendarId();
+  }, [user]);
+
+  useEffect(() => {
+    if (teamCalendarId) {
+      fetchEvents();
+    }
+  }, [teamCalendarId]);
 
   const fetchEvents = async () => {
     const fetchedEvents = await listEvents(teamCalendarId);
@@ -103,7 +128,7 @@ const GameCalendar = () => {
     if (fetchedEvents && fetchedEvents.length > 0) {
       fetchedEvents.forEach((event: CalendarEvent) => {
         const date = event.start.dateTime?.split('T')[0] || event.start.date;
-        if (date) newMarkedDates[date] = { marked: true, dotColor: '#e88e61' };
+        if (date) newMarkedDates[date] = { marked: true, dotColor: colors.textThird };
       });
     }
     setMarkedDates(newMarkedDates);
@@ -286,20 +311,27 @@ const GameCalendar = () => {
             ...markedDates,
             [selectedDate]: {
               selected: true,
-              selectedColor: '#e88e61',
+              selectedColor: colors.primary,
               ...(markedDates[selectedDate] || {}),
             },
           }}
           theme={{
-            todayTextColor: '#e88e61',
-            arrowColor: '#e88e61',
+            backgroundColor: colors.background,
+            calendarBackground: colors.cardBackground,
+            textSectionTitleColor: colors.textPrimary,
+            selectedDayBackgroundColor: colors.primary,
+            selectedDayTextColor: colors.textOnPrimary,
+            todayTextColor: colors.accentCyan,
+            dayTextColor: colors.textPrimary,
+            textDisabledColor: colors.textSecondary,
+            dotColor: colors.accentYellow,
+            selectedDotColor: colors.textOnPrimary,
+            arrowColor: colors.primary,
+            monthTextColor: colors.textPrimary,
+            indicatorColor: colors.primary,
             textDayFontWeight: '500',
             textMonthFontWeight: 'bold',
             textDayHeaderFontWeight: '600',
-            selectedDayBackgroundColor: '#e88e61',
-            selectedDayTextColor: '#ffffff',
-            selectedDotColor: '#e88e61',
-            dotColor: '#e88e61',
           }}
         />
 
@@ -330,7 +362,7 @@ const GameCalendar = () => {
                             <Ionicons
                               name="ellipsis-horizontal-outline"
                               size={24}
-                              color="#e88e61"
+                              color={colors.textThird}
                             />
                           </TouchableOpacity>
                         )}
@@ -363,7 +395,7 @@ const GameCalendar = () => {
                             <Ionicons
                               name="create-outline"
                               size={24}
-                              color="#e88e61"
+                              color={colors.textThird}
                             />
                           </TouchableOpacity>
 
@@ -567,7 +599,7 @@ const GameCalendar = () => {
              
                 {attendanceLoader ? (
                   <View style={{ padding: 20 }}>
-                    <ActivityIndicator size="large" color="#e88e61" />
+                    <ActivityIndicator size="large" color={colors.textThird} />
                   </View>
                 ) : attendanceList.length === 0 ? (
                   <Text style={{ padding: 5 }}>No one has RSVPed yet.</Text>
@@ -592,34 +624,34 @@ const GameCalendar = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: colors.background,
     padding: 10,
     paddingBottom: 80,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCard: {
     width: '90%',
     height: windowHeight * 0.7,
-    backgroundColor: '#fff',
+    backgroundColor: colors.cardBackground,
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
   },
   eventItem: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.cardBackgroundLight,
     borderRadius: 12,
     marginBottom: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
@@ -633,7 +665,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: colors.textPrimary,
   },
   moreButton: {
     flexDirection: 'row',
@@ -642,7 +674,7 @@ const styles = StyleSheet.create({
   moreText: {
     marginLeft: 4,
     fontSize: 16,
-    color: '#e88e61',
+    color: colors.textThird,
   },
   dropdownContainer: {
     flexDirection: 'column',
@@ -660,12 +692,12 @@ const styles = StyleSheet.create({
   },
   eventDate: {
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
     marginVertical: 4,
   },
   eventDescription: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   actionButtons: {
@@ -675,15 +707,16 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: colors.borderColor,
     padding: 12,
     marginVertical: 8,
     borderRadius: 8,
     fontSize: 16,
-    color: '#333',
+    color: colors.textPrimary,
+    backgroundColor: colors.cardBackgroundLight,
   },
   appButton: {
-    backgroundColor: '#e88e61',
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -691,12 +724,12 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   appButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '500',
   },
   smallButton: {
-    backgroundColor: '#e88e61',
+    backgroundColor: colors.primary,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
@@ -704,7 +737,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   closeButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: colors.error,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -712,18 +745,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   modalButton: {
-    backgroundColor: '#e88e61',
+    backgroundColor: colors.primary,
     marginTop: 10,
   },
   createButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-    backgroundColor: '#e88e61',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 30,
-    shadowColor: '#000',
+    shadowColor: colors.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
@@ -731,14 +764,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   createButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   noEventText: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#666',
+    color: colors.textSecondary,
     marginVertical: 20,
   },
   timePickerRow: {
@@ -748,7 +781,7 @@ const styles = StyleSheet.create({
   },
   timePickerLabel: {
     fontSize: 16,
-    color: '#333',
+    color: colors.textPrimary,
     width: 90,
   },
   timePickerButton: {
@@ -756,12 +789,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: colors.borderColor,
     borderRadius: 8,
+    backgroundColor: colors.cardBackgroundLight,
   },
   timePickerText: {
     fontSize: 16,
-    color: '#333',
+    color: colors.textPrimary,
   },
   imageWrapper: {
     flexDirection: 'row-reverse',

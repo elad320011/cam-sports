@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView } from "react-native";
 import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from "@/contexts/AuthContext";
 import { getPayments, deletePayment, Payment } from "@/services/paymentService";
+import { colors } from "@/constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface PaymentsProps {
   isManager?: boolean;
@@ -69,76 +71,93 @@ export default function Payments({ isManager = true }: PaymentsProps) {
     });
   };
 
-  const renderPaymentItem = ({ item }: { item: Payment | { id: string; amount: number; description: string; due_date: string } }) => {
-    if (item.id === "create" && isManager) {
-      return (
-        <View style={styles.itemContainer}>
-          <TouchableOpacity
-            style={[styles.item, styles.createItem]}
-            onPress={handleCreatePayment}
-          >
-            <View style={styles.createContainer}>
-              <MaterialIcons name="add" size={24} color="#fff" />
-              <Text style={[styles.text, styles.createText]}>{item.description}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.itemContainer}>
-        <View style={[styles.item, !isManager && styles.playerItem]}>
-          <View style={styles.paymentInfo}>
-            <Text style={styles.amount}>₪{item.amount}</Text>
-            <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-            {'reminders' in item && item.reminders && item.reminders.length > 0 && (
-              <View style={styles.remindersList}>
-                <Text style={styles.remindersTitle}>Reminders:</Text>
-                {item.reminders.map((reminder) => (
-                  <View key={reminder.id} style={styles.reminderItem}>
-                    <MaterialIcons name="notifications" size={16} color="#87ceeb" />
-                    <Text style={styles.reminderDate}>
-                      {formatDate(reminder.date)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
-        {isManager && item.id !== "create" && (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.editButton]}
-              onPress={() => handleNavigate(item.id)}
-            >
-              <MaterialIcons name="edit" size={20} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.deleteButton]}
-              onPress={() => handleDeletePayment(item.id)}
-            >
-              <MaterialIcons name="delete" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    );
-  };
-
   return (
     <Collapsible title="Payments">
-      <View>
+      <View style={styles.container}>
         {loading ? (
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color={colors.primary} />
         ) : (
-          <FlatList
-            data={isManager ? [{ id: "create", amount: 0, description: "Create Payment", due_date: "" }, ...payments] : payments}
-            keyExtractor={(item) => item.id}
-            renderItem={renderPaymentItem}
-          />
+          <>
+            {isManager && (
+              <TouchableOpacity
+                style={styles.createItem}
+                onPress={handleCreatePayment}
+              >
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.createContainer}
+                >
+                  <MaterialIcons name="add" size={24} color="#fff" />
+                  <Text style={styles.createText}>Create Payment</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+
+            <ScrollView 
+              style={[
+                styles.scrollView,
+                payments.length > 5 && styles.scrollViewActive
+              ]}
+            >
+              <FlatList
+                scrollEnabled={false}
+                data={payments}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <View key={item.id} style={styles.itemContainer}>
+                    <TouchableOpacity
+                      style={[styles.item, !isManager && styles.itemFullWidth]}
+                      onPress={() => handleNavigate(item.id)}
+                    >
+                      <LinearGradient
+                        colors={[colors.cardBackground, colors.cardBackgroundLight]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.itemGradient}
+                      >
+                        <View style={styles.paymentInfo}>
+                          <Text style={styles.amount}>₪{item.amount}</Text>
+                          <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
+                          <Text style={styles.description}>{item.description}</Text>
+                          {'reminders' in item && item.reminders && item.reminders.length > 0 && (
+                            <View key={`reminders-${item.id}`} style={styles.remindersList}>
+                              <Text style={styles.remindersTitle}>Reminders:</Text>
+                              {item.reminders.map((reminder) => (
+                                <View key={`${item.id}-${reminder.id}`} style={styles.reminderItem}>
+                                  <MaterialIcons name="notifications" size={16} color={colors.primary} />
+                                  <Text style={styles.reminderDate}>
+                                    {formatDate(reminder.date)}
+                                  </Text>
+                                </View>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    {isManager && (
+                      <View key={`actions-${item.id}`} style={styles.buttonContainer}>
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.editButton]}
+                          onPress={() => handleNavigate(item.id)}
+                        >
+                          <MaterialIcons name="edit" size={20} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.deleteButton]}
+                          onPress={() => handleDeletePayment(item.id)}
+                        >
+                          <MaterialIcons name="delete" size={20} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                )}
+              />
+            </ScrollView>
+          </>
         )}
       </View>
     </Collapsible>
@@ -146,102 +165,116 @@ export default function Payments({ isManager = true }: PaymentsProps) {
 }
 
 const styles = StyleSheet.create({
-  text: { 
-    fontSize: 16,
+  container: {
+    width: '100%',
+    paddingTop: 16,
   },
-  description: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+  scrollView: {
+    maxHeight: 250,
+  },
+  scrollViewActive: {
+    maxHeight: 250,
+  },
+  text: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontWeight: '500',
   },
   item: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    flex: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   createItem: {
-    backgroundColor: "#87ceeb",
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   createText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 16,
     marginLeft: 8,
   },
   createContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
   },
   itemContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    marginBottom: 8,
+    width: '100%',
+    paddingHorizontal: 8,
+    minHeight: 56,
+  },
+  itemGradient: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
   },
   paymentInfo: {
     flex: 1,
   },
   amount: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    color: colors.textPrimary,
   },
   dueDate: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  description: {
+    fontSize: 14,
+    color: colors.textSecondary,
     marginTop: 4,
   },
   buttonContainer: {
     flexDirection: 'row',
     gap: 8,
+    marginLeft: 8,
   },
   actionButton: {
     padding: 8,
-    borderRadius: 4,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   editButton: {
-    backgroundColor: "#87ceeb",
+    backgroundColor: colors.primary,
   },
   deleteButton: {
-    backgroundColor: "#ff4d4d",
+    backgroundColor: colors.error,
   },
   remindersList: {
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: colors.borderColor,
   },
   remindersTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
+    color: colors.textSecondary,
+    marginBottom: 8,
   },
   reminderItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 4,
+    marginTop: 6,
+    gap: 8,
   },
   reminderDate: {
     fontSize: 13,
-    color: '#666',
+    color: colors.textSecondary,
   },
-  playerItem: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginHorizontal: 8,
-    marginVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+  itemFullWidth: {
+    width: '100%',
   },
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
 import { Redirect, router } from 'expo-router';
 import WelcomeHeader from '@/components/WelcomeHeader';
@@ -27,6 +27,22 @@ export default function Management() {
     return <Redirect href="/login" />;
   }
 
+  const components = [
+    { id: 'messages', component: <Messages /> },
+    { id: 'calendar', component: <GameCalendar /> },
+    { id: 'statistics', component: <GameStatistics /> },
+    // { id: 'training', component: <Training /> },
+    { id: 'formations', component: <Formations isManager={user?.user_type === 'management'} /> },
+    { id: 'footage', component: <Footage teamId={user?.team_id}/> },
+    { id: 'payments', component: <Payments isManager={user?.user_type === 'management'} /> },
+  ];
+
+  const renderItem = ({ item }: { item: { id: string; component: React.ReactNode } }) => (
+    <View>
+      {item.component}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -42,21 +58,12 @@ export default function Management() {
       />
       <WelcomeHeader />
 
-      <ScrollView style={styles.scrollContainer}>
-        <GameCalendar />
-        <View style={{ margin: 10 }} />
-        <GameStatistics />
-        <View style={{ margin: 10 }} />
-        <Training />
-        <View style={{ margin: 10 }} />
-        <Messages />
-        <View style={{ margin: 10 }} />
-        <Formations />
-        <View style={{ margin: 10 }} />
-        <Footage teamId={user?.team_id}/>
-        <View style={{ margin: 10 }} />
-        <Payments isManager={user?.user_type === 'management'} />
-      </ScrollView>
+      <FlatList
+        data={components}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
+      />
 
       <TouchableOpacity
         style={styles.fab}
@@ -90,8 +97,8 @@ const styles = StyleSheet.create({
     paddingBlock: 20,
     fontWeight: "bold",
   },
-  scrollContainer: {
-    flex: 1,
+  listContainer: {
+    flexGrow: 1,
   },
   fab: {
     position: 'absolute',

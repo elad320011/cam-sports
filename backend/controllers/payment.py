@@ -12,6 +12,8 @@ def send_reminder_notification(payment_id: str, reminder_date: datetime):
         if payment:
             # Create message content with payment details
             message_content = f"Payment Reminder:\nAmount: ${payment.amount}\nDue Date: {payment.due_date.strftime('%Y-%m-%d')}\nPayment Link: {payment.link}"
+            if payment.description:
+                message_content += f"\nDescription: {payment.description}"
             
             # Add message to the team's message board
             # Note: You'll need to get the team_id from the payment or pass it as a parameter

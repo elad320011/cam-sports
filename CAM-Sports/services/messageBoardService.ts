@@ -1,8 +1,9 @@
 import axiosInstance from '@/utils/axios';
 
 export interface Message {
+    id: string;
     content: string;
-    type: string;
+    type: 'announcement' | 'reminder';
     creator_email: string;
     created_at: string;
     last_updated: string;
@@ -27,11 +28,25 @@ export const getTeamMessageBoard = async (teamId: string): Promise<MessageBoard>
 
 export const addMessage = async (teamId: string, content: string, type: string, creator_email:string): Promise<MessageBoard> => {
     try {
+        // First, add the message
         const response = await axiosInstance.post(`/message_board/${teamId}/messages`, {
             content,
             type,
             creator_email: creator_email
         });
+
+        // Then, send push notification to all team members
+        await axiosInstance.post('/notifications/send', {
+            to: teamId,
+            title: type === 'announcement' ? 'New Announcement' : 'New Reminder',
+            body: content,
+            data: {
+                type: 'message',
+                messageType: type,
+                teamId: teamId
+            }
+        });
+
         return response.data;
     } catch (error) {
         console.error('Error adding message:', error);

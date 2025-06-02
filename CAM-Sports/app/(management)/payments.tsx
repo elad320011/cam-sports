@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, Pressable, ScrollView, Image } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '@/contexts/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { createPayment, getPayments, updatePayment, Payment } from '@/services/paymentService';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors } from '@/constants/Colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Reminder {
   id: string;
@@ -84,14 +87,14 @@ export default function PaymentPage() {
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
     setShowDatePicker(false);
-    if (selectedDate) {
-      setDate(selectedDate);
-      setDueDate(selectedDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
-    } else {
-      setDate(new Date());
-      setDueDate('');
-    }
+    setDate(currentDate);
+    setDueDate(currentDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
+  };
+
+  const showDatepicker = () => {
+    setShowDatePicker(true);
   };
 
   const onReminderDateChange = (reminderId: string, event: any, selectedDate?: Date) => {
@@ -153,11 +156,11 @@ export default function PaymentPage() {
 
       if (isEditMode && params.paymentId) {
         await updatePayment(params.paymentId as string, paymentData);
-        router.replace('/(tabs)');
+        router.replace('/');
         Alert.alert('Success', 'Payment updated successfully');
       } else {
         await createPayment(paymentData);
-        router.replace('/(tabs)');
+        router.replace('/');
         Alert.alert('Success', 'Payment created successfully');
       }
       
@@ -170,171 +173,211 @@ export default function PaymentPage() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
           headerTitle: isEditMode ? 'Edit Payment' : 'Create Payment',
         }}
       />
+
+      <LinearGradient
+        colors={['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0)']}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0, y: 0.5 }}
+        style={styles.sunRays}
+      />
+      <Image
+        source={require('@/assets/images/volleyball.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
       
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Payment Link</Text>
-          <TextInput
-            style={styles.input}
-            value={paymentLink}
-            onChangeText={setPaymentLink}
-            placeholder="Enter payment link"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Amount</Text>
-          <TextInput
-            style={styles.input}
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="Enter amount"
-            keyboardType="decimal-pad"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.descriptionInput]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Enter payment description"
-            multiline={true}
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Due Date</Text>
-          {Platform.OS === 'web' ? (
-            <input
-              type="date"
-              style={{
-                height: 30,
-                borderColor: '#ddd',
-                borderWidth: 1,
-                marginBottom: 12,
-                width: '100%',
-                borderRadius: 8,
-                padding: 8,
-                fontSize: 16,
-                backgroundColor: '#fff',
-              }}
-              value={formatDateForInput(date)}
-              onChange={(e) => {
-                const selectedDate = new Date(e.target.value);
-                setDate(selectedDate);
-                setDueDate(selectedDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
-              }}
-              min={formatDateForInput(new Date())}
-            />
-          ) : (
-            <>
-              <Pressable 
-                style={[styles.input, styles.dateInput]} 
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={dueDate ? styles.dateText : styles.placeholderText}>
-                  {dueDate || 'Select Due Date'}
-                </Text>
-              </Pressable>
-
-              {showDatePicker && (
-                <DateTimePicker
-                  testID="dateTimePicker"
-                  value={date}
-                  mode="date"
-                  is24Hour={true}
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={onDateChange}
-                  minimumDate={new Date()}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.formWrapper}>
+          <LinearGradient
+            colors={[colors.cardBackground, colors.cardBackgroundLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.formContainer}
+          >
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Payment Link</Text>
+                <TextInput
+                  style={styles.input}
+                  value={paymentLink}
+                  onChangeText={setPaymentLink}
+                  placeholder="Enter payment link"
+                  autoCapitalize="none"
+                  placeholderTextColor={colors.textSecondary}
                 />
-              )}
-            </>
-          )}
-        </View>
+              </View>
 
-        <View style={styles.remindersContainer}>
-          <View style={styles.remindersHeader}>
-            <Text style={styles.label}>Reminders</Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={addNewReminder}
-            >
-              <MaterialIcons name="add" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          
-          {reminders.map((reminder) => (
-            <View key={reminder.id} style={styles.reminderItem}>
-              {Platform.OS === 'web' ? (
-                <input
-                  type="datetime-local"
-                  style={{
-                    height: 48,
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                    width: '100%',
-                    borderRadius: 8,
-                    padding: 8,
-                    fontSize: 16,
-                    backgroundColor: '#fff',
-                  }}
-                  value={formatDateTimeForInput(reminder.date)}
-                  onChange={(e) => {
-                    const selectedDate = new Date(e.target.value);
-                    setReminders(prev => prev.map(r => 
-                      r.id === reminder.id 
-                        ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
-                        : r
-                    ));
-                  }}
-                  min={formatDateTimeForInput(new Date())}
-                  max={formatDateTimeForInput(date)}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Amount</Text>
+                <TextInput
+                  style={styles.input}
+                  value={amount}
+                  onChangeText={setAmount}
+                  placeholder="Enter amount"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={colors.textSecondary}
                 />
-              ) : (
-                <>
-                  <Pressable 
-                    style={[styles.input, styles.dateInput]} 
-                    onPress={() => setShowReminderPickers(prev => ({ ...prev, [reminder.id]: true }))}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.descriptionInput]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Enter payment description"
+                  multiline={true}
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Due Date</Text>
+                {Platform.OS === 'web' ? (
+                  <input
+                    type="date"
+                    style={{
+                      height: 50,
+                      borderColor: colors.borderColor,
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      marginBottom: 16,
+                      width: '100%',
+                      backgroundColor: colors.background,
+                      color: colors.textPrimary,
+                      padding: '0 16px',
+                    }}
+                    value={formatDateForInput(date)}
+                    onChange={(e) => {
+                      const selectedDate = new Date(e.target.value);
+                      setDate(selectedDate);
+                      setDueDate(selectedDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
+                    }}
+                    min={formatDateForInput(new Date())}
+                  />
+                ) : (
+                  <>
+                    <Pressable
+                      style={[styles.input, styles.dateInput]}
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Text style={dueDate ? styles.dateText : styles.placeholderText}>
+                        {dueDate || 'Select Due Date'}
+                      </Text>
+                    </Pressable>
+
+                    {showDatePicker && (
+                      <DateTimePicker
+                        testID="dateTimePicker"
+                        value={date}
+                        mode="date"
+                        is24Hour={true}
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={onDateChange}
+                        minimumDate={new Date()}
+                      />
+                    )}
+                  </>
+                )}
+              </View>
+
+              <View style={styles.remindersContainer}>
+                <View style={styles.remindersHeader}>
+                  <Text style={styles.label}>Reminders</Text>
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={addNewReminder}
                   >
-                    <Text style={reminder.dateString !== 'Select reminder date and time' ? styles.dateText : styles.placeholderText}>
-                      {reminder.dateString}
-                    </Text>
-                  </Pressable>
+                    <MaterialIcons name="add" size={24} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+                
+                {reminders.map((reminder) => (
+                  <View key={reminder.id} style={styles.reminderItem}>
+                    {Platform.OS === 'web' ? (
+                      <input
+                        type="datetime-local"
+                        style={{
+                          height: 50,
+                          borderColor: colors.borderColor,
+                          borderWidth: 1,
+                          borderRadius: 8,
+                          marginBottom: 16,
+                          width: '100%',
+                          backgroundColor: colors.background,
+                          color: colors.textPrimary,
+                          padding: '0 16px',
+                        }}
+                        value={formatDateTimeForInput(reminder.date)}
+                        onChange={(e) => {
+                          const selectedDate = new Date(e.target.value);
+                          setReminders(prev => prev.map(r => 
+                            r.id === reminder.id 
+                              ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
+                              : r
+                          ));
+                        }}
+                        min={formatDateTimeForInput(new Date())}
+                        max={formatDateTimeForInput(date)}
+                      />
+                    ) : (
+                      <View style={styles.reminderInputContainer}>
+                        <Pressable
+                          style={[styles.input, styles.dateInput]}
+                          onPress={() => setShowReminderPickers(prev => ({ ...prev, [reminder.id]: true }))}
+                        >
+                          <Text style={reminder.dateString !== 'Select reminder date and time' ? styles.dateText : styles.placeholderText}>
+                            {reminder.dateString}
+                          </Text>
+                        </Pressable>
 
-                  {showReminderPickers[reminder.id] && (
-                    <DateTimePicker
-                      testID={`reminderDateTimePicker-${reminder.id}`}
-                      value={reminder.date}
-                      mode="datetime"
-                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                      onChange={(event, date) => onReminderDateChange(reminder.id, event, date)}
-                      minimumDate={new Date()}
-                      maximumDate={date}
-                    />
-                  )}
-                </>
-              )}
-              <TouchableOpacity
-                onPress={() => removeReminder(reminder.id)}
-                style={styles.removeButton}
-              >
-                <MaterialIcons name="close" size={20} color="#ff4d4d" />
-              </TouchableOpacity>
+                        {showReminderPickers[reminder.id] && (
+                          <View style={styles.reminderDatePickerContainer}>
+                            <DateTimePicker
+                              testID={`reminderDateTimePicker-${reminder.id}`}
+                              value={reminder.date}
+                              mode="datetime"
+                              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                              onChange={(event, selectedDate) => {
+                                setShowReminderPickers(prev => ({ ...prev, [reminder.id]: false }));
+                                if (selectedDate) {
+                                  setReminders(prev => prev.map(r => 
+                                    r.id === reminder.id 
+                                      ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
+                                      : r
+                                  ));
+                                }
+                              }}
+                              minimumDate={date}
+                              maximumDate={date}
+                            />
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => removeReminder(reminder.id)}
+                      style={styles.removeButton}
+                    >
+                      <MaterialIcons name="close" size={20} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
             </View>
-          ))}
+          </LinearGradient>
         </View>
+      </ScrollView>
 
+      <View style={styles.submitButtonContainer}>
         <TouchableOpacity
           style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}
@@ -345,47 +388,85 @@ export default function PaymentPage() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
+  },
+  sunRays: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    bottom: '-16%',
+    left: '-90%',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 20,
+    paddingBottom: 120,
+  },
+  formWrapper: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    overflow: 'visible',
+    zIndex: 10,
+  },
+  formContainer: {
+    padding: 20,
+    zIndex: 10,
   },
   form: {
-    padding: 16,
+    paddingBottom: 100,
   },
   inputContainer: {
     marginBottom: 20,
-    marginRight: 40,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: colors.textPrimary,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.borderColor,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     height: 48,
+    color: colors.textPrimary,
   },
   dateInput: {
+    height: 50,
     justifyContent: 'center',
+    borderColor: colors.borderColor,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: colors.background,
   },
   dateText: {
     fontSize: 16,
-    color: '#333',
+    color: colors.textPrimary,
   },
   placeholderText: {
     fontSize: 16,
-    color: '#999',
+    color: colors.textSecondary,
   },
   remindersContainer: {
     marginBottom: 20,
@@ -397,7 +478,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addButton: {
-    backgroundColor: '#87ceeb',
+    backgroundColor: colors.primary,
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -406,26 +487,36 @@ const styles = StyleSheet.create({
   },
   reminderItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 16,
     gap: 8,
-  },
-  reminderText: {
-    fontSize: 16,
-    color: '#333',
   },
   removeButton: {
     padding: 4,
   },
+  submitButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.background,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderColor,
+  },
   submitButton: {
-    backgroundColor: '#87ceeb',
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   submitButtonText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -436,5 +527,26 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     opacity: 0.7,
+  },
+  reminderInputContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  reminderDatePickerContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    zIndex: 1000,
+    marginTop: 4,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
