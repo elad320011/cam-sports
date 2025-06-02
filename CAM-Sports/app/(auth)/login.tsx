@@ -102,6 +102,11 @@ export default function LoginScreen() {
       router.replace('/');
     } catch (error: any) {
       console.log('❌ Login error:', error);
+      if (error.isAxiosError) {
+        console.log('🔍 Axios error details:', error.toJSON ? error.toJSON() : error);
+        console.log('🔗 Error config:', error.config);
+        console.log('💬 Error message:', error.message);
+      }
       console.log('📊 Error response:', error.response?.data);
       console.log('🔢 Error status:', error.response?.status);
       setError(error.response?.data?.message || `Login failed: ${BACKEND_URL}`);
