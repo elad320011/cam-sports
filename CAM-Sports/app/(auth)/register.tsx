@@ -232,7 +232,12 @@ export default function RegisterScreen() {
         }
       }
     } catch (error: any) {
-      console.error('Registration error:', error.response?.data);
+      console.error('Registration error:', error);
+      if (error.isAxiosError) {
+        console.error('🔍 Axios error details:', error.toJSON ? error.toJSON() : error);
+        console.error('🔗 Error config:', error.config);
+        console.error('💬 Error message:', error.message);
+      }
       setErrorMessage({
         text: error.response?.data?.message || 'Registration failed',
         type: 'error'

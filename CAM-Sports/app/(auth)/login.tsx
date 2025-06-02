@@ -25,7 +25,7 @@ export default function LoginScreen() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Expo client ID
     iosClientId: 'YOUR_IOS_CLIENT_ID', // Replace with your iOS client ID
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID', // Replace with your Android client ID
+    androidClientId: '223542901572-ltdj7a4hn9c1rvd0rlalkrjimntfia7b.apps.googleusercontent.com', // Replace with your Android client ID
     webClientId: '223542901572-b48ip0f0766r7fsss60drs2tb02vqfvf.apps.googleusercontent.com', // Replace with your Web client ID
   });
 
@@ -102,6 +102,11 @@ export default function LoginScreen() {
       router.replace('/');
     } catch (error: any) {
       console.log('❌ Login error:', error);
+      if (error.isAxiosError) {
+        console.log('🔍 Axios error details:', error.toJSON ? error.toJSON() : error);
+        console.log('🔗 Error config:', error.config);
+        console.log('💬 Error message:', error.message);
+      }
       console.log('📊 Error response:', error.response?.data);
       console.log('🔢 Error status:', error.response?.status);
       setError(error.response?.data?.message || `Login failed: ${BACKEND_URL}`);

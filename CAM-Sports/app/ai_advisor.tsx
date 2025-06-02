@@ -14,12 +14,14 @@ import {
   ImageResizeMode,
   ViewStyle,
   TextStyle,
-  ImageStyle
+  ImageStyle,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { getTeamMembers } from '@/services/usersService';
 import { getTeamGameStatistics } from '@/services/gameStatsService';
@@ -443,6 +445,17 @@ export default function AIAdvisor() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0)']}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0, y: 0.5 }}
+        style={styles.sunRays}
+      />
+      <Image
+        source={require('@/assets/images/volleyball.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
@@ -585,6 +598,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    bottom: '-16%',
+    left: '-90%',
+  },
+  sunRays: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
   },
   header: {
     paddingVertical: 15,
