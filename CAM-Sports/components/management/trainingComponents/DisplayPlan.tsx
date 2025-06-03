@@ -9,7 +9,12 @@ import Modal from 'react-native-modal';
 import { ButtonGroup } from "react-native-elements";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-export function DisplayPlan(props: any) {
+type DisplayPlanProps = {
+    plan: any;
+    setCurrentPlan: (plan: any) => void;
+};
+
+export function DisplayPlan(props: DisplayPlanProps) {
 
     const [images, setImages] = useState<{ uri: string }[]>([]);
     const [videos, setVideos] = useState<{ uri: string }[]>([]);

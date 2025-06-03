@@ -16,7 +16,13 @@ interface SectionInput {
     sources: Source[];
 }
 
-export function AddPlan(props: any) {
+type AddPlanProps = {
+    team_id: string | undefined;
+    currentMode: string | undefined;
+    setCurrentMode: any;
+};
+
+export function AddPlan(props: AddPlanProps) {
 
     const { team_id, currentMode, setCurrentMode } = props;
     const [planName, setPlanName] = useState<string>("");

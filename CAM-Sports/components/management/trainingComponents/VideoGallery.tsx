@@ -5,7 +5,13 @@ import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import { Card, Divider } from "react-native-paper"
 import YoutubePlayer from "react-native-youtube-iframe";
 
-export function VideoGallery(props: any) {
+type VideoGalleryProps = {
+    videos: { uri: string }[];
+    videoVisible: boolean;
+    setVideoVisible: (visible: boolean) => void;
+};
+
+export function VideoGallery(props: VideoGalleryProps) {
     const { videos, videoVisible, setVideoVisible } = props;
     const [currentIndex, setCurrentIndex] = useState(0);
     const [playing, setPlaying] = useState(true);

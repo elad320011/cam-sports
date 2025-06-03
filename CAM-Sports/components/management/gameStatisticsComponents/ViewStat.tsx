@@ -42,7 +42,25 @@ type ScoreChangeObject = {
     action: 'add' | 'update';
 }
 
-export default function ViewStat(props: any) {
+type ViewStatProps = {
+    currentStat: any;
+    setCurrentStat: (stat: any) => void;
+    rows: DataRow[];
+    cols: string[];
+    from: number;
+    to: number;
+    itemsPerPage: number;
+    page: number;
+    setPage: (page: number) => void;
+    numberOfItemsPerPageList: number[];
+    isVisible: boolean;
+    setRows: (rows: DataRow[]) => void;
+    user: any;
+    editSet: string;
+    setEditSet: (setId: string) => void;
+};
+
+export default function ViewStat(props: ViewStatProps) {
 
     const {
         currentStat,

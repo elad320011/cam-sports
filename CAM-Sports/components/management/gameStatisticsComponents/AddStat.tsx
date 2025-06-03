@@ -8,7 +8,13 @@ import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/d
 import { Card, TextInput } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function AddStat(props: any) {
+type AddStatProps = {
+    team_id: string;
+    currentMode: string;
+    setCurrentMode: (mode: string) => void;
+};
+
+export default function AddStat(props: AddStatProps) {
 
     const {
         team_id,
