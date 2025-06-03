@@ -83,21 +83,6 @@ export function Collapsible({
               />
             )}
             <Text style={[styles.text, titleTextStyle]}>{title}</Text>
-            {training && (
-              <View style={{ flex: 1 }}>
-                <View style={{ justifyContent: 'flex-end', alignItems: 'flex-end' }}>
-                  <Ionicons
-                    name="add-outline"
-                    size={24}
-                    color="white"
-                    onPress={() => {
-                      setCurrentMode("Add");
-                      setCurrentPlan(undefined);
-                    }}
-                  />
-                </View>
-              </View>
-            )}
           </View>
         </LinearGradient>
       </TouchableOpacity>

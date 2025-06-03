@@ -17,9 +17,9 @@ interface SectionInput {
 }
 
 type AddPlanProps = {
-    team_id: string;
-    currentMode: string;
-    setCurrentMode: (mode: string | undefined) => void;
+    team_id: string | undefined;
+    currentMode: string | undefined;
+    setCurrentMode: any;
 };
 
 export function AddPlan(props: AddPlanProps) {

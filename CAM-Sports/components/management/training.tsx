@@ -68,7 +68,16 @@ export default function Training() {
 
   return (
   <>
-    <Collapsible title="Training Programs" keepShut={true} training={true} setCurrentMode={setCurrentMode} setCurrentPlan={setCurrentPlan}>
+    <Collapsible
+      title="Training Programs"
+      keepShut={true}
+      training={true}
+      setCurrentMode={setCurrentMode}
+      setCurrentPlan={setCurrentPlan}
+      image={require('@/assets/images/trainings.png')}
+      imageStyle={styles.image}
+      titleContainerStyle={styles.imageWrapper}
+    >
 
       <View style={styles.buttonsView}>
         <Ionicons
@@ -93,8 +102,8 @@ export default function Training() {
         />
       </View>
 
-      <DisplayPlans plans={plans} currentPlan={currentPlan} setCurrentPlan={setCurrentPlan} currentMode={currentMode} setCurrentMode={setCurrentMode} />
-      <AddPlan team_id={user?.team_id} currentMode={currentMode} setCurrentMode={setCurrentMode} />
+      {currentMode == "View" && (<DisplayPlans plans={plans} currentPlan={currentPlan} setCurrentPlan={setCurrentPlan} currentMode={currentMode} setCurrentMode={setCurrentMode} />)}
+      {currentMode == "Add" && (<AddPlan team_id={user?.team_id} currentMode={currentMode} setCurrentMode={setCurrentMode} />)}
     </Collapsible>
     </>
   );
@@ -114,4 +123,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 15,
 },
+imageWrapper: {
+  flexDirection: 'row-reverse',
+  justifyContent: 'space-between'
+},
+image: {
+  tintColor: '#ffffff',
+  width: 52,
+  height: 52
+}
 });
