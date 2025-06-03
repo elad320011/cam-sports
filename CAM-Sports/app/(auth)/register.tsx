@@ -269,6 +269,13 @@ export default function RegisterScreen() {
 
         await customizeAIAdvisor(data);
 
+        // More custom messages
+        await customizeAIAdvisor({
+          email: email,
+          user_type: userType,
+          custom_info: "When asked about formations, training plans, or statistics, always start your response with a brief summary of key insights and improvement points and tips for the players or coach depends on the type of the user tips for better playing or better managing before providing detailed information. Focus on actionable recommendations and specific areas for improvement."
+        });
+
       }
       catch (error) {
         console.error('Error setting up profile:', error);
