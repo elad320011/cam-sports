@@ -5,8 +5,14 @@ import { useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import axiosInstance from '@/utils/axios';
 
+type AddFootageProps = {
+    visible: boolean;
+    setVisible: (visible: boolean) => void;
+    teamId: string;
+    userId: string;
+};
 
-export function AddFootage(props: any) {
+export function AddFootage(props: AddFootageProps) {
 
     const { visible, setVisible, teamId, userId } = props;
     const [currentPhase, setCurrentPhase] = useState('Title');
