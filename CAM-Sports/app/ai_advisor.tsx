@@ -81,6 +81,8 @@ export default function AIAdvisor() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [trainingPlansVisible, setTrainingPlansVisible] = useState(false);
   const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
+  const [formations, setFormations] = useState<any[]>([]);
+  const [formationsVisible, setFormationsVisible] = useState(false);
 
   const router = useRouter();
 
@@ -135,6 +137,7 @@ export default function AIAdvisor() {
       const formationsResponse = await getTeamFormations(user?.team_id ?? '');
   
       if (formationsResponse.formations) {
+        setFormations(formationsResponse.formations);
         const formationsText = formationsResponse.formations
           .map(formation => {
             const rolesText = Object.entries(formation.roles)
@@ -257,10 +260,12 @@ export default function AIAdvisor() {
   const handleSendStatistic = async (statisticId: string) => {
     setStatisticsVisible(false);
 
+    const statistic = gameStatistics.find(stat => stat._id === statisticId);
+    const statisticsName = statistic ? `${statistic.team_id} vs ${statistic.opposite_team_name} - ${statistic.game_date}` : 'Unknown Statistic';
     const userMsg: Message = {
       id: Date.now().toString(),
       sender: 'user',
-      text: `Analyze game statistics: ${statisticId}`,
+      text: `Analyze game statistics: ${statisticsName}`,
     };
 
     const loadingMsg: Message = {
@@ -398,10 +403,12 @@ export default function AIAdvisor() {
   const handleTrainingPlanSelect = async (planId: string) => {
     setTrainingPlansVisible(false);
 
+    const planName = trainingPlans.find(plan => plan.id === planId)?.name || 'Unknown Plan';
+    
     const userMsg: Message = {
       id: Date.now().toString(),
       sender: 'user',
-      text: `Analyze training plan: ${planId}`,
+      text: `Analyze training plan: ${planName}`,
     };
 
     const loadingMsg: Message = {
@@ -423,6 +430,53 @@ export default function AIAdvisor() {
       console.log(data)
       const aiResponse = await sendAIAdvisorTextMessage(data);
       console.log(aiResponse)
+      const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === loadingMsg.id ? { ...msg, loading: false } : msg
+        )
+      );
+
+      simulateTypingAIResponse(aiMessageText, loadingMsg.id);
+    } catch (error) {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === loadingMsg.id
+            ? { ...msg, text: 'Error getting response from AI advisor.', loading: false }
+            : msg
+        )
+      );
+    }
+  };
+
+  const handleFormationSelect = async (formationName: string) => {
+    setFormationsVisible(false);
+    
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: `Analyze formation: ${formationName}`,
+    };
+
+    const loadingMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      sender: 'ai',
+      text: '',
+      loading: true,
+    };
+
+    setMessages((prev) => [...prev, userMsg, loadingMsg]);
+
+    try {
+      const data = {
+        email: user?.email,
+        user_type: user?.user_type,
+        type: 'text',
+        message: JSON.stringify(`Analyze formation: ${formationName}`),
+      };
+
+      const aiResponse = await sendAIAdvisorTextMessage(data);
       const aiMessageText = aiResponse?.message || 'No response from AI advisor.';
 
       setMessages((prevMessages) =>
@@ -534,6 +588,15 @@ export default function AIAdvisor() {
             >
               <Text style={styles.menuItemText}>Training Plans</Text>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                setFormationsVisible(true);
+              }}
+            >
+              <Text style={styles.menuItemText}>Formations</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -584,6 +647,34 @@ export default function AIAdvisor() {
               )}
             </ScrollView>
             <TouchableOpacity onPress={() => setTrainingPlansVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={formationsVisible} transparent animationType="fade">
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalHeader}>Select Formation</Text>
+            <ScrollView>
+              {formations.length > 0 ? (
+                formations.map(formation => (
+                  <TouchableOpacity 
+                    key={formation.id} 
+                    style={styles.statItem} 
+                    onPress={() => handleFormationSelect(formation.name)}
+                  >
+                    <Text style={styles.statText}>
+                      {formation.name || 'Unnamed Formation'}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.emptyMessage}>No formations available yet. Create some formations to help your team improve!</Text>
+              )}
+            </ScrollView>
+            <TouchableOpacity onPress={() => setFormationsVisible(false)} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>

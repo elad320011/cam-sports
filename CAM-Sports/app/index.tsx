@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image, ImageBackground, FlatList } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
 import { Redirect, router } from 'expo-router';
 import WelcomeHeader from '@/components/WelcomeHeader';
@@ -69,10 +69,16 @@ export default function Management() {
         style={styles.fab}
         onPress={() => router.push('/ai_advisor')}
       >
-        <View style={styles.fabContent}>
-          <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
-          <Text style={styles.fabText}>AI Advisor</Text>
-        </View>
+        <ImageBackground
+          source={require('@/assets/images/volleyball-2.png')}
+          resizeMode="cover"
+          style={styles.fabBackground}
+        >
+          <View style={styles.fabContent}>
+            <Ionicons name="chatbubble-ellipses" size={24} color={colors.textPrimary} />
+            <Text style={styles.fabText}>AI Advisor</Text>
+          </View>
+        </ImageBackground>
       </TouchableOpacity>
     </View>
   );
@@ -102,26 +108,41 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
-    borderRadius: 30,
-    height: 60,
+    bottom: 15,
+    right: 5,
+    height: 95,
+    width: 85,
+    borderRadius: 45,
+    elevation: 20,
+    shadowColor: 'white',
+    shadowOffset: { width: 20, height: 20 },
+    shadowRadius: 25,
+    shadowOpacity: 0.9,
+  },
+  fabBackground: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: colors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    borderRadius: 45,
+    overflow: 'hidden',
   },
   fabContent: {
     alignItems: 'center',
+    textAlign: 'center',
     gap: 4,
+    shadowColor: 'black',
+    shadowOffset: { width: 25, height: 25 },
+    padding: 5,
+    shadowRadius: 30,
+    borderRadius: 50,
+    elevation: 5,
   },
   fabText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '500',
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+    margin: 'auto',
   },
   backgroundImage: {
     position: 'absolute',
