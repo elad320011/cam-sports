@@ -2,7 +2,7 @@ import { DataTable, Card, Button as ActionButton } from 'react-native-paper';
 import React, { useEffect, useState } from 'react';
 import { Button, PressableStateCallbackType, ScrollView, StyleSheet, TextInput, Text, View, TouchableOpacity } from 'react-native';
 import axiosInstance from '@/utils/axios';
-import { ButtonGroup } from '@rneui/themed';
+import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import Modal from 'react-native-modal';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -282,7 +282,7 @@ export default function ViewStat(props: any) {
         >
 
             <Card style = {{ width: '100%', height: 500, backgroundColor: '#0c1c2c', overflow: 'visible', margin: 0, padding: 10 }}>
-                <ButtonGroup
+                <ButtonGroupWrapper
                     buttons = {["Sets", "Stats"]}
                     selectedIndex={currentViewMode === "Sets" ? 0 : currentViewMode === "Stats" ? 1 : 2}
                     onPress={(index) => {

@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Text, Button, View, Alert } from "react-native";
 import Modal from 'react-native-modal';
-import { ButtonGroup } from "react-native-elements";
+import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import { Card, Divider } from "react-native-paper"
 import YoutubePlayer from "react-native-youtube-iframe";
 
@@ -59,7 +59,7 @@ export function VideoGallery(props: any) {
 
                             <Divider style={{ margin: 20 }} />
 
-                            <ButtonGroup
+                            <ButtonGroupWrapper
                                 buttons={["<", playing ? "pause" : "play", ">"]}
                                 onPress={(index) => {
                                     if (index == 0) {
