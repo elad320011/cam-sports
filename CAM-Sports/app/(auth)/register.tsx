@@ -290,9 +290,11 @@ export default function RegisterScreen() {
           calendar_id: result.id
         }
 
-        // Update the team with the new calendar
-        await updateTeam(updatedTeamData);
-
+        if(result) {
+          // Update the team with the new calendar
+          await updateTeam(updatedTeamData);
+        }
+      
       }
       catch (error) {
         console.error('Error sharing calendar with user:', error);
