@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Collapsible } from "../Collapsible";
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Divider } from 'react-native-paper';
-import { ButtonGroup } from 'react-native-elements';
+import { ButtonGroupWrapper } from '../ButtonGroupWrapper';
 import { AddFootage } from './footageComponents/addFootage';
 
 const Footage = ({ teamId }: { teamId: string }) => {
@@ -306,7 +306,7 @@ const Footage = ({ teamId }: { teamId: string }) => {
 
                 <Divider style={styles.divider} />
 
-                <ButtonGroup
+                <ButtonGroupWrapper
                     buttons={["<", playing ? "pause" : "play", ">"]}
                     onPress={(index) => {
                         if (index === 0) {
