@@ -76,6 +76,10 @@ def change_player_password(request):
     
     if not all([email, current_password, new_password]):
         return jsonify({"error": "Email, current password, and new password are required"}), 400
+
+    # Validate password length
+    if len(new_password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters long"}), 400
     
     player = Player.objects(email=email).first()
     if not player:
@@ -84,6 +88,10 @@ def change_player_password(request):
     # Verify current password
     if not check_password_hash(player.password, current_password):
         return jsonify({"error": "Current password is incorrect"}), 401
+    
+    # Check if new password is the same as current password
+    if check_password_hash(player.password, new_password):
+        return jsonify({"error": "New password must be different from current password"}), 400
     
     # Update password
     player.password = generate_password_hash(new_password)

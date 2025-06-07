@@ -17,6 +17,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
@@ -37,6 +38,25 @@ export default function LoginScreen() {
       }
     }
   }, [response]);
+
+  const validatePassword = (password: string) => {
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    setError('');
+    if (text.length > 0) {
+      validatePassword(text);
+    } else {
+      setPasswordError('');
+    }
+  };
 
   const handleGoogleLogin = async (accessToken: string) => {
     try {
@@ -75,6 +95,9 @@ export default function LoginScreen() {
     console.log('🌐 Backend URL:', BACKEND_URL);
     
     setIsLoading(true);
+    setError('');
+    setPasswordError('');
+    
     try {
       if (!email || !password) {
         console.log('❌ Validation failed: Missing email or password');
@@ -83,7 +106,23 @@ export default function LoginScreen() {
         return;
       }
 
+      // Validate email format
+      if (!email.includes('@') || !email.includes('.')) {
+        setError('Please enter a valid email address');
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate password length
+      if (!validatePassword(password)) {
+        setIsLoading(false);
+        return;
+      }
+
       console.log('📡 Making login request...');
+      console.log('🔗 Login URL:', `${BACKEND_URL}/auth/login`);
+      console.log('📦 Login payload:', { email: email.toLowerCase(), password: '***' });
+      
       const response = await axiosInstance.post('/auth/login', {
         email: email.toLowerCase(),
         password
@@ -102,6 +141,7 @@ export default function LoginScreen() {
       router.replace('/');
     } catch (error: any) {
       console.log('❌ Login error:', error);
+      console.log('❌ Full error object:', JSON.stringify(error, null, 2));
       if (error.isAxiosError) {
         console.log('🔍 Axios error details:', error.toJSON ? error.toJSON() : error);
         console.log('🔗 Error config:', error.config);
@@ -109,7 +149,47 @@ export default function LoginScreen() {
       }
       console.log('📊 Error response:', error.response?.data);
       console.log('🔢 Error status:', error.response?.status);
-      setError(error.response?.data?.message || `Login failed: ${BACKEND_URL}`);
+      console.log('🏷️ Error code:', error.code);
+      
+      // Enhanced error handling for login
+      let errorMessage = 'Login failed. Please try again.';
+      
+      // Check if we have a proper HTTP response with error data
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status) {
+        // Handle specific HTTP status codes
+        switch (error.response.status) {
+          case 400:
+            errorMessage = error.response.data?.message || 'Invalid login credentials format';
+            break;
+          case 401:
+            errorMessage = 'Incorrect email or password';
+            break;
+          case 404:
+            errorMessage = 'No account found with this email address';
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage = `Login failed (Error ${error.response.status}). Please try again.`;
+        }
+      } else if (error.message) {
+        // Handle axios/network errors
+        if (error.message.includes('Network Error') || error.code === 'NETWORK_ERROR') {
+          errorMessage = 'Network error. Please check your connection.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timeout. Please try again.';
+        } else if (error.message.includes('No refresh token available')) {
+          // This shouldn't happen anymore with our interceptor fix, but just in case
+          errorMessage = 'Authentication error. Please try logging in again.';
+        } else {
+          errorMessage = `Connection error: ${error.message}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -179,14 +259,18 @@ export default function LoginScreen() {
                   style={[styles.input, error ? styles.inputError : null]}
                   placeholder="Enter your password"
                   value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    setError('');
-                  }}
+                  onChangeText={handlePasswordChange}
                   secureTextEntry
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
+
+              {passwordError && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle" size={20} color={colors.error} />
+                  <Text style={styles.error}>{passwordError}</Text>
+                </View>
+              )}
 
               <View style={styles.buttonGroup}>
                 <TouchableOpacity

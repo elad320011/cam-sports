@@ -34,6 +34,7 @@ def create_tokens(user_id, user_type):
     return access_token, refresh_token
 
 def login():
+    print(f"🔍 Login attempt received for email: {request.get_json().get('email', 'MISSING')}")
     data = request.get_json()
     email = data.get('email', '').lower()
     password = data.get('password')
@@ -41,36 +42,52 @@ def login():
     if not email or not password:
         return jsonify({"message": "Email and password are required"}), 400
 
+    # Add password length validation
+    if len(password) < 6:
+        return jsonify({"message": "Password must be at least 6 characters long"}), 400
+
     # Try to find user in each collection
     user = None
     user_type = None
     team_id = None
     full_name = None
 
-    # Check Player collection
+    # Check Player collection first
     user = Player.objects(email=email).first()
-    if user and check_password_hash(user.password, password):
-        user_type = 'player'
-        team_id = user.team_id
-        full_name = user.full_name
-
-    # Check Management collection
-    if not user:
-        user = Management.objects(email=email).first()
-        if user and check_password_hash(user.password, password):
-            user_type = 'management'
+    if user:
+        if check_password_hash(user.password, password):
+            user_type = 'player'
             team_id = user.team_id
             full_name = user.full_name
+        else:
+            # User exists but wrong password
+            return jsonify({"message": "Incorrect password"}), 401
+
+    # Check Management collection if not found in Player
+    if not user:
+        user = Management.objects(email=email).first()
+        if user:
+            if check_password_hash(user.password, password):
+                user_type = 'management'
+                team_id = user.team_id
+                full_name = user.full_name
+            else:
+                # User exists but wrong password
+                return jsonify({"message": "Incorrect password"}), 401
+
+    # If user not found in either collection
+    if not user:
+        return jsonify({"message": "No account found with this email address"}), 404
 
     # Get calendar id for team
     team = Team.objects(id=team_id).first()
-    calendar_id = team.calendar_id
+    calendar_id = team.calendar_id if team else None
 
     if user and user_type:
         access_token, refresh_token = create_tokens(str(user.id), user_type)
 
         # Get team name for the response
-        team_id = None
+        team_name = None
         if user.team_id:
             team = Team.objects(id=user.team_id).first()
             if team:
@@ -89,7 +106,7 @@ def login():
             }
         })
     else:
-        return jsonify({"message": "Invalid credentials"}), 401
+        return jsonify({"message": "Authentication failed"}), 401
 
 def generate_team_code(length=6):
     """Generate a unique team code"""
@@ -113,6 +130,11 @@ def register():
                    data.get('weight'), data.get('height'), data.get('team_code')]):
             return jsonify({"message": "All fields are required"}), 400
 
+        # Validate password length
+        password = data.get('password')
+        if len(password) < 6:
+            return jsonify({"message": "Password must be at least 6 characters long"}), 400
+
         # Check if email exists in either Player or Management collection
         if Player.objects(email=email).first():
             return jsonify({"message": "Email already registered as a player"}), 400
@@ -129,24 +151,32 @@ def register():
         except ValueError:
             return jsonify({"message": "Invalid date format. Use YYYY-MM-DD"}), 400
 
-        player = Player(
-            email=email,
-            full_name=data['full_name'],
-            password=generate_password_hash(data['password']),
-            role=data['role'],
-            birth_date=birth_date,
-            weight=float(data['weight']),
-            height=float(data['height']),
-            team_id=team.id  # Use the MongoDB ObjectId
-        )
-        player.save()
+        try:
+            player = Player(
+                email=email,
+                full_name=data['full_name'],
+                password=generate_password_hash(data['password']),
+                role=data['role'],
+                birth_date=birth_date,
+                weight=float(data['weight']),
+                height=float(data['height']),
+                team_id=team.id  # Use the MongoDB ObjectId
+            )
+            player.save()
 
-        # Add player's email to the team's players list
-        team.update(push__players=email)
+            # Add player's email to the team's players list
+            team.update(push__players=email)
+        except Exception as e:
+            return jsonify({"message": f"Error creating player account: {str(e)}"}), 500
 
     elif user_type == 'management':
         if not all([email, data.get('full_name'), data.get('password'), data.get('team_code')]):
             return jsonify({"message": "Email, full name, password, and team code are required"}), 400
+
+        # Validate password length
+        password = data.get('password')
+        if len(password) < 6:
+            return jsonify({"message": "Password must be at least 6 characters long"}), 400
 
         # Check if email exists in either Player or Management collection
         if Management.objects(email=email).first():
@@ -159,16 +189,19 @@ def register():
         if not team:
             return jsonify({"message": "Invalid team code"}), 400
 
-        management = Management(
-            email=email,
-            full_name=data['full_name'],
-            password=generate_password_hash(data['password']),
-            team_id=team.id  # Use the MongoDB ObjectId
-        )
-        management.save()
+        try:
+            management = Management(
+                email=email,
+                full_name=data['full_name'],
+                password=generate_password_hash(data['password']),
+                team_id=team.id  # Use the MongoDB ObjectId
+            )
+            management.save()
 
-        # Add management's email to the team's management list
-        team.update(push__management=email)
+            # Add management's email to the team's management list
+            team.update(push__management=email)
+        except Exception as e:
+            return jsonify({"message": f"Error creating management account: {str(e)}"}), 500
 
     elif user_type == 'team':
         if not data.get('team_id'):  # We'll still use team_id in the request but save it as name
