@@ -28,12 +28,12 @@ export default function Management() {
   }
 
   const components = [
-    { id: 'messages', component: <Messages /> },
+    // { id: 'messages', component: <Messages /> },
     { id: 'calendar', component: <GameCalendar /> },
     { id: 'statistics', component: <GameStatistics /> },
     { id: 'training', component: <Training /> },
     { id: 'formations', component: <Formations isManager={user?.user_type === 'management'} /> },
-    { id: 'footage', component: <Footage teamId={user?.team_id}/> },
+    { id: 'footage', component: <Footage /> },
     { id: 'payments', component: <Payments isManager={user?.user_type === 'management'} /> },
   ];
 

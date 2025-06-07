@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { 
-  Text, 
-  StyleSheet, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  Alert, 
+import {
+  Text,
+  StyleSheet,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Alert,
   ActivityIndicator,
   ScrollView,
   Modal,
@@ -99,15 +99,15 @@ export default function Messages() {
     try {
       const messageBoard = await getTeamMessageBoard(user?.team_id || '');
       const newMessages = messageBoard?.messages || [];
-      
+
       if (newMessages.length > 0) {
         const latestMessage = newMessages[newMessages.length - 1];
-        
+
         // Check if this is a new message
         if (latestMessage.created_at !== lastMessageTimestamp.current) {
           lastMessageTimestamp.current = latestMessage.created_at;
           setMessages(newMessages.reverse());
-          
+
           // Send notification for the new message
           if (!isManagement) { // Only send notifications to players
             await sendImmediateNotification(latestMessage);
@@ -272,7 +272,7 @@ export default function Messages() {
       const updatedBoard = await addMessage(user?.team_id || '', newMessage, messageType, user?.email || '');
       const newMessages = (updatedBoard?.messages || []).reverse();
       setMessages(newMessages);
-      
+
       // The server will handle sending push notifications to all team members
       setNewMessage('');
       setMessageType('announcement');
@@ -416,7 +416,7 @@ export default function Messages() {
   );
 
   return (
-    <Collapsible 
+    <Collapsible
       title="Messages"
       image={require('@/assets/images/messages.png')}
       imageStyle={styles.image}
@@ -427,7 +427,7 @@ export default function Messages() {
       ) : (
         <View style={styles.container}>
           <View style={styles.messagesContainer}>
-            <ScrollView 
+            <ScrollView
               style={styles.messagesList}
               contentContainerStyle={styles.messagesContent}
               showsVerticalScrollIndicator={true}
@@ -457,12 +457,12 @@ export default function Messages() {
                         {format(new Date(message.created_at), 'MMM d, yyyy HH:mm')}
                       </Text>
                     </View>
-                    
+
                     <Text style={styles.messageContent}>{message.content}</Text>
-                    
+
                     <View style={styles.messageFooter}>
                       <Text style={styles.creatorEmail}>By: {message.creator_email}</Text>
-                      
+
                       {isManagement && (
                         <View style={styles.messageActions}>
                           <TouchableOpacity
@@ -672,10 +672,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between'
   },
-  image: { 
-    tintColor: colors.textPrimary, 
+  image: {
+    tintColor: colors.textPrimary,
     width: 52,
-    height: 52 
+    height: 52
   },
   emptyContainer: {
     flex: 1,

@@ -9,9 +9,9 @@ import { Card, TextInput } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 
 type AddStatProps = {
-    team_id: string;
+    team_id: string | undefined;
     currentMode: string;
-    setCurrentMode: (mode: string) => void;
+    setCurrentMode: React.Dispatch<React.SetStateAction<"View" | "Add" | undefined>>;
 };
 
 export default function AddStat(props: AddStatProps) {

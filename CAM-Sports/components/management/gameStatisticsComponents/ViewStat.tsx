@@ -1,39 +1,13 @@
 import { DataTable, Card, Button as ActionButton } from 'react-native-paper';
 import React, { useEffect, useState } from 'react';
-import { Button, PressableStateCallbackType, ScrollView, StyleSheet, TextInput, Text, View, TouchableOpacity } from 'react-native';
+import { PressableStateCallbackType, ScrollView, StyleSheet, TextInput, Text, View, TouchableOpacity } from 'react-native';
 import axiosInstance from '@/utils/axios';
 import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import Modal from 'react-native-modal';
 import { Ionicons } from '@expo/vector-icons';
-
-type DataRow = {
-    player: boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.Key | null | undefined;
-    starter: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    position: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    attacks: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    kills: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    errors: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    killPercentage: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serves: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    aces: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveErrors: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    acePercentage: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    setAttempts: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    assists: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    setErrors: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    digs: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    digErrors: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    digsEfficiency: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveRecieves: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveRecieveOne: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveRecieveTwo: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveRecieveThree: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveRecieveErrors: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    serveReciveScore: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    blocks: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    blockKills: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-    blockErrors: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined;
-};
+import { GameStats } from './assets';
+import { DataRow } from './assets';
+import { useAuth } from "@/contexts/AuthContext";
 
 type ScoreChangeObject = {
     set: string;
@@ -43,21 +17,20 @@ type ScoreChangeObject = {
 }
 
 type ViewStatProps = {
-    currentStat: any;
-    setCurrentStat: (stat: any) => void;
+    currentStat: GameStats | null;
+    setCurrentStat: React.Dispatch<React.SetStateAction<GameStats | null>>;
     rows: DataRow[];
     cols: string[];
     from: number;
     to: number;
     itemsPerPage: number;
     page: number;
-    setPage: (page: number) => void;
+    setPage: React.Dispatch<React.SetStateAction<number>>;
     numberOfItemsPerPageList: number[];
     isVisible: boolean;
-    setRows: (rows: DataRow[]) => void;
-    user: any;
+    setRows: React.Dispatch<React.SetStateAction<DataRow[] | []>>;
     editSet: string;
-    setEditSet: (setId: string) => void;
+    setEditSet: React.Dispatch<React.SetStateAction<string>>;
 };
 
 export default function ViewStat(props: ViewStatProps) {
@@ -75,12 +48,12 @@ export default function ViewStat(props: ViewStatProps) {
         numberOfItemsPerPageList,
         isVisible,
         setRows,
-        user,
         editSet,
         setEditSet
     } = props;
 
     const [liveStat, setLiveStat] = useState<any>(currentStat);
+    const { logout, user } = useAuth();
     const [currentViewMode, setCurrentViewMode] = useState<'Sets' | 'Stats'>('Sets');
     const [changedCard, setChangedCard] = useState<ScoreChangeObject | null>({
         set: "",
@@ -222,14 +195,14 @@ export default function ViewStat(props: ViewStatProps) {
         let tempStat = currentStat;
 
         if (changedCard?.action === "update") {
-            updatedSetsScores = { ...currentStat.sets_scores };
+            updatedSetsScores = { ...currentStat?.sets_scores };
 
             updatedSetsScores[changedCard.set] = {
                 team_score: safeNumber(changedCard.teamScore), // Use safeNumber
                 opposite_team_score: safeNumber(changedCard.oppositeTeamScore), // Use safeNumber
             };
         } else if (changedCard?.action === "add") {
-            updatedSetsScores = { ...currentStat.sets_scores };
+            updatedSetsScores = { ...currentStat?.sets_scores };
             const newSetKey = (Object.keys(updatedSetsScores).length + 1).toString();
 
             updatedSetsScores[newSetKey] = {
@@ -238,8 +211,10 @@ export default function ViewStat(props: ViewStatProps) {
             };
         }
 
-        tempStat.sets_scores = updatedSetsScores;
-        setLiveStat(tempStat);
+        if (tempStat) {
+            tempStat.sets_scores = updatedSetsScores;
+            setLiveStat(tempStat);
+        }
 
         // Calculate team_sets_won_count and team_sets_lost_count
         for (const setId in updatedSetsScores) {
@@ -320,7 +295,7 @@ export default function ViewStat(props: ViewStatProps) {
                                 {
                                     Object.keys(liveStat.sets_scores).map((set, index) => {
                                         return (
-                                            <>
+                                            <View style={{width: '100%', justifyContent: 'center', alignItems:'center'}} key={index}>
                                                 <Card key={index} style={{ width: '90%', marginBottom: 20, backgroundColor: 'transparent', borderColor: '#0c1c2c' }}>
                                                     <Card.Title titleStyle={{ color: 'white' }} style={{ marginTop: 10 }} title={`Set ${index + 1}`} />
                                                     <Card.Content>
@@ -354,10 +329,10 @@ export default function ViewStat(props: ViewStatProps) {
                                                         ): (
                                                             <>
                                                                 <Text style={{ fontSize: 16, color: '#808080' }}>
-                                                                    {user.team_id}: {currentStat.sets_scores[set].team_score}
+                                                                    {user?.team_id}: {currentStat?.sets_scores[set].team_score}
                                                                 </Text>
                                                                 <Text style={{ fontSize: 16, color: '#808080' }}>
-                                                                    {currentStat.opposite_team_name}: {currentStat.sets_scores[set].opposite_team_score}
+                                                                    {currentStat?.opposite_team_name}: {currentStat?.sets_scores[set].opposite_team_score}
                                                                 </Text>
                                                             </>
                                                         )}
@@ -401,23 +376,23 @@ export default function ViewStat(props: ViewStatProps) {
 
                                                     </Card.Actions>
                                                 </Card>
-                                            </>
+                                            </View>
                                         );
                                     })
                                 }
                             </ScrollView>
                             <>
-                                {Object.keys(currentStat.sets_scores).length <= 4 && editSet == "" && (
+                                {Object.keys(currentStat?.sets_scores ?? {}).length <= 4 && editSet == "" && (
 
                                     <TouchableOpacity
                                         onPress={async () => {
                                             await setChangedCard({
-                                                set: (Object.keys(currentStat.sets_scores).length + 1).toString(),
+                                                set: (Object.keys(currentStat?.sets_scores ?? {}).length + 1).toString(),
                                                 teamScore: 0,
                                                 oppositeTeamScore: 0,
                                                 action: 'add',
                                             });
-                                            setEditSet((Object.keys(currentStat.sets_scores).length + 1).toString());
+                                            setEditSet((Object.keys(currentStat?.sets_scores ?? {}).length + 1).toString());
                                             updateSets();
                                         }}
                                     >

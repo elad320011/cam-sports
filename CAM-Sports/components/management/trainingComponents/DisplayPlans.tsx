@@ -10,7 +10,7 @@ interface DisplayPlansProps {
     currentPlan: PlanProps | undefined;
     setCurrentPlan: React.Dispatch<React.SetStateAction<PlanProps | undefined>>;
     currentMode: "View" | "Add" | undefined;
-    setCurrentMode: any;
+    setCurrentMode: React.Dispatch<React.SetStateAction<"View" | "Add" | undefined>>;
 }
 
 export function DisplayPlans({ plans, currentPlan, setCurrentPlan, currentMode, setCurrentMode }: DisplayPlansProps) {

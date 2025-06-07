@@ -2,16 +2,16 @@ import { useState } from "react";
 import { Text, View, TouchableOpacity } from "react-native";
 import { Card, Divider, Button } from "react-native-paper";
 import ImageView from "react-native-image-viewing";
-import { sources } from "./assets";
+import { PlanProps, sources } from "./assets";
 import { VideoGallery } from "./VideoGallery";
 import axiosInstance from '@/utils/axios';
 import Modal from 'react-native-modal';
-import { ButtonGroup } from "react-native-elements";
+import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 type DisplayPlanProps = {
-    plan: any;
-    setCurrentPlan: (plan: any) => void;
+    plan: PlanProps;
+    setCurrentPlan: React.Dispatch<React.SetStateAction<PlanProps | undefined>>;
 };
 
 export function DisplayPlan(props: DisplayPlanProps) {
@@ -123,7 +123,7 @@ export function DisplayPlan(props: DisplayPlanProps) {
 
                     <Divider style={{ margin: 20 }} />
 
-                    <ButtonGroup
+                    <ButtonGroupWrapper
                         buttons={["<", ">"]}
                         onPress={(index) => {
                             if (index == 0) {

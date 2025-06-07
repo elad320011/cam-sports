@@ -5,16 +5,15 @@ import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
 import Dropdown from 'react-native-input-select';
 import AddStat from "./gameStatisticsComponents/AddStat";
-import { ButtonGroup } from '@rneui/themed';
 import ViewStat from "./gameStatisticsComponents/ViewStat";
-import { GameStats, DataRow, allCols, formatDateToDDMMYYYY, offenseCols } from "./gameStatisticsComponents/assets";
+import { GameStats, DataRow, allCols, formatDateToDDMMYYYY, offenseCols } from "@/components/management/gameStatisticsComponents/assets";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function GameStatistics() {
 
     const { logout, user } = useAuth();
     const [allStats, setAllStats] = useState<GameStats[] | null>(null);
-    const [currentMode, setCurrentMode] = useState("View");
+    const [currentMode, setCurrentMode] = useState<"View" | "Add" | undefined>("View");
     const [currentStat, setCurrentStat] = useState<GameStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -122,7 +121,7 @@ export default function GameStatistics() {
 
     if (loading) {
         return (
-            <Collapsible 
+            <Collapsible
                 title="Game Statistics"
                 image={require('@/assets/images/statistics.png')}
                 imageStyle={styles.image}
@@ -135,7 +134,7 @@ export default function GameStatistics() {
 
     if (error) {
         return (
-            <Collapsible 
+            <Collapsible
                 title="Game Statistics"
                 image={require('@/assets/images/statistics.png')}
                 imageStyle={styles.image}
@@ -147,7 +146,7 @@ export default function GameStatistics() {
     }
 
     return (
-        <Collapsible 
+        <Collapsible
             title="Game Statistics"
             image={require('@/assets/images/statistics.png')}
             imageStyle={styles.image}
@@ -184,12 +183,10 @@ export default function GameStatistics() {
                             to={to}
                             itemsPerPage={itemsPerPage}
                             numberOfItemsPerPageList={numberOfItemsPerPageList}
-                            onItemsPerPageChange={onItemsPerPageChange}
                             page={page}
                             setPage={setPage}
                             isVisible={currentMode === "View" && currentStat !== null}
                             setRows={setRows}
-                            user={user}
                             editSet={editSet}
                             setEditSet={setEditSet}
                         />
@@ -227,9 +224,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row-reverse',
         justifyContent: 'space-between'
     },
-    image: { 
+    image: {
         tintColor: '#fff',
         width: 52,
-        height: 52 
+        height: 52
     },
 });
