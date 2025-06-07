@@ -83,6 +83,9 @@ export default function AIAdvisor() {
   const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
   const [formations, setFormations] = useState<any[]>([]);
   const [formationsVisible, setFormationsVisible] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  const [isLoadingFormations, setIsLoadingFormations] = useState(false);
 
   const router = useRouter();
 
@@ -97,6 +100,7 @@ export default function AIAdvisor() {
   
   // Get team game statistics
   const loadGameStatistics = async () => {
+    setIsLoadingStats(true);
     try {
       const result = await getTeamGameStatistics(user?.team_id ?? '');
       
@@ -115,6 +119,8 @@ export default function AIAdvisor() {
     } catch (error) {
       console.error('Error fetching game statistics:', error);
       setGameStatistics([]);
+    } finally {
+      setIsLoadingStats(false);
     }
   };
 
@@ -133,9 +139,10 @@ export default function AIAdvisor() {
   };
 
   const loadFormationsToHistory = async () => {
+    setIsLoadingFormations(true);
     try {
       const formationsResponse = await getTeamFormations(user?.team_id ?? '');
-  
+      console.log(formationsResponse)
       if (formationsResponse.formations) {
         setFormations(formationsResponse.formations);
         const formationsText = formationsResponse.formations
@@ -164,6 +171,8 @@ export default function AIAdvisor() {
       }
     } catch (error) {
       console.error('Error loading formations:', error);
+    } finally {
+      setIsLoadingFormations(false);
     }
   };
   
@@ -390,6 +399,7 @@ export default function AIAdvisor() {
   );
 
   const loadTrainingPlans = async () => {
+    setIsLoadingPlans(true);
     try {
       const plans = await getTrainingPlans(user?.team_id ?? '');
       const parsedPlans = JSON.parse(plans.plans);
@@ -397,6 +407,8 @@ export default function AIAdvisor() {
     } catch (error) {
       console.error('Error loading training plans:', error);
       setTrainingPlans([]); 
+    } finally {
+      setIsLoadingPlans(false);
     }
   };
 
@@ -572,8 +584,9 @@ export default function AIAdvisor() {
               style={styles.menuItem} 
               onPress={() => {
                 setMenuVisible(false);
-                loadGameStatistics();
+                setIsLoadingStats(true);
                 setStatisticsVisible(true);
+                loadGameStatistics();
               }}
             >
               <Text style={styles.menuItemText}>Game Statistics</Text>
@@ -582,8 +595,9 @@ export default function AIAdvisor() {
               style={styles.menuItem} 
               onPress={() => {
                 setMenuVisible(false);
-                loadTrainingPlans();
+                setIsLoadingPlans(true);
                 setTrainingPlansVisible(true);
+                loadTrainingPlans();
               }}
             >
               <Text style={styles.menuItemText}>Training Plans</Text>
@@ -592,7 +606,9 @@ export default function AIAdvisor() {
               style={styles.menuItem} 
               onPress={() => {
                 setMenuVisible(false);
+                setIsLoadingFormations(true);
                 setFormationsVisible(true);
+                loadFormationsToHistory();
               }}
             >
               <Text style={styles.menuItemText}>Formations</Text>
@@ -605,8 +621,13 @@ export default function AIAdvisor() {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalHeader}>Select Game Statistics</Text>
-            <ScrollView>
-              {gameStatistics.length > 0 ? (
+            <ScrollView style={styles.modalScrollView}>
+              {isLoadingStats ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.loadingText}>Loading statistics...</Text>
+                </View>
+              ) : gameStatistics.length > 0 ? (
                 gameStatistics.map(stat => (
                   <TouchableOpacity key={stat._id} style={styles.statItem} onPress={() => handleSendStatistic(stat._id)}>
                     <Text style={styles.statText}>
@@ -629,8 +650,13 @@ export default function AIAdvisor() {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalHeader}>Select Training Plan</Text>
-            <ScrollView>
-              {trainingPlans.length > 0 ? (
+            <ScrollView style={styles.modalScrollView}>
+              {isLoadingPlans ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.loadingText}>Loading training plans...</Text>
+                </View>
+              ) : trainingPlans.length > 0 ? (
                 trainingPlans.map(plan => (
                   <TouchableOpacity 
                     key={plan.id} 
@@ -657,8 +683,13 @@ export default function AIAdvisor() {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalHeader}>Select Formation</Text>
-            <ScrollView>
-              {formations.length > 0 ? (
+            <ScrollView style={styles.modalScrollView}>
+              {isLoadingFormations ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                  <Text style={styles.loadingText}>Loading formations...</Text>
+                </View>
+              ) : formations.length > 0 ? (
                 formations.map(formation => (
                   <TouchableOpacity 
                     key={formation.id} 
@@ -852,6 +883,20 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     width: 40,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
+  },
+  loadingText: {
+    color: colors.textSecondary,
+    marginTop: 10,
+    fontSize: 16,
+  },
+  modalScrollView: {
+    maxHeight: 400,
   },
 });
 
