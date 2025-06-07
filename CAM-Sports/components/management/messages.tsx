@@ -118,7 +118,7 @@ export default function Messages() {
         }
       }
     } catch (error) {
-      // console.error('Error checking for new messages:', error);
+      console.error('Error checking for new messages:', error);
     }
   };
 

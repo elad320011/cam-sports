@@ -6,7 +6,7 @@ import { PlanProps, sources } from "./assets";
 import { VideoGallery } from "./VideoGallery";
 import axiosInstance from '@/utils/axios';
 import Modal from 'react-native-modal';
-import { ButtonGroup } from "react-native-elements";
+import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 type DisplayPlanProps = {
@@ -123,7 +123,7 @@ export function DisplayPlan(props: DisplayPlanProps) {
 
                     <Divider style={{ margin: 20 }} />
 
-                    <ButtonGroup
+                    <ButtonGroupWrapper
                         buttons={["<", ">"]}
                         onPress={(index) => {
                             if (index == 0) {

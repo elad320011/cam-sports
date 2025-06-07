@@ -1,12 +1,13 @@
 import { DataTable, Card, Button as ActionButton } from 'react-native-paper';
 import React, { useEffect, useState } from 'react';
-import { Button, PressableStateCallbackType, ScrollView, StyleSheet, TextInput, Text, View, TouchableOpacity } from 'react-native';
+import { PressableStateCallbackType, ScrollView, StyleSheet, TextInput, Text, View, TouchableOpacity } from 'react-native';
 import axiosInstance from '@/utils/axios';
 import { ButtonGroupWrapper } from '../../ButtonGroupWrapper';
 import Modal from 'react-native-modal';
 import { Ionicons } from '@expo/vector-icons';
 import { GameStats } from './assets';
 import { DataRow } from './assets';
+import { useAuth } from "@/contexts/AuthContext";
 
 type ScoreChangeObject = {
     set: string;
@@ -294,7 +295,7 @@ export default function ViewStat(props: ViewStatProps) {
                                 {
                                     Object.keys(liveStat.sets_scores).map((set, index) => {
                                         return (
-                                            <>
+                                            <View style={{width: '100%', justifyContent: 'center', alignItems:'center'}} key={index}>
                                                 <Card key={index} style={{ width: '90%', marginBottom: 20, backgroundColor: 'transparent', borderColor: '#0c1c2c' }}>
                                                     <Card.Title titleStyle={{ color: 'white' }} style={{ marginTop: 10 }} title={`Set ${index + 1}`} />
                                                     <Card.Content>
@@ -328,7 +329,7 @@ export default function ViewStat(props: ViewStatProps) {
                                                         ): (
                                                             <>
                                                                 <Text style={{ fontSize: 16, color: '#808080' }}>
-                                                                    {user.team_id}: {currentStat?.sets_scores[set].team_score}
+                                                                    {user?.team_id}: {currentStat?.sets_scores[set].team_score}
                                                                 </Text>
                                                                 <Text style={{ fontSize: 16, color: '#808080' }}>
                                                                     {currentStat?.opposite_team_name}: {currentStat?.sets_scores[set].opposite_team_score}
@@ -375,7 +376,7 @@ export default function ViewStat(props: ViewStatProps) {
 
                                                     </Card.Actions>
                                                 </Card>
-                                            </>
+                                            </View>
                                         );
                                     })
                                 }
@@ -638,7 +639,3 @@ const styles = StyleSheet.create({
         width: 160,
     },
 });
-function useAuth(): { logout: any; user: any; } {
-    throw new Error('Function not implemented.');
-}
-

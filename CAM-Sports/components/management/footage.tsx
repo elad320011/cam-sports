@@ -18,7 +18,7 @@ export function Footage() {
   const [tags, setTags] = useState<string[]>([]);
   const [currentTagInput, setCurrentTagInput] = useState<string>('');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
   const [showPlayer, setShowPlayer] = useState(true);
   const [filteredVideos, setFilteredVideos] = useState<{ id: string; title: string; url: string, tags: string[], user_id: string }[]>([]);
   const [refreshVideos, setRefreshVideos] = useState(false);
