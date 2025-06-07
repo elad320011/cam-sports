@@ -669,16 +669,6 @@ export default function ProfileScreen() {
               ) : (
                 <Text style={styles.noDataText}>No team members yet</Text>
               )}
-              
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={fetchTeammates}
-                disabled={isLoadingTeammates}
-              >
-                <Text style={styles.secondaryButtonText}>
-                  {isLoadingTeammates ? 'Loading...' : 'Refresh Team Members'}
-                </Text>
-              </TouchableOpacity>
             </LinearGradient>
           </View>
         </Collapsible>
