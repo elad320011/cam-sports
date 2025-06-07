@@ -268,13 +268,23 @@ export default function ViewStat(props: ViewStatProps) {
             supportedOrientations={['landscape']}
             animationIn={"slideInUp"}
             animationOut={"slideOutDown"}
-            hasBackdrop={true}
-            onBackdropPress={() => setCurrentStat(null)}
             style={{ display: "flex", alignContent: "center", justifyContent: "center", margin: 0 }}
             isVisible={isVisible}
         >
 
             <Card style = {{ width: '100%', height: 500, backgroundColor: '#0c1c2c', overflow: 'visible', margin: 0, padding: 10 }}>
+                <View style={{ padding: 10, borderTopLeftRadius: 5, borderTopRightRadius: 5 }}>
+                    <TouchableOpacity
+                        style={{ alignSelf: 'flex-end' }}
+                        onPress={() => setCurrentStat(null)}
+                    >
+                        <Ionicons
+                            name="close-outline"
+                            size={24}
+                            color="white"
+                        />
+                    </TouchableOpacity>
+                </View>
                 <ButtonGroupWrapper
                     buttons = {["Sets", "Stats"]}
                     selectedIndex={currentViewMode === "Sets" ? 0 : currentViewMode === "Stats" ? 1 : 2}

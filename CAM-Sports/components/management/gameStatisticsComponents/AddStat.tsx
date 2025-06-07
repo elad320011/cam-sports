@@ -72,13 +72,6 @@ export default function AddStat(props: AddStatProps) {
     return (
         <Modal
             isVisible={true}
-            onBackdropPress={() => {
-                setSelectedDate('');
-                setCurrentMode("View");
-                setShowDatePicker(false);
-                setModalReady(false);
-            }}
-            hasBackdrop={true}
             animationIn={"slideInUp"}
             onModalShow={() => {
                 setModalReady(true);
@@ -89,6 +82,23 @@ export default function AddStat(props: AddStatProps) {
                 height: 250,
                 zIndex: 1
             }}>
+                <View style={{ backgroundColor: '#1a2938', padding: 10, borderTopLeftRadius: 5, borderTopRightRadius: 5 }}>
+                    <TouchableOpacity
+                        style={{ alignSelf: 'flex-end' }}
+                        onPress={() => {
+                            setSelectedDate('');
+                            setCurrentMode("View");
+                            setShowDatePicker(false);
+                            setModalReady(false);
+                        }}
+                    >
+                        <Ionicons
+                            name="close-outline"
+                            size={24}
+                            color="white"
+                        />
+                    </TouchableOpacity>
+                </View>
                 <Card.Title title="Add Game Statistics" titleStyle={{ color: 'white', justifyContent: 'center', alignSelf: 'center', fontSize: 24, marginTop: 30 }} />
                 <Card.Content style={{
                     zIndex: 2
