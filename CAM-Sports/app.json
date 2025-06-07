@@ -10,14 +10,16 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ac.il.colman.camsports"
+      "bundleIdentifier": "ac.il.colman.camsports",
+      "allowRTL": false
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "ac.il.colman.camsports"
+      "package": "ac.il.colman.camsports",
+      "allowRTL": false
     },
     "web": {
       "bundler": "metro",
