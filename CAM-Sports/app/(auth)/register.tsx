@@ -30,6 +30,7 @@ export default function RegisterScreen() {
   const [teamCode, setTeamCode] = useState('');  // For player/management registration
   const [registeredTeamCode, setRegisteredTeamCode] = useState('');
   const [errorMessage, setErrorMessage] = useState<Message | null>(null);
+  const [passwordError, setPasswordError] = useState('');
   const [teamId, setTeamId] = useState('');
   const [role, setRole] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -51,6 +52,25 @@ export default function RegisterScreen() {
   useEffect(() => {
     saveFormData();
   }, [fullName, userType, teamCode, teamId, role, birthDate, weight, height, email]);
+
+  const validatePassword = (password: string) => {
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    setErrorMessage(null);
+    if (text.length > 0) {
+      validatePassword(text);
+    } else {
+      setPasswordError('');
+    }
+  };
 
   const loadSavedData = async () => {
     try {
@@ -133,6 +153,10 @@ export default function RegisterScreen() {
           return;
         }
 
+        if (!validatePassword(password)) {
+          return;
+        }
+
         const response = await axiosInstance.post('/auth/register', {
           email: email.toLowerCase(),
           full_name: fullName,
@@ -171,6 +195,10 @@ export default function RegisterScreen() {
             text: 'Please enter a valid email address',
             type: 'error'
           });
+          return;
+        }
+
+        if (!validatePassword(password)) {
           return;
         }
 
@@ -514,16 +542,19 @@ export default function RegisterScreen() {
                     placeholderTextColor={colors.textSecondary}
                   />
                   <TextInput
-                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    style={[styles.input, (errorMessage || passwordError) ? styles.inputError : null]}
                     placeholder="Password (min 6 characters)"
                     value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      setErrorMessage(null);
-                    }}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry
                     placeholderTextColor={colors.textSecondary}
                   />
+                  {passwordError && (
+                    <View style={styles.passwordErrorContainer}>
+                      <Ionicons name="alert-circle" size={16} color={colors.error} />
+                      <Text style={styles.passwordErrorText}>{passwordError}</Text>
+                    </View>
+                  )}
                   <TextInput
                     style={styles.input}
                     placeholder="Enter Team Code"
@@ -661,16 +692,19 @@ export default function RegisterScreen() {
                     placeholderTextColor={colors.textSecondary}
                   />
                   <TextInput
-                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    style={[styles.input, (errorMessage || passwordError) ? styles.inputError : null]}
                     placeholder="Password (min 6 characters)"
                     value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      setErrorMessage(null);
-                    }}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry
                     placeholderTextColor={colors.textSecondary}
                   />
+                  {passwordError && (
+                    <View style={styles.passwordErrorContainer}>
+                      <Ionicons name="alert-circle" size={16} color={colors.error} />
+                      <Text style={styles.passwordErrorText}>{passwordError}</Text>
+                    </View>
+                  )}
                   <TextInput
                     style={styles.input}
                     placeholder="Enter Team Code"
@@ -698,16 +732,19 @@ export default function RegisterScreen() {
                     placeholderTextColor={colors.textSecondary}
                   />
                   <TextInput
-                    style={[styles.input, errorMessage ? styles.inputError : null]}
+                    style={[styles.input, (errorMessage || passwordError) ? styles.inputError : null]}
                     placeholder="Password (min 6 characters)"
                     value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      setErrorMessage(null);
-                    }}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry
                     placeholderTextColor={colors.textSecondary}
                   />
+                  {passwordError && (
+                    <View style={styles.passwordErrorContainer}>
+                      <Ionicons name="alert-circle" size={16} color={colors.error} />
+                      <Text style={styles.passwordErrorText}>{passwordError}</Text>
+                    </View>
+                  )}
                   <TextInput
                     style={styles.input}
                     placeholder="Enter Team Code"
@@ -1058,5 +1095,18 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 16,
     color: colors.textPrimary,
+  },
+  passwordErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -12,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  passwordErrorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginLeft: 4,
+    flex: 1,
   },
 });

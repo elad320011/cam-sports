@@ -56,6 +56,7 @@ export default function ProfileScreen() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifiedTeam, setVerifiedTeam] = useState<TeamInfo | null>(null);
   
@@ -226,6 +227,25 @@ export default function ProfileScreen() {
     }
   };
 
+  const validatePassword = (password: string) => {
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const handleNewPasswordChange = (text: string) => {
+    setNewPassword(text);
+    setError('');
+    if (text.length > 0) {
+      validatePassword(text);
+    } else {
+      setPasswordError('');
+    }
+  };
+
   const handleUpdateProfile = async () => {
     if (user?.user_type !== 'player') return;
     
@@ -286,15 +306,25 @@ export default function ProfileScreen() {
       setError('All password fields are required');
       return;
     }
+
+    if (!validatePassword(newPassword)) {
+      return;
+    }
     
     if (newPassword !== confirmPassword) {
       setError('New passwords do not match');
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setError('New password must be different from current password');
       return;
     }
     
     setIsUpdating(true);
     setError('');
     setSuccess('');
+    setPasswordError('');
     
     try {
       // Use the dedicated password change endpoints we just created
@@ -318,7 +348,24 @@ export default function ProfileScreen() {
       setConfirmPassword('');
     } catch (error: any) {
       console.error('Password change error:', error.response?.data || error.message || error);
-      setError(error.response?.data?.error || error.response?.data?.message || 'Failed to change password');
+      console.error('Full error object:', error);
+      
+      // Enhanced error handling for password change
+      let errorMessage = 'Failed to change password';
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Current password is incorrect';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.error || 'Invalid password format';
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsUpdating(false);
     }
@@ -689,11 +736,14 @@ export default function ProfileScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Current Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, error ? styles.inputError : null]}
                 placeholderTextColor={colors.textSecondary}
                 placeholder="Enter current password"
                 value={currentPassword}
-                onChangeText={setCurrentPassword}
+                onChangeText={(text) => {
+                  setCurrentPassword(text);
+                  setError('');
+                }}
                 secureTextEntry
               />
             </View>
@@ -701,23 +751,32 @@ export default function ProfileScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>New Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, passwordError ? styles.inputError : null]}
                 placeholderTextColor={colors.textSecondary}
-                placeholder="Enter new password"
+                placeholder="Enter new password (min 6 characters)"
                 value={newPassword}
-                onChangeText={setNewPassword}
+                onChangeText={handleNewPasswordChange}
                 secureTextEntry
               />
+              {passwordError && (
+                <View style={styles.passwordErrorContainer}>
+                  <Ionicons name="alert-circle" size={16} color={colors.error} />
+                  <Text style={styles.passwordErrorText}>{passwordError}</Text>
+                </View>
+              )}
             </View>
             
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Confirm New Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, error ? styles.inputError : null]}
                 placeholderTextColor={colors.textSecondary}
                 placeholder="Confirm new password"
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setError('');
+                }}
                 secureTextEntry
               />
             </View>
@@ -1002,5 +1061,21 @@ const styles = StyleSheet.create({
     padding: 8,
     width: 40,
     color: colors.textPrimary,
+  },
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: 1.5,
+  },
+  passwordErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  passwordErrorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginLeft: 4,
+    flex: 1,
   },
 });

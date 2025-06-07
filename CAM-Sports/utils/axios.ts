@@ -28,7 +28,15 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't retry token refresh for certain endpoints when getting 401
+    // because 401 here means incorrect credentials, not expired token
+    const isPasswordChangeEndpoint = originalRequest.url?.includes('/change-password');
+    const isLoginEndpoint = originalRequest.url?.includes('/auth/login');
+    const isRegisterEndpoint = originalRequest.url?.includes('/auth/register');
+    const isGoogleAuthEndpoint = originalRequest.url?.includes('/auth/google');
+
+    if (error.response?.status === 401 && !originalRequest._retry && 
+        !isPasswordChangeEndpoint && !isLoginEndpoint && !isRegisterEndpoint && !isGoogleAuthEndpoint) {
       originalRequest._retry = true;
 
       try {
