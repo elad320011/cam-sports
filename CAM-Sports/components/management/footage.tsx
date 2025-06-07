@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions, Image } from 'react-native';
-import { PlusCircle, Trash2 } from 'lucide-react-native';
+import { Trash2 } from 'lucide-react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import axiosInstance from '@/utils/axios';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +10,7 @@ import { Card, Divider } from 'react-native-paper';
 import { ButtonGroupWrapper } from '../ButtonGroupWrapper';
 import { AddFootage } from './footageComponents/addFootage';
 
-const Footage = ({ teamId }: { teamId: string }) => {
+export function Footage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [videos, setVideos] = useState<{ id: string; title: string; url: string, tags: string[], user_id: string }[]>([]);
@@ -144,7 +144,7 @@ const Footage = ({ teamId }: { teamId: string }) => {
   }
 
   return (
-    <Collapsible 
+    <Collapsible
       title="Footage"
       image={require('@/assets/images/footage.png')}
       imageStyle={styles.image}
@@ -465,10 +465,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'space-between'
   },
-  image: { 
+  image: {
     tintColor: '#fff',
     width: 52,
-    height: 52 
+    height: 52
   },
 });
 

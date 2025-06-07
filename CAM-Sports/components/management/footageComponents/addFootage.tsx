@@ -7,9 +7,9 @@ import axiosInstance from '@/utils/axios';
 
 type AddFootageProps = {
     visible: boolean;
-    setVisible: (visible: boolean) => void;
-    teamId: string;
-    userId: string;
+    setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+    teamId: string | undefined;
+    userId: string | undefined;
 };
 
 export function AddFootage(props: AddFootageProps) {

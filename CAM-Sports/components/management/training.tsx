@@ -5,7 +5,6 @@ import { Collapsible } from "../Collapsible";
 import axiosInstance from '@/utils/axios';
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanProps } from "./trainingComponents/assets";
-import { ButtonGroup } from "@rneui/themed";
 import { AddPlan } from "./trainingComponents/AddPlan";
 import { DisplayPlans } from "./trainingComponents/DisplayPlans";
 import { Ionicons } from "@expo/vector-icons";
