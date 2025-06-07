@@ -53,6 +53,8 @@ export default function ProfileScreen() {
   const [teamCodeToJoin, setTeamCodeToJoin] = useState('');
   const [teamInfo, setTeamInfo] = useState<TeamInfo | null>(null);
   const [teammates, setTeammates] = useState<Teammate[]>([]);
+  const [isLoadingTeammates, setIsLoadingTeammates] = useState(false);
+  const [teammatesError, setTeammatesError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -71,15 +73,20 @@ export default function ProfileScreen() {
   const [inputHeight, setInputHeight] = useState('');
   
   useEffect(() => {
-    if (user?.team_id) {
-      fetchTeamCode();
-      fetchTeammates();
-    }
+    const loadInitialData = async () => {
+      if (user?.team_id) {
+        // Load team code and teammates in parallel, but wait for team info first
+        await fetchTeamCode();
+        await fetchTeammates();
+      }
+      
+      // Fetch player details if user is a player
+      if (user?.user_type === 'player') {
+        fetchPlayerDetails();
+      }
+    };
     
-    // Fetch player details if user is a player
-    if (user?.user_type === 'player') {
-      fetchPlayerDetails();
-    }
+    loadInitialData();
   }, [user]);
   
   if (isLoading) {
@@ -105,12 +112,22 @@ export default function ProfileScreen() {
   };
   
   const fetchTeammates = async () => {
+    if (!user?.team_id) {
+      console.log('No team_id available, skipping teammates fetch');
+      return;
+    }
+
+    setIsLoadingTeammates(true);
+    setTeammatesError('');
+    
     try {
+      console.log('🔄 Fetching teammates for team:', user.team_id);
+      
       // Step 1: Get the team information with the list of player/management emails
       const teamResponse = await axiosInstance.get(`/team/get_by_name?team_name=${user.team_id}`);
       const team = teamResponse.data;
       
-      console.log("Team data:", team);
+      console.log("📊 Team data:", team);
       
       // For both player and management, show all team members
       let memberEmails: string[] = [];
@@ -125,62 +142,86 @@ export default function ProfileScreen() {
         memberEmails = [...memberEmails, ...team.management];
       }
       
-      console.log("Member emails to fetch:", memberEmails);
+      console.log("📧 Member emails to fetch:", memberEmails);
+      
+      if (memberEmails.length === 0) {
+        console.log('No team members found');
+        setTeammates([]);
+        setIsLoadingTeammates(false);
+        return;
+      }
       
       // Empty array to collect member details
       const memberDetails: Teammate[] = [];
 
       // Step 2: Fetch details for each member (including current user)
       for (const email of memberEmails) {
-        let isCurrentUser = email === user.email;
-        
-        if (isCurrentUser) {
-          // Add current user with (You) indicator
-          memberDetails.push({
-            email: user.email,
-            full_name: `${user.full_name} (You)`,
-            role: user.user_type === 'player' ? playerRole || 'Player' : 'Team Manager',
-            user_type: user.user_type as 'player' | 'management' | 'unknown'
-          });
-          continue;
-        }
-        
         try {
-          // Try to fetch as player first
-          const playerResponse = await axiosInstance.get(`/player/details?email=${email}`);
-          memberDetails.push({
-            email: email,
-            full_name: playerResponse.data.full_name,
-            role: playerResponse.data.role || 'Player',
-            user_type: 'player' as const
-          });
-        } catch (error) {
-          // If not a player, try as management
-          try {
-            const managementResponse = await axiosInstance.get(`/management/details?email=${email}`);
+          const isCurrentUser = email === user.email;
+          
+          if (isCurrentUser) {
+            // Add current user with (You) indicator
             memberDetails.push({
-              email: email,
-              full_name: managementResponse.data.full_name,
-              role: 'Team Manager',
-              user_type: 'management' as const
+              email: user.email,
+              full_name: `${user.full_name} (You)`,
+              role: user.user_type === 'player' ? playerRole || 'Player' : 'Team Manager',
+              user_type: user.user_type as 'player' | 'management' | 'unknown'
             });
-          } catch (innerError) {
-            // If both fail, just add the email
-            memberDetails.push({
-              email: email,
-              full_name: email,
-              role: 'Unknown',
-              user_type: 'unknown' as const
-            });
+            console.log('✅ Added current user to teammates');
+            continue;
           }
+          
+          console.log(`🔍 Fetching details for: ${email}`);
+          
+          // Try to fetch as player first
+          try {
+            const playerResponse = await axiosInstance.get(`/player/details?email=${email}`);
+            memberDetails.push({
+              email: email,
+              full_name: playerResponse.data.full_name,
+              role: playerResponse.data.role || 'Player',
+              user_type: 'player' as const
+            });
+            console.log(`✅ Added player: ${playerResponse.data.full_name}`);
+          } catch (playerError) {
+            console.log(`❌ Not a player, trying management for: ${email}`);
+            
+            // If not a player, try as management
+            try {
+              const managementResponse = await axiosInstance.get(`/management/details?email=${email}`);
+              memberDetails.push({
+                email: email,
+                full_name: managementResponse.data.full_name,
+                role: 'Team Manager',
+                user_type: 'management' as const
+              });
+              console.log(`✅ Added management: ${managementResponse.data.full_name}`);
+            } catch (managementError) {
+              console.log(`❌ Failed to fetch details for ${email}, adding as unknown`);
+              // If both fail, just add the email
+              memberDetails.push({
+                email: email,
+                full_name: email,
+                role: 'Unknown',
+                user_type: 'unknown' as const
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing member ${email}:`, error);
+          // Continue with other members even if one fails
         }
       }
       
-      console.log("Fetched member details:", memberDetails);
+      console.log("✅ Final teammate details:", memberDetails);
       setTeammates(memberDetails);
+      
     } catch (error) {
-      console.error('Error fetching teammates:', error);
+      console.error('❌ Error fetching teammates:', error);
+      setTeammatesError('Failed to load team members');
       setTeammates([]);
+    } finally {
+      setIsLoadingTeammates(false);
     }
   };
   
@@ -599,7 +640,18 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.gradient}
             >
-              {teammates.length > 0 ? (
+              {teammatesError ? (
+                <View style={styles.errorText}>
+                  <Text style={styles.errorText}>{teammatesError}</Text>
+                </View>
+              ) : null}
+              
+              {isLoadingTeammates ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 20 }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 14, marginLeft: 8 }}>Loading team members...</Text>
+                </View>
+              ) : teammates.length > 0 ? (
                 teammates.map((member, index) => (
                   <View key={index} style={styles.teammateContainer}>
                     <View>
@@ -617,6 +669,16 @@ export default function ProfileScreen() {
               ) : (
                 <Text style={styles.noDataText}>No team members yet</Text>
               )}
+              
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={fetchTeammates}
+                disabled={isLoadingTeammates}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  {isLoadingTeammates ? 'Loading...' : 'Refresh Team Members'}
+                </Text>
+              </TouchableOpacity>
             </LinearGradient>
           </View>
         </Collapsible>
@@ -1078,4 +1140,5 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     flex: 1,
   },
+
 });
