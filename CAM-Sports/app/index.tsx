@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, Image, ImageBackground, FlatList } from "react-native";
 import { useAuth } from '@/contexts/AuthContext';
 import { Redirect, router } from 'expo-router';
@@ -6,6 +6,8 @@ import WelcomeHeader from '@/components/WelcomeHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { I18nManager } from 'react-native';
+import * as Updates from 'expo-updates'; 
 
 // Components
 import GameCalendar from "@/components/management/calendar";
@@ -18,6 +20,15 @@ import Payments from "@/components/management/payments";
 
 export default function Management() {
   const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (I18nManager.isRTL) {
+      I18nManager.forceRTL(false);
+      I18nManager.allowRTL(false);
+      // Reload the app to apply direction changes
+      Updates.reloadAsync();
+    }
+  }, []);
 
   if (isLoading) {
     return null; // Or a loading spinner
