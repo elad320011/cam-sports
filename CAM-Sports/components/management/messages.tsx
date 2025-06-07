@@ -47,6 +47,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -123,6 +125,23 @@ export default function Messages() {
   };
 
   const registerForPushNotificationsAsync = async () => {
+    
+    // Set up notification channels for Android
+    if (Platform.OS === 'android') {
+      try {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+          enableVibrate: true,
+          enableLights: true,
+        });
+      } catch (error) {
+        console.error('Error setting up Android notification channel:', error);
+      }
+    }
+
     if (!Device.isDevice) {
       Alert.alert('Must use physical device for Push Notifications');
       return;
@@ -143,7 +162,7 @@ export default function Messages() {
       }
 
       // Get the token that uniquely identifies this device
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
       console.log('Using project ID:', projectId);
 
       if (!projectId) {
@@ -179,22 +198,7 @@ export default function Messages() {
       } else {
         console.error('No user email available for push token registration');
       }
-
-      // Set up notification channels for Android
-      if (Platform.OS === 'android') {
-        try {
-          await Notifications.setNotificationChannelAsync('default', {
-            name: 'default',
-            importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250],
-            lightColor: '#FF231F7C',
-            enableVibrate: true,
-            enableLights: true,
-          });
-        } catch (error) {
-          console.error('Error setting up Android notification channel:', error);
-        }
-      }
+      
     } catch (error) {
       console.error('Error setting up push notifications:', error);
       Alert.alert('Error', 'Failed to set up push notifications. Please try again.');
