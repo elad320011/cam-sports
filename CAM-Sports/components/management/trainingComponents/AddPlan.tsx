@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Text, View, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import Modal from 'react-native-modal';
+import { Text, View, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal } from "react-native";
 import { Card, Divider } from 'react-native-paper';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import axiosInstance from '@/utils/axios';
@@ -99,10 +98,11 @@ export function AddPlan(props: AddPlanProps) {
 
     return (
         <Modal
-            isVisible={currentMode == "Add"}
-            animationIn="bounceInUp"
+            visible={currentMode == "Add"}
+            animationType="slide"
+            transparent={true}
         >
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
                 <Card style={{ backgroundColor: '#0c1c2c', width: '80%' }}>
                     <View style={{ backgroundColor: '#1a2938', padding: 10, borderTopLeftRadius: 5, borderTopRightRadius: 5 }}>
                         <TouchableOpacity

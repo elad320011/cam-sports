@@ -163,6 +163,18 @@ export function Footage() {
               style={styles.iconButton}
             />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setRefreshVideos(!refreshVideos)
+            }}
+          >
+            <Ionicons
+              name='refresh-outline'
+              size={24}
+              color='#cdd1ce'
+              style={styles.iconButton}
+            />
+          </TouchableOpacity>
           {showFilters == false && (
             <TouchableOpacity
               onPress={() => setShowAddVideoModal(true)}
@@ -199,19 +211,6 @@ export function Footage() {
               >
                 <Ionicons
                   name='arrow-down'
-                  size={24}
-                  color='#cdd1ce'
-                  style={styles.iconButton}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  setRefreshVideos(!refreshVideos)
-                }}
-              >
-                <Ionicons
-                  name='refresh-outline'
                   size={24}
                   color='#cdd1ce'
                   style={styles.iconButton}
@@ -293,7 +292,8 @@ export function Footage() {
                 )}
                 {filteredVideos.length > 0 && currentVideo ? (
                     <YoutubePlayer
-                        height={180}
+                        height={Dimensions.get('window').width * 0.5 * 9 / 16}
+                        width={Dimensions.get('window').width * 0.5}
                         play={playing}
                         videoId={currentVideo.url.split('v=')[1]?.split("&")[0]}
                         onChangeState={onStateChange}
@@ -412,6 +412,8 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
     padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   videoDetailsContainer: {
     marginBottom: 15,
