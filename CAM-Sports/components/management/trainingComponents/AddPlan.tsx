@@ -101,11 +101,21 @@ export function AddPlan(props: AddPlanProps) {
         <Modal
             isVisible={currentMode == "Add"}
             animationIn="bounceInUp"
-            hasBackdrop={true}
-            onBackdropPress={() => setCurrentMode(undefined)}
         >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
                 <Card style={{ backgroundColor: '#0c1c2c', width: '80%' }}>
+                    <View style={{ backgroundColor: '#1a2938', padding: 10, borderTopLeftRadius: 5, borderTopRightRadius: 5 }}>
+                        <TouchableOpacity
+                            style={{ alignSelf: 'flex-end' }}
+                            onPress={() => setCurrentMode(undefined)}
+                        >
+                            <Ionicons
+                                name="close-outline"
+                                size={24}
+                                color="white"
+                            />
+                        </TouchableOpacity>
+                    </View>
                     <Card.Title
                         title="Add Training Plan"
                         titleStyle={{ fontSize: 20, marginTop: 10, fontWeight: 'bold', color: 'white', textAlign: 'center', paddingTop: 30 }}
