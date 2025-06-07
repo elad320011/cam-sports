@@ -18,7 +18,7 @@ interface SectionInput {
 type AddPlanProps = {
     team_id: string | undefined;
     currentMode: string | undefined;
-    setCurrentMode: React.Dispatch<React.SetStateAction<"View" | "Add" | undefined>>;
+    setCurrentMode: any;
 };
 
 export function AddPlan(props: AddPlanProps) {
@@ -100,6 +100,7 @@ export function AddPlan(props: AddPlanProps) {
         <Modal
             visible={currentMode == "Add"}
             animationType="slide"
+            transparent={true}
         >
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
                 <Card style={{ backgroundColor: '#0c1c2c', width: '80%' }}>
