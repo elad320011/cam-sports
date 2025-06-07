@@ -63,6 +63,7 @@ export default function Management() {
         renderItem={renderItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
+        removeClippedSubviews={false}
       />
 
       <TouchableOpacity

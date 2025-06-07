@@ -18,7 +18,7 @@ interface SectionInput {
 type AddPlanProps = {
     team_id: string | undefined;
     currentMode: string | undefined;
-    setCurrentMode: any;
+    setCurrentMode: React.Dispatch<React.SetStateAction<"View" | "Add" | undefined>>;
 };
 
 export function AddPlan(props: AddPlanProps) {
