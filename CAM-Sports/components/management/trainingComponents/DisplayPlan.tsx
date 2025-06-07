@@ -24,6 +24,11 @@ export function DisplayPlan(props: DisplayPlanProps) {
     const plan = props.plan;
     const setCurrentPlan = props.setCurrentPlan;
 
+    // Add a check for plan.plan_sections existence and if it's not empty
+    const currentSection = plan.plan_sections && plan.plan_sections.length > 0
+        ? plan.plan_sections[currentSectionIndex]
+        : undefined;
+
     const deletePlan = async () => {
         const response = await axiosInstance.delete(`/training_plans/delete`,
             {
@@ -44,18 +49,22 @@ export function DisplayPlan(props: DisplayPlanProps) {
     }
 
     const toggleSectionNext = () => {
-        if (currentSectionIndex < plan.plan_sections.length - 1) {
-            setCurrentSectionIndex(currentSectionIndex + 1);
-        } else {
-            setCurrentSectionIndex(0);
+        if (plan.plan_sections && plan.plan_sections.length > 0) {
+            if (currentSectionIndex < plan.plan_sections.length - 1) {
+                setCurrentSectionIndex(currentSectionIndex + 1);
+            } else {
+                setCurrentSectionIndex(0);
+            }
         }
     }
 
     const toggleSectionPrevious = () => {
-        if (currentSectionIndex > 0) {
-            setCurrentSectionIndex(currentSectionIndex - 1);
-        } else {
-            setCurrentSectionIndex(plan.plan_sections.length - 1);
+        if (plan.plan_sections && plan.plan_sections.length > 0) {
+            if (currentSectionIndex > 0) {
+                setCurrentSectionIndex(currentSectionIndex - 1);
+            } else {
+                setCurrentSectionIndex(plan.plan_sections.length - 1);
+            }
         }
     }
 
@@ -88,55 +97,54 @@ export function DisplayPlan(props: DisplayPlanProps) {
                     <Divider style={{ margin: 20 }}/>
                     <Card.Content>
                         <View>
-                            {plan.plan_sections.length > 0 ? (
+                            {currentSection ? (
                                 <Text style={{ marginBottom: 10, color: '#cdd1ce', textAlign: 'center' }}>
-                                    {`${plan.plan_sections[currentSectionIndex].name}: ${plan.plan_sections[currentSectionIndex].description}`}
+                                    {`${currentSection.name}: ${currentSection.description}`}
                                 </Text>
                             ) : (
                                 <Text style={{ marginBottom: 10, color: '#cdd1ce', textAlign: 'center' }}>
                                     No sections or drills available for {plan.name}.
                                 </Text>
                             )}
-                            {plan.plan_sections ? (plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Image").length > 0 && (
+                            {/* Use currentSection for checks */}
+                            {currentSection && currentSection.sources && currentSection.sources.filter((obj: sources) => obj.source_type === "Image").length > 0 && (
                                 <Button
                                     textColor="#cdd1ce"
                                     onPress={() => {
-                                        setImages(plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Image").map((image: any) => ({uri: image.source_url})));
+                                        setImages(currentSection.sources.filter((obj: sources) => obj.source_type === "Image").map((image: any) => ({uri: image.source_url})));
                                         setIsVisible(true)
                                     }}
                                 >Images</Button>
-                            )) : (
-                                <></>
                             )}
-                            {plan.plan_sections ? (plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Video").length > 0 && (
+                            {currentSection && currentSection.sources && currentSection.sources.filter((obj: sources) => obj.source_type === "Video").length > 0 && (
                                 <Button
                                     textColor="#cdd1ce"
                                     onPress={() => {
-                                        setVideos(plan.plan_sections[currentSectionIndex].sources.filter((obj: sources) => obj.source_type === "Video").map((video: any) => ({uri: video.source_url})));
+                                        setVideos(currentSection.sources.filter((obj: sources) => obj.source_type === "Video").map((video: any) => ({uri: video.source_url})));
                                         setVideoVisible(true)
                                     }}
                                 >Videos</Button>
-                            )) : (
-                                <></>
                             )}
                         </View>
 
                     <Divider style={{ margin: 20 }} />
 
-                    <ButtonGroupWrapper
-                        buttons={["<", ">"]}
-                        onPress={(index) => {
-                            if (index == 0) {
-                                toggleSectionPrevious()
-                            }
-                            else {
-                                toggleSectionNext();
-                            }
-                        }}
-                        containerStyle={{ marginBottom: 20, backgroundColor: 'transparent', borderColor: 'transparent' }}
-                        textStyle={{ color: '#cdd1ce', fontWeight: 'bold' }}
-                    />
-                    {/* <Button mode="outlined" onPress={() => deletePlan()} style={{ marginTop: 10, marginBottom: 10, borderColor: '#faec93' }} textColor="#cdd1ce">Delete</Button> */}
+                    {/* Only show buttons if there are sections */}
+                    {plan.plan_sections && plan.plan_sections.length > 0 && (
+                        <ButtonGroupWrapper
+                            buttons={["<", ">"]}
+                            onPress={(index) => {
+                                if (index == 0) {
+                                    toggleSectionPrevious()
+                                }
+                                else {
+                                    toggleSectionNext();
+                                }
+                            }}
+                            containerStyle={{ marginBottom: 20, backgroundColor: 'transparent', borderColor: 'transparent' }}
+                            textStyle={{ color: '#cdd1ce', fontWeight: 'bold' }}
+                        />
+                    )}
                     </Card.Content>
                     <ImageView
                         images={images}

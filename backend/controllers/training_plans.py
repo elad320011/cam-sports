@@ -26,6 +26,7 @@ def create_training_plan(request):
         sources = [PlanSource(source_type=source['source_type'], source_url=source['source_url']) for source in sources_data]
         plan_section = PlanSection(name=section['name'], description=section.get('description'), sources=sources)
         plan_sections.append(plan_section)
+
     # create training plan
     training_plan = TrainingPlan(
         name=name,
@@ -61,7 +62,7 @@ def delete_training_plan(team_id, plan_id):
         return jsonify({"message": "Training plan not found"}), 404
     except Exception as e:
         return jsonify({"message": str(e)}), 500
-    
+
 def edit_training_plan(request, plan_id):
     data = request.get_json()
     name = data.get('name')

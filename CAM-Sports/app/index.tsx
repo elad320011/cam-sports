@@ -28,7 +28,7 @@ export default function Management() {
   }
 
   const components = [
-    // { id: 'messages', component: <Messages /> },
+    { id: 'messages', component: <Messages /> },
     { id: 'calendar', component: <GameCalendar /> },
     { id: 'statistics', component: <GameStatistics /> },
     { id: 'training', component: <Training /> },
