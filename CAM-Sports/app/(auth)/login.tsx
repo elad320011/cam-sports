@@ -64,6 +64,8 @@ export default function LoginScreen() {
         access_token: accessToken
       });
 
+      router.replace('/login'); // Redirect back
+
       if (response.data.needs_registration) {
         // User doesn't exist yet, redirect to complete profile
         router.push({
