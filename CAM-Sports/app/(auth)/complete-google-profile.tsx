@@ -94,6 +94,8 @@ export default function CompleteGoogleProfileScreen() {
           user_type: userType,
           team_code: teamCode
         });
+
+        router.replace('/login'); // Redirect back
         
         if (response.data.redirect) {
           setUpProfile();
