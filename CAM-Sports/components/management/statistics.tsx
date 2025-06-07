@@ -163,6 +163,7 @@ export default function GameStatistics() {
                             options={allStats.map((stats: GameStats) => ({ value: stats._id, label: `${stats.opposite_team_name} - ${formatDateToDDMMYYYY(new Date(stats.game_date.$date))} (${stats.team_sets_won_count > stats.team_sets_lost_count ? "W" : "L"})` }))}
                             primaryColor={'green'}
                             isMultiple={false}
+                            placeholder="Select a game"
                         />
                     )}
                 </>

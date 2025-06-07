@@ -79,7 +79,6 @@ export default function AddStat(props: AddStatProps) {
         >
             <Card style={{
                 backgroundColor: '#0c1c2c',
-                height: 250,
                 zIndex: 1
             }}>
                 <View style={{ backgroundColor: '#1a2938', padding: 10, borderTopLeftRadius: 5, borderTopRightRadius: 5 }}>
@@ -120,18 +119,10 @@ export default function AddStat(props: AddStatProps) {
                             name="calendar-outline"
                             size={24}
                             color="white"
-                            style={{ alignSelf: 'center', margin: 0 }}
+                            style={{ alignSelf: 'center', margin: 20 }}
                         />
                     </TouchableOpacity>
-                    {modalReady && showDatePicker && (
-                        <RNDateTimePicker
-                            value={new Date()}
-                            onChange={setDate}
-                            style={{
-                                zIndex: 3
-                            }}
-                        />
-                    )}
+
                     {selectedDate !== '' && (
                         <TouchableOpacity
                             onPress={() => {
@@ -140,11 +131,21 @@ export default function AddStat(props: AddStatProps) {
                         >
                             <Ionicons
                                 name="checkmark-circle-outline"
-                                size={24}
+                                size={30}
                                 color="white"
-                                style={{ alignSelf: 'flex-end', margin: 20 }}
+                                style={{ alignSelf: 'center',}}
                             />
                         </TouchableOpacity>
+                    )}
+
+                    {modalReady && showDatePicker && (
+                        <RNDateTimePicker
+                            value={new Date()}
+                            onChange={setDate}
+                            style={{
+                                zIndex: 3
+                            }}
+                        />
                     )}
                 </Card.Content>
             </Card>
