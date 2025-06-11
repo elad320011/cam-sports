@@ -44,7 +44,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
   const handleDeletePayment = async (paymentId: string) => {
     try {
       await deletePayment(paymentId);
-      Alert.alert("Success", "Payment deleted successfully.");
+      // Alert.alert("Success", "Payment deleted successfully.");
       fetchPayments();
     } catch (error) {
       Alert.alert("Error", "Failed to delete payment.");

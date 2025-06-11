@@ -534,6 +534,7 @@ export default function ProfileScreen() {
       setSuccess('Team changed successfully. Please log out and log back in to see changes.');
       setVerifiedTeam(null);
       setTeamCodeToJoin('');
+      logout();
     } catch (error: any) {
       setError(error.response?.data?.message || error.message || 'Failed to change team');
     } finally {
