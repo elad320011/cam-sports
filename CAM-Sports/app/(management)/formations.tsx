@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TextInput, Button, Alert, Modal, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Text, TextInput, Alert, TouchableOpacity, ScrollView, Dimensions, FlatList, Modal, Platform } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
-import { Picker } from '@react-native-picker/picker';
 import { getFormation, createFormation, updateFormation, updatePlayerRole, Formation, getTeamPlayers, PlayerInfo, getUsedPlayerIds } from '@/services/formationService';
 import { colors } from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import ModalDropdown from 'react-native-modal-dropdown';
 
 const Player = ({ 
   number, 
@@ -41,6 +41,7 @@ const Player = ({
   const [currentFormationData, setCurrentFormationData] = useState<Formation | null>(formationData);
   const [showPlayerList, setShowPlayerList] = useState(false);
   const { user } = useAuth();
+  const formationDropdownRef = useRef<ModalDropdown>(null);
 
   // Update currentFormationData when formationData prop changes
   useEffect(() => {
@@ -198,55 +199,71 @@ const Player = ({
                 <Text style={styles.modalTitle}>Edit Player</Text>
                 <View style={styles.pickerWrapper}>
                   <Text style={styles.pickerLabel}>Select Player</Text>
-                  <TouchableOpacity 
+                  {/* @ts-ignore */}
+                  <ModalDropdown
+                    ref={formationDropdownRef}
                     style={styles.dropdownButton}
-                    onPress={() => setShowPlayerList(!showPlayerList)}
+                    options={['Unassigned', ...players
+                      .filter(player => player.id !== '')
+                      .map(player => {
+                        const isAssigned = otherUsedPlayerIds.includes(player.id);
+                        return isAssigned ? `${player.fullName} (Assigned)` : player.fullName;
+                      })
+                    ]}
+                    onSelect={(index: string, value: string) => {
+                      const numericIndex = parseInt(index, 10);
+                      if (String(value).includes('(Assigned)')) {
+                        return false; // Prevent selection and keep dropdown open
+                      }
+                      if (value === 'Unassigned') {
+                        setEditedName('');
+                      } else {
+                        const selectedPlayer = players.find(p => p.fullName === String(value));
+                        if (selectedPlayer) {
+                          setEditedName(selectedPlayer.id);
+                        }
+                      }
+                    }}
+                    dropdownStyle={[styles.dropdownList, { zIndex: 1000 }]}
+                    adjustFrame={style => {
+                      const screenWidth = Dimensions.get('window').width;
+                      const dropdownWidth = style.width || 300;
+
+                      // Center horizontally
+                      style.left = (screenWidth - dropdownWidth) / 2;
+                      
+                      // Position top edge at button's bottom with small padding
+                      if (style.top) {
+                        style.top += Platform.OS === 'ios' ? 45 : 5;
+                      }
+
+                      return style;
+                    }}
+                    renderRow={(option: string, index: string, isSelected: boolean) => (
+                      <View key={`dropdown-item-${index}`} style={styles.dropdownItem}>
+                        <Text style={[
+                          styles.dropdownItemText,
+                          String(option).includes('(Assigned)') && styles.dropdownItemTextDisabled
+                        ]}>
+                          {option}
+                        </Text>
+                      </View>
+                    )}
+                    renderSeparator={() => <View key="separator" style={styles.dropdownSeparator} />}
+                    scrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
                   >
-                    <Text style={styles.dropdownButtonText}>
-                      {players.find(p => p.id === editedName)?.fullName || 'Unassigned'}
-                    </Text>
-                    <MaterialIcons 
-                      name={showPlayerList ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-                      size={24} 
-                      color={colors.textPrimary} 
-                    />
-                  </TouchableOpacity>
-                  {showPlayerList && (
-                    <View style={styles.dropdownList}>
-                      <ScrollView style={styles.dropdownScroll}>
-                        <TouchableOpacity
-                          style={styles.dropdownItem}
-                          onPress={() => handlePlayerSelect('', 'Unassigned')}
-                        >
-                          <Text style={styles.dropdownItemText}>Unassigned</Text>
-                        </TouchableOpacity>
-                        {players
-                          .filter(player => player.id !== '')
-                          .map(player => {
-                            const isAssigned = otherUsedPlayerIds.includes(player.id);
-                            return (
-                              <TouchableOpacity
-                                key={player.id}
-                                style={[
-                                  styles.dropdownItem,
-                                  isAssigned && styles.dropdownItemDisabled
-                                ]}
-                                onPress={() => !isAssigned && handlePlayerSelect(player.id, player.fullName)}
-                                disabled={isAssigned}
-                              >
-                                <Text style={[
-                                  styles.dropdownItemText,
-                                  isAssigned && styles.dropdownItemTextDisabled
-                                ]}>
-                                  {player.fullName}
-                                  {isAssigned && ' (Assigned)'}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                      </ScrollView>
+                    <View style={styles.dropdownButtonContent}>
+                      <Text style={styles.dropdownButtonText}>
+                        {players.find(p => p.id === editedName)?.fullName || 'Unassigned'}
+                      </Text>
+                      <MaterialIcons
+                        name="keyboard-arrow-down"
+                        size={24}
+                        color={colors.textPrimary}
+                      />
                     </View>
-                  )}
+                  </ModalDropdown>
                 </View>
                 <TextInput
                   style={styles.instructionsInput}
@@ -775,40 +792,67 @@ const styles = StyleSheet.create({
     borderColor: colors.borderColor,
     borderRadius: 8,
     backgroundColor: colors.cardBackgroundLight,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  dropdownButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
   },
   dropdownButtonText: {
     color: colors.textPrimary,
     fontSize: 16,
   },
   dropdownList: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: colors.cardBackgroundLight,
+    marginTop: -25,
+    width: 300,
+    height: 200,
     borderWidth: 1,
     borderColor: colors.borderColor,
     borderRadius: 8,
-    marginTop: 4,
-    maxHeight: 200,
-    zIndex: 2,
-  },
-  dropdownScroll: {
-    maxHeight: 200,
+    backgroundColor: colors.cardBackgroundLight,
+    zIndex: 1000,
   },
   dropdownItem: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
   },
   dropdownItemText: {
     color: colors.textPrimary,
     fontSize: 16,
+  },
+  dropdownItemTextDisabled: {
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  dropdownSeparator: {
+    height: 1,
+    backgroundColor: colors.borderColor,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalView: {
+    backgroundColor: colors.cardBackgroundLight,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderColor,
+  },
+  closeButton: {
+    padding: 8,
   },
   instructionsInput: {
     width: '100%',
@@ -822,16 +866,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minHeight: 100,
     textAlignVertical: 'top',
-  },
-  dropdownItemDisabled: {
-    opacity: 0.6,
-    backgroundColor: colors.cardBackground,
-  },
-  dropdownItemTextDisabled: {
-    color: colors.textSecondary,
-  },
-  closeButton: {
-    backgroundColor: colors.error,
   },
 });
 
