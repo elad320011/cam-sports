@@ -34,26 +34,49 @@ export function Collapsible({
   const theme = useColorScheme() ?? 'light';
   const animatedHeight = useRef(new Animated.Value(0)).current;
   const contentHeight = useRef(0);
+  const contentRef = useRef<View>(null);
+  const isAnimating = useRef(false);
 
+  // Function to measure and update content height
+  const updateContentHeight = () => {
+    if (contentRef.current) {
+      contentRef.current.measure((x, y, width, height) => {
+        contentHeight.current = height;
+        if (isOpen && !isAnimating.current) {
+          Animated.timing(animatedHeight, {
+            toValue: height,
+            duration: 150,
+            useNativeDriver: false,
+          }).start();
+        }
+      });
+    }
+  };
+
+  // Update height when children change
   useEffect(() => {
     if (isOpen) {
-      Animated.timing(animatedHeight, {
-        toValue: contentHeight.current,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      Animated.timing(animatedHeight, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
+      // Small delay to ensure content is rendered
+      setTimeout(updateContentHeight, 50);
     }
-  }, [isOpen]);
+  }, [children]);
 
-  const onContentLayout = (event: any) => {
-    contentHeight.current = event.nativeEvent.layout.height;
-  };
+  useEffect(() => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+
+    Animated.timing(animatedHeight, {
+      toValue: isOpen ? contentHeight.current : 0,
+      duration: 350,
+      useNativeDriver: false,
+    }).start(() => {
+      isAnimating.current = false;
+      // If we're opening, measure the content height after animation completes
+      if (isOpen) {
+        updateContentHeight();
+      }
+    });
+  }, [isOpen]);
 
   return (
     <View style={styles.container}>
@@ -88,7 +111,11 @@ export function Collapsible({
       </TouchableOpacity>
 
       <Animated.View style={[styles.content, { height: animatedHeight }]}>
-        <View style={styles.contentInner} onLayout={onContentLayout}>
+        <View 
+          ref={contentRef}
+          style={styles.contentInner} 
+          onLayout={updateContentHeight}
+        >
           <LinearGradient
             colors={[colors.cardBackground, colors.cardBackgroundLight]}
             start={{ x: 0, y: 0 }}
@@ -132,7 +159,7 @@ const styles = StyleSheet.create({
     width: '100%',
     overflow: 'hidden',
     margin: 'auto',
-  justifyContent: 'center',
+    justifyContent: 'center',
   },
   contentInner: {
     width: '100%',

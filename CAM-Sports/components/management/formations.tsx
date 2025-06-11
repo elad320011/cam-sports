@@ -42,7 +42,7 @@ export default function Formations({ isManager = true }: FormationsProps) {
   const handleDeleteFormation = async (formationId: string) => {
     try {
       await deleteFormation(formationId);
-      Alert.alert("Success", "Formation deleted successfully.");
+      // Alert.alert("Success", "Formation deleted successfully.");
       fetchFormations();
     } catch (error) {
       Alert.alert("Error", "Failed to delete formation.");
