@@ -103,13 +103,15 @@ export default function Formations({ isManager = true }: FormationsProps) {
                 styles.scrollView,
                 formations.length > 5 && styles.scrollViewActive
               ]}
+              nestedScrollEnabled={true}
+              removeClippedSubviews={false}
             >
               <FlatList
                 scrollEnabled={false}
                 data={[...formations].sort((a, b) => b.id.localeCompare(a.id))}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => `formation-${item.id}`}
                 renderItem={({ item }) => (
-                  <View style={styles.itemContainer}>
+                  <View key={`formation-item-${item.id}`} style={styles.itemContainer}>
                     <TouchableOpacity
                       style={[styles.item, !isManager && styles.itemFullWidth]}
                       onPress={() => handleNavigate(item.id)}

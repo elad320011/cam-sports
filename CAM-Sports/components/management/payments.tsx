@@ -105,13 +105,15 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                 styles.scrollView,
                 payments.length > 5 && styles.scrollViewActive
               ]}
+              nestedScrollEnabled={true}
+              removeClippedSubviews={false}
             >
               <FlatList
                 scrollEnabled={false}
                 data={payments}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => `payment-${item.id}`}
                 renderItem={({ item }) => (
-                  <View key={item.id} style={styles.itemContainer}>
+                  <View key={`payment-item-${item.id}`} style={styles.itemContainer}>
                     <TouchableOpacity
                       style={[styles.item, !isManager && styles.itemFullWidth]}
                       onPress={() => handleNavigate(item.id)}
@@ -130,7 +132,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                             <View key={`reminders-${item.id}`} style={styles.remindersList}>
                               <Text style={styles.remindersTitle}>Reminders:</Text>
                               {item.reminders.map((reminder, index) => (
-                                <View key={`${reminder.id}-${index}`} style={styles.reminderItem}>
+                                <View key={`reminder-${reminder.id}-${index}`} style={styles.reminderItem}>
                                   <MaterialIcons name="notifications" size={16} color={colors.primary} />
                                   <Text style={styles.reminderDate}>
                                     {formatDate(reminder.date)}
