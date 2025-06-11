@@ -201,6 +201,7 @@ const Player = ({
                   <Text style={styles.pickerLabel}>Select Player</Text>
                   {/* @ts-ignore */}
                   <ModalDropdown
+                    ref={formationDropdownRef}
                     style={styles.dropdownButton}
                     options={['Unassigned', ...players
                       .filter(player => player.id !== '')
@@ -223,7 +224,7 @@ const Player = ({
                         }
                       }
                     }}
-                    dropdownStyle={styles.dropdownList}
+                    dropdownStyle={[styles.dropdownList, { zIndex: 1000 }]}
                     adjustFrame={style => {
                       const screenWidth = Dimensions.get('window').width;
                       const dropdownWidth = style.width || 300;
@@ -239,7 +240,7 @@ const Player = ({
                       return style;
                     }}
                     renderRow={(option: string, index: string, isSelected: boolean) => (
-                      <View style={styles.dropdownItem}>
+                      <View key={`dropdown-item-${index}`} style={styles.dropdownItem}>
                         <Text style={[
                           styles.dropdownItemText,
                           String(option).includes('(Assigned)') && styles.dropdownItemTextDisabled
@@ -248,7 +249,9 @@ const Player = ({
                         </Text>
                       </View>
                     )}
-                    renderSeparator={() => <View style={styles.dropdownSeparator} />}
+                    renderSeparator={() => <View key="separator" style={styles.dropdownSeparator} />}
+                    scrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
                   >
                     <View style={styles.dropdownButtonContent}>
                       <Text style={styles.dropdownButtonText}>
@@ -809,6 +812,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderColor,
     borderRadius: 8,
     backgroundColor: colors.cardBackgroundLight,
+    zIndex: 1000,
   },
   dropdownItem: {
     paddingVertical: 12,
