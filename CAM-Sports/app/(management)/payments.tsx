@@ -138,7 +138,7 @@ export default function PaymentPage() {
             : reminder
         ));
       }
-      setShowReminderDatePickers(prev => ({ ...prev, [reminderId]: false }));
+      // Do not automatically close the picker on iOS; let the user dismiss it manually
     }
   };
 
@@ -181,7 +181,7 @@ export default function PaymentPage() {
     const newReminder: Reminder = {
       id: Date.now().toString(),
       date: new Date(),
-      dateString: 'Select reminder date and time'
+      dateString: 'Select date'
     };
     setReminders([...reminders, newReminder]);
   };
@@ -331,103 +331,75 @@ export default function PaymentPage() {
               )}
 
               <View style={styles.remindersContainer}>
-                <View style={styles.remindersHeader}>
-                  <Text style={styles.label}>Reminders</Text>
-                  <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={addNewReminder}
-                  >
-                    <MaterialIcons name="add" size={24} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-                
+                <Text style={styles.remindersTitle}>Reminders</Text>
                 {reminders.map((reminder) => (
-                  <View key={reminder.id} style={styles.reminderItem}>
-                    {Platform.OS === 'web' ? (
-                      <input
-                        type="datetime-local"
-                        style={{
-                          height: 50,
-                          borderColor: colors.borderColor,
-                          borderWidth: 1,
-                          borderRadius: 8,
-                          marginBottom: 16,
-                          width: '100%',
-                          backgroundColor: colors.background,
-                          color: colors.textPrimary,
-                          padding: '0 16px',
-                        }}
-                        value={formatDateTimeForInput(reminder.date)}
-                        onChange={(e) => {
-                          const selectedDate = new Date(e.target.value);
-                          setReminders(prev => prev.map(r => 
-                            r.id === reminder.id 
-                              ? { ...r, date: selectedDate, dateString: selectedDate.toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) }
-                              : r
-                          ));
-                        }}
-                        min={formatDateTimeForInput(new Date())}
-                        max={formatDateTimeForInput(date)}
-                      />
-                    ) : (
-                      <View key={`container-${reminder.id}`} style={styles.reminderInputContainer}>
-                        <Pressable
-                          key={`pressable-${reminder.id}`}
-                          style={[styles.input, styles.dateInput]}
+                  <View key={`reminder-${reminder.id}`} style={styles.reminderItem}>
+                    <View style={styles.reminderRow}>
+                      <View style={styles.reminderDateContainer}>
+                        <TouchableOpacity
+                          style={styles.reminderDateButton}
                           onPress={() => handlePickerPress(reminder.id)}
                         >
-                          <Text key={`text-${reminder.id}`} style={styles.dateText}>
+                          <Text
+                            style={styles.reminderDateText}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
                             {reminder.dateString}
                           </Text>
-                        </Pressable>
+                          <MaterialIcons name="calendar-today" size={20} color={colors.textPrimary} />
+                        </TouchableOpacity>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.removeReminderButton}
+                        onPress={() => removeReminder(reminder.id)}
+                      >
+                        <MaterialIcons name="close" size={20} color={colors.error} />
+                      </TouchableOpacity>
+                    </View>
 
-                        {Platform.OS === 'android' ? (
-                          <>
-                            {showReminderDatePickers[reminder.id] && (
-                              <DateTimePicker
-                                key={`date-picker-${reminder.id}`}
-                                value={reminder.date}
-                                mode="date"
-                                display="default"
-                                onChange={(event, selectedDate) => onReminderDateChange(reminder.id, event, selectedDate)}
-                                minimumDate={currentDate}
-                              />
-                            )}
-                            {showReminderTimePickers[reminder.id] && (
-                              <DateTimePicker
-                                key={`time-picker-${reminder.id}`}
-                                value={reminder.date}
-                                mode="time"
-                                display="default"
-                                onChange={(event, selectedTime) => onReminderTimeChange(reminder.id, event, selectedTime)}
-                                minimumDate={currentDate}
-                              />
-                            )}
-                          </>
-                        ) : (
-                          showReminderDatePickers[reminder.id] && (
-                            <DateTimePicker
-                              key={`picker-${reminder.id}`}
-                              value={reminder.date}
-                              mode="datetime"
-                              display="spinner"
-                              onChange={(event, selectedDate) => onReminderDateChange(reminder.id, event, selectedDate)}
-                              minimumDate={currentDate}
-                              maximumDate={date}
-                            />
-                          )
-                        )}
+                    {/* Android pickers remain inline below row */}
+                    {Platform.OS === 'android' && showReminderDatePickers[reminder.id] && (
+                      <DateTimePicker
+                        value={reminder.date}
+                        mode="date"
+                        display="default"
+                        onChange={(event, selectedDate) => onReminderDateChange(reminder.id, event, selectedDate)}
+                        minimumDate={currentDate}
+                      />
+                    )}
+                    {Platform.OS === 'android' && showReminderTimePickers[reminder.id] && (
+                      <DateTimePicker
+                        value={reminder.date}
+                        mode="time"
+                        display="default"
+                        onChange={(event, selectedTime) => onReminderTimeChange(reminder.id, event, selectedTime)}
+                        minimumDate={currentDate}
+                      />
+                    )}
+
+                    {/* iOS inline DateTimePicker below row */}
+                    {Platform.OS === 'ios' && showReminderDatePickers[reminder.id] && (
+                      <View style={styles.inlineDatePicker}>
+                        <DateTimePicker
+                          value={reminder.date}
+                          mode="datetime"
+                          display="spinner"
+                          onChange={(event, selectedDate) => onReminderDateChange(reminder.id, event, selectedDate)}
+                          minimumDate={currentDate}
+                          maximumDate={date}
+                        />
                       </View>
                     )}
-                    <TouchableOpacity
-                      key={`remove-${reminder.id}`}
-                      onPress={() => removeReminder(reminder.id)}
-                      style={styles.removeButton}
-                    >
-                      <MaterialIcons name="close" size={20} color={colors.error} />
-                    </TouchableOpacity>
                   </View>
                 ))}
+                <TouchableOpacity
+                  style={styles.addReminderButton}
+                  onPress={addNewReminder}
+                >
+                  <MaterialIcons name="add" size={20} color={colors.primary} />
+                  <Text style={styles.addReminderText}>Add Reminder</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </LinearGradient>
@@ -528,39 +500,75 @@ const styles = StyleSheet.create({
   remindersContainer: {
     marginBottom: 20,
   },
-  remindersHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  remindersTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 12,
+    color: colors.textPrimary,
   },
-  addButton: {
-    backgroundColor: colors.primary,
+  reminderItem: {
+    width: '100%',
+    flexDirection: 'column',
+    marginBottom: 12,
+    gap: 8,
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reminderDateContainer: {
+    flex: 1,
+  },
+  dateTimePickerOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 100,
+  },
+  reminderDateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+  },
+  reminderDateText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    flexShrink: 1,
+  },
+  removeReminderButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: colors.error + '20',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  reminderItem: {
+  addReminderButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-    position: 'relative',
-  },
-  reminderInputContainer: {
-    flex: 1,
-  },
-  removeButton: {
-    padding: 8,
     justifyContent: 'center',
-    alignItems: 'center',
-    height: 50,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    zIndex: 1,
+    gap: 8,
+    marginTop: 8,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  addReminderText: {
+    color: colors.textOnPrimary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   submitButtonContainer: {
     position: 'absolute',
@@ -643,5 +651,22 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 16,
     color: colors.textPrimary,
+  },
+  datePickerContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    shadowColor: colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  inlineDatePicker: {
+    marginTop: 8,
   },
 });
