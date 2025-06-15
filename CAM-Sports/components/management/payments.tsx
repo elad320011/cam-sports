@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView, Image } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView, Image, Linking } from "react-native";
 import { Collapsible } from "../Collapsible";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -27,6 +27,19 @@ export default function Payments({ isManager = true }: PaymentsProps) {
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  const getPaymentStatus = (item: Payment) => {
+    const now = new Date();
+    const dueDate = new Date(item.due_date);
+    
+    // Set both dates to start of day for accurate comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const paymentDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    
+    if (item.status === 'paid') return 'paid';
+    if (today > paymentDueDate) return 'expired';
+    return 'pending';
   };
 
   const fetchPayments = async () => {
@@ -58,6 +71,7 @@ export default function Payments({ isManager = true }: PaymentsProps) {
   }, [isFocused]);
 
   const handleNavigate = (paymentId: string) => {
+    if (!isManager) return; // Prevent navigation for players
     router.push({
       pathname: `../payments`,
       params: { paymentId },
@@ -112,56 +126,81 @@ export default function Payments({ isManager = true }: PaymentsProps) {
                 scrollEnabled={false}
                 data={payments}
                 keyExtractor={(item) => `payment-${item.id}`}
-                renderItem={({ item }) => (
-                  <View key={`payment-item-${item.id}`} style={styles.itemContainer}>
-                    <TouchableOpacity
-                      style={[styles.item, !isManager && styles.itemFullWidth]}
-                      onPress={() => handleNavigate(item.id)}
-                    >
-                      <LinearGradient
-                        colors={[colors.cardBackground, colors.cardBackgroundLight]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.itemGradient}
+                renderItem={({ item }) => {
+                  const status = getPaymentStatus(item);
+                  return (
+                    <View key={`payment-item-${item.id}`} style={styles.itemContainer}>
+                      <View
+                        style={[styles.item, !isManager && styles.itemFullWidth]}
                       >
-                        <View style={styles.paymentInfo}>
-                          <Text style={styles.amount}>₪{item.amount}</Text>
-                          <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
-                          <Text style={styles.description}>{item.description}</Text>
-                          {'reminders' in item && item.reminders && item.reminders.length > 0 && (
-                            <View key={`reminders-${item.id}`} style={styles.remindersList}>
-                              <Text style={styles.remindersTitle}>Reminders:</Text>
-                              {item.reminders.map((reminder, index) => (
-                                <View key={`reminder-${reminder.id}-${index}`} style={styles.reminderItem}>
-                                  <MaterialIcons name="notifications" size={16} color={colors.primary} />
-                                  <Text style={styles.reminderDate}>
-                                    {formatDate(reminder.date)}
-                                  </Text>
-                                </View>
-                              ))}
+                        <LinearGradient
+                          colors={[colors.cardBackground, colors.cardBackgroundLight]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.itemGradient}
+                        >
+                          <View style={styles.paymentInfo}>
+                            <View style={styles.amountContainer}>
+                              <Text style={styles.amount}>₪{item.amount}</Text>
+                              <Text style={styles.dueDate}>Due: {formatDate(item.due_date)}</Text>
                             </View>
-                          )}
-                        </View>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                    {isManager && (
-                      <View key={`actions-${item.id}`} style={styles.buttonContainer}>
-                        <TouchableOpacity
-                          style={[styles.actionButton, styles.editButton]}
-                          onPress={() => handleNavigate(item.id)}
-                        >
-                          <MaterialIcons name="edit" size={20} color="#fff" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.actionButton, styles.deleteButton]}
-                          onPress={() => handleDeletePayment(item.id)}
-                        >
-                          <MaterialIcons name="delete" size={20} color="#fff" />
-                        </TouchableOpacity>
+                            <Text style={styles.description}>{item.description}</Text>
+                            {!isManager && item.link && (
+                              <TouchableOpacity 
+                                style={styles.paymentLink}
+                                onPress={() => Linking.openURL(item.link)}
+                              >
+                                <MaterialIcons name="payment" size={20} color={colors.primary} />
+                                <Text style={styles.paymentLinkText}>Pay Now</Text>
+                              </TouchableOpacity>
+                            )}
+                            {isManager && item.link && (
+                              <View style={styles.paymentLinkContainer}>
+                                <Text style={styles.paymentLinkLabel}>Payment Link:</Text>
+                                <TouchableOpacity 
+                                  style={styles.paymentLink}
+                                  onPress={() => Linking.openURL(item.link)}
+                                >
+                                  <MaterialIcons name="link" size={20} color={colors.primary} />
+                                  <Text style={styles.paymentLinkText}>Open Link</Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                            {'reminders' in item && item.reminders && item.reminders.length > 0 && (
+                              <View key={`reminders-${item.id}`} style={styles.remindersList}>
+                                <Text style={styles.remindersTitle}>Reminders:</Text>
+                                {item.reminders.map((reminder, index) => (
+                                  <View key={`reminder-${reminder.id}-${index}`} style={styles.reminderItem}>
+                                    <MaterialIcons name="notifications" size={16} color={colors.primary} />
+                                    <Text style={styles.reminderDate}>
+                                      {formatDate(reminder.date)}
+                                    </Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        </LinearGradient>
                       </View>
-                    )}
-                  </View>
-                )}
+                      {isManager && (
+                        <View key={`actions-${item.id}`} style={styles.buttonContainer}>
+                          <TouchableOpacity
+                            style={[styles.actionButton, styles.editButton]}
+                            onPress={() => handleNavigate(item.id)}
+                          >
+                            <MaterialIcons name="edit" size={20} color="#fff" />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.actionButton, styles.deleteButton]}
+                            onPress={() => handleDeletePayment(item.id)}
+                          >
+                            <MaterialIcons name="delete" size={20} color="#fff" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  );
+                }}
               />
             </ScrollView>
           </>
@@ -227,6 +266,12 @@ const styles = StyleSheet.create({
   paymentInfo: {
     flex: 1,
   },
+  amountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   amount: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -235,7 +280,6 @@ const styles = StyleSheet.create({
   dueDate: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginTop: 4,
   },
   description: {
     fontSize: 14,
@@ -292,5 +336,56 @@ const styles = StyleSheet.create({
     tintColor: '#fff',
     width: 52,
     height: 52 
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statusPaid: {
+    backgroundColor: colors.success + '20',
+  },
+  statusPending: {
+    backgroundColor: colors.warning + '20',
+  },
+  statusExpired: {
+    backgroundColor: colors.error + '20',
+  },
+  statusTextPaid: {
+    color: colors.success,
+  },
+  statusTextPending: {
+    color: colors.warning,
+  },
+  statusTextExpired: {
+    color: colors.error,
+  },
+  paymentLinkContainer: {
+    marginTop: 12,
+  },
+  paymentLinkLabel: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  paymentLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '20',
+    padding: 8,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  paymentLinkText: {
+    color: colors.primary,
+    marginLeft: 8,
+    fontWeight: '600',
   },
 });

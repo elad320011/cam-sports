@@ -30,6 +30,7 @@ export const colors = {
   // Status
   success: '#4ade80',          // Optional: team created, invite sent
   error: '#f87171',            // Optional: failed actions, errors
+  warning: '#f4c534',          // Optional: pending status, warnings
 };
 
 const tintColorLight = '#0a7ea4';
