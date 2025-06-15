@@ -33,7 +33,7 @@ yarn-error.*
 .env*.local
 
 # Firebase/Google Services
-google-services.json
+# google-services.json
 GoogleService-Info.plist
 
 # typescript
