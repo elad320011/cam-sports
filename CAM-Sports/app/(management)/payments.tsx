@@ -309,53 +309,26 @@ export default function PaymentPage() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Due Date</Text>
-                {Platform.OS === 'web' ? (
-                  <input
-                    type="date"
-                    style={{
-                      height: 50,
-                      borderColor: colors.borderColor,
-                      borderWidth: 1,
-                      borderRadius: 8,
-                      marginBottom: 16,
-                      width: '100%',
-                      backgroundColor: colors.background,
-                      color: colors.textPrimary,
-                      padding: '0 16px',
-                    }}
-                    value={formatDateForInput(date)}
-                    onChange={(e) => {
-                      const selectedDate = new Date(e.target.value);
-                      setDate(selectedDate);
-                      setDueDate(selectedDate.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' }));
-                    }}
-                    min={formatDateForInput(new Date())}
-                  />
-                ) : (
-                  <>
-                    <Pressable
-                      style={[styles.input, styles.dateInput]}
-                      onPress={handleDueDatePress}
-                    >
-                      <Text style={dueDate ? styles.dateText : styles.placeholderText}>
-                        {dueDate || 'Select Due Date'}
-                      </Text>
-                    </Pressable>
-
-                    {showDatePicker && (
-                      <DateTimePicker
-                        testID="dateTimePicker"
-                        value={date}
-                        mode="date"
-                        is24Hour={true}
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={onDateChange}
-                        minimumDate={new Date()}
-                      />
-                    )}
-                  </>
-                )}
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateButtonText}>{dueDate || 'Select due date'}</Text>
+                  <MaterialIcons name="calendar-today" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
               </View>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  testID="dateTimePicker"
+                  value={date}
+                  mode="date"
+                  is24Hour={true}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onDateChange}
+                  minimumDate={new Date()}
+                />
+              )}
 
               <View style={styles.remindersContainer}>
                 <View style={styles.remindersHeader}>
@@ -656,5 +629,19 @@ const styles = StyleSheet.create({
   iosPicker: {
     backgroundColor: colors.background,
     height: 200,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: colors.textPrimary,
   },
 });
