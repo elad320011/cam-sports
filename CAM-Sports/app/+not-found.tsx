@@ -1,11 +1,15 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { colors } from '@/constants/Colors'
+import { Stack } from 'expo-router';
 
 export default function NotFoundScreen() {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color="#4a90e2" />
-    </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#4a90e2" />
+      </View>
+    </>
   );
 }
 
